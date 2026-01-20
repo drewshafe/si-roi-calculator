@@ -331,9 +331,30 @@
                     </div>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" id="protectionPremiumGroup">
                     <label>Protection Premium %</label>
                     <input type="text" id="protectionPremium" value="3.00" placeholder="ex: 3.25%" inputmode="decimal">
+                </div>
+
+                <div class="input-group">
+                    <label>Pricing Template</label>
+                    <select id="pricingTemplate" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 1.1em; background: white; color: #333; font-weight: 500; cursor: pointer;">
+                        <option value="percentage">Percentage-Based</option>
+                        <option value="1.5_accurate">1.5% Accurate</option>
+                        <option value="2_accurate">2% Accurate</option>
+                        <option value="2_round_50">2% Round to $0.50</option>
+                        <option value="2.5_accurate">2.5% Accurate</option>
+                        <option value="3_accurate">3% Accurate</option>
+                        <option value="3.5_accurate">3.5% Accurate</option>
+                        <option value="static_1.50_300_2.00">Static $1.50&lt;$300, $2.00&gt;$300</option>
+                        <option value="flat_1.50">Flat $1.50</option>
+                        <option value="flat_5.95">Flat $5.95</option>
+                        <option value="2_flat_0.98">2% Flat $0.98 Min</option>
+                        <option value="3_accurate_100_1.95">3% Accurate &lt;$100=$1.95</option>
+                        <option value="3.25_1.55">3.25% $1.55 Min</option>
+                        <option value="2.5_1.95">2.5% $1.95 Min</option>
+                        <option value="born_primitive">Born Primitive Custom</option>
+                    </select>
                 </div>
 
                 <div class="input-group">
@@ -453,6 +474,64 @@
 
         // Handle logo upload
 
+        // Tiered pricing templates
+        const pricingTemplates = {
+            "1.5_accurate": [{min:1,max:77,premium:0.98},{min:77,max:88,premium:1.23},{min:88,max:100,premium:1.40},{min:100,max:114,premium:1.60},{min:115,max:131,premium:1.83},{min:131,max:150,premium:2.09},{min:150,max:171,premium:2.39},{min:171,max:195,premium:2.74},{min:195,max:223,premium:3.13},{min:223,max:255,premium:3.57},{min:255,max:292,premium:4.08},{min:292,max:333,premium:4.67},{min:333,max:381,premium:5.33},{min:381,max:435,premium:6.10},{min:435,max:498,premium:6.97},{min:498,max:569,premium:7.96},{min:569,max:650,premium:9.10},{min:650,max:743,premium:10.40},{min:743,max:849,premium:11.89},{min:849,max:970,premium:13.59},{min:970,max:1109,premium:15.53},{min:1109,max:1267,premium:17.74},{min:1267,max:1449,premium:20.28},{min:1449,max:1655,premium:23.18},{min:1655,max:1892,premium:26.49},{min:1892,max:2162,premium:30.27},{min:2162,max:2471,premium:34.60},{min:2471,max:2824,premium:39.54},{min:2824,max:3228,premium:45.19},{min:3228,max:3689,premium:51.64},{min:3689,max:4216,premium:59.02},{min:4216,max:10000,premium:67.45}],
+            "2_accurate": [{min:1,max:54,premium:0.98},{min:54,max:60,premium:1.14},{min:60,max:66,premium:1.26},{min:66,max:73,premium:1.39},{min:73,max:81,premium:1.54},{min:81,max:89,premium:1.70},{min:89,max:99,premium:1.88},{min:99,max:109,premium:2.08},{min:109,max:121,premium:2.29},{min:121,max:133,premium:2.54},{min:133,max:148,premium:2.80},{min:148,max:163,premium:3.10},{min:163,max:180,premium:3.43},{min:180,max:199,premium:3.79},{min:199,max:220,premium:4.18},{min:220,max:243,premium:4.63},{min:243,max:269,premium:5.11},{min:269,max:297,premium:5.65},{min:297,max:329,premium:6.25},{min:329,max:363,premium:6.90},{min:363,max:402,premium:7.63},{min:402,max:444,premium:8.43},{min:444,max:491,premium:9.32},{min:491,max:542,premium:10.30},{min:542,max:599,premium:11.39},{min:599,max:662,premium:12.59},{min:662,max:732,premium:13.91},{min:732,max:809,premium:15.38},{min:809,max:894,premium:16.99},{min:894,max:989,premium:18.78},{min:989,max:1093,premium:20.76},{min:1093,max:1208,premium:22.95},{min:1208,max:1335,premium:25.36},{min:1335,max:1475,premium:28.03},{min:1475,max:1631,premium:30.98},{min:1631,max:1802,premium:34.25},{min:1802,max:1992,premium:37.85},{min:1992,max:2202,premium:41.83},{min:2202,max:2434,premium:46.24},{min:2434,max:2690,premium:51.11},{min:2690,max:2973,premium:56.49},{min:2973,max:3286,premium:62.43},{min:3286,max:3632,premium:69.00},{min:3632,max:4014,premium:76.27},{min:4014,max:4437,premium:84.30},{min:4437,max:10000,premium:93.17}],
+            "2_round_50": [{min:1,max:50,premium:1.00},{min:50,max:80,premium:1.50},{min:80,max:110,premium:2.00},{min:110,max:140,premium:2.50},{min:140,max:160,premium:3.00},{min:160,max:180,premium:3.50},{min:180,max:210,premium:4.00},{min:210,max:300,premium:5.00},{min:300,max:400,premium:8.00},{min:400,max:500,premium:10.00},{min:500,max:600,premium:12.00},{min:600,max:700,premium:14.00},{min:700,max:800,premium:16.00},{min:800,max:900,premium:18.00},{min:900,max:10000,premium:20.00}],
+            "2.5_accurate": [{min:1,max:41,premium:0.98},{min:41,max:44,premium:1.06},{min:44,max:48,premium:1.15},{min:48,max:52,premium:1.25},{min:52,max:56,premium:1.35},{min:56,max:61,premium:1.47},{min:61,max:66,premium:1.59},{min:66,max:72,premium:1.72},{min:72,max:78,premium:1.87},{min:78,max:84,premium:2.02},{min:84,max:91,premium:2.19},{min:91,max:99,premium:2.37},{min:99,max:107,premium:2.57},{min:107,max:116,premium:2.79},{min:116,max:126,premium:3.02},{min:126,max:136,premium:3.27},{min:136,max:148,premium:3.54},{min:148,max:160,premium:3.84},{min:160,max:173,premium:4.16},{min:173,max:188,premium:4.51},{min:188,max:203,premium:4.88},{min:203,max:220,premium:5.29},{min:220,max:239,premium:5.73},{min:239,max:259,premium:6.21},{min:259,max:280,premium:6.73},{min:280,max:304,premium:7.29},{min:304,max:329,premium:7.90},{min:329,max:356,premium:8.55},{min:356,max:386,premium:9.27},{min:386,max:418,premium:10.04},{min:418,max:453,premium:10.88},{min:453,max:491,premium:11.78},{min:491,max:532,premium:12.76},{min:532,max:576,premium:13.83},{min:576,max:624,premium:14.98},{min:624,max:676,premium:16.23},{min:676,max:733,premium:17.58},{min:733,max:794,premium:19.05},{min:794,max:860,premium:20.64},{min:860,max:931,premium:22.36},{min:931,max:1009,premium:24.22},{min:1009,max:1093,premium:26.24},{min:1093,max:1184,premium:28.42},{min:1184,max:1283,premium:30.79},{min:1283,max:1390,premium:33.36},{min:1390,max:1506,premium:36.14},{min:1506,max:1631,premium:39.15},{min:1631,max:1767,premium:42.41},{min:1767,max:1915,premium:45.95},{min:1915,max:2074,premium:49.78},{min:2074,max:2247,premium:53.93},{min:2247,max:2434,premium:58.42},{min:2434,max:2637,premium:63.29},{min:2637,max:2857,premium:68.56},{min:2857,max:3095,premium:74.28},{min:3095,max:3353,premium:80.47},{min:3353,max:3632,premium:87.17},{min:3632,max:3935,premium:94.44},{min:3935,max:4263,premium:102.31},{min:4263,max:4618,premium:110.83},{min:4618,max:10000,premium:120.07}],
+            "3_accurate": "USE_PERCENTAGE_3.0",
+            "3.5_accurate": "USE_PERCENTAGE_3.5",
+            "static_1.50_300_2.00": [{min:1,max:300,premium:1.50},{min:300,max:10000,premium:2.00}],
+            "flat_1.50": [{min:1,max:10000,premium:1.50}],
+            "flat_5.95": [{min:0,max:10000,premium:5.95}],
+            "2_flat_0.98": "USE_PERCENTAGE_2.0_MIN_0.98",
+            "3_accurate_100_1.95": "USE_PERCENTAGE_3.0_MIN_1.95",
+            "3.25_1.55": "USE_PERCENTAGE_3.25_MIN_1.55",
+            "2.5_1.95": "USE_PERCENTAGE_2.5_MIN_1.95",
+            "born_primitive": [{min:1,max:50,premium:2.25},{min:50,max:100,premium:2.75},{min:100,max:150,premium:3.25},{min:150,max:200,premium:3.75},{min:200,max:300,premium:4.95},{min:300,max:500,premium:5.95},{min:500,max:10000,premium:6.95}]
+        };
+
+        function getTieredPremium(orderValue, template) {
+            const tiers = pricingTemplates[template];
+            if (!tiers) return 0;
+            
+            // Handle percentage-based templates with minimums
+            if (typeof tiers === 'string') {
+                if (tiers.startsWith('USE_PERCENTAGE_')) {
+                    const parts = tiers.replace('USE_PERCENTAGE_', '').split('_MIN_');
+                    const percentage = parseFloat(parts[0]) / 100;
+                    const calculated = orderValue * percentage;
+                    if (parts.length > 1) {
+                        const minimum = parseFloat(parts[1]);
+                        return Math.max(calculated, minimum);
+                    }
+                    return calculated;
+                }
+                return 0;
+            }
+            
+            // Handle tier arrays
+            for (let tier of tiers) {
+                if (orderValue >= tier.min && orderValue < tier.max) {
+                    return tier.premium;
+                }
+            }
+            // If above highest tier, use highest tier premium
+            return tiers[tiers.length - 1].premium;
+        }
+
+        function toggleProtectionPremiumVisibility() {
+            const template = document.getElementById('pricingTemplate').value;
+            const premiumGroup = document.getElementById('protectionPremiumGroup');
+            
+            if (template === 'percentage') {
+                premiumGroup.style.display = 'block';
+            } else {
+                premiumGroup.style.display = 'none';
+            }
+        }
+
         function formatCurrency(value) {
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
@@ -480,6 +559,7 @@
 
         function calculate() {
             const timeframe = document.getElementById('timeframe').value;
+            const pricingTemplate = document.getElementById('pricingTemplate').value;
             
             // Input is ALWAYS monthly orders
             // Get inputs (remove commas for calculation)
@@ -504,6 +584,7 @@
                 localStorage.setItem('shipinsure_attachRate', document.getElementById('attachRate').value);
                 localStorage.setItem('shipinsure_protectionPremium', document.getElementById('protectionPremium').value);
                 localStorage.setItem('shipinsure_timeframe', timeframe);
+                localStorage.setItem('shipinsure_pricingTemplate', pricingTemplate);
             }
 
             // Auto-update shareable link if it's displayed
@@ -527,8 +608,13 @@
             // Calculate protected orders
             const protectedOrders = periodOrders * attachRate;
 
-            // Calculate average premium
-            const avgPremium = avgOrderValue * protectionPremium;
+            // Calculate average premium based on pricing template
+            let avgPremium;
+            if (pricingTemplate !== 'percentage') {
+                avgPremium = getTieredPremium(avgOrderValue, pricingTemplate);
+            } else {
+                avgPremium = avgOrderValue * protectionPremium;
+            }
 
             // Calculate total claims
             const totalClaims = periodOrders * claimsRate;
@@ -584,6 +670,7 @@
                 document.getElementById('attachRate').value = urlParams.get('attach') || '60';
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
+                document.getElementById('pricingTemplate').value = urlParams.get('template') || 'percentage';
             } else {
                 // Load from localStorage if no URL params
                 const savedValues = {
@@ -595,7 +682,8 @@
                     revenueShare: localStorage.getItem('shipinsure_revenueShare') || '30',
                     attachRate: localStorage.getItem('shipinsure_attachRate') || '60',
                     protectionPremium: localStorage.getItem('shipinsure_protectionPremium') || '3.00',
-                    timeframe: localStorage.getItem('shipinsure_timeframe') || 'monthly'
+                    timeframe: localStorage.getItem('shipinsure_timeframe') || 'monthly',
+                    pricingTemplate: localStorage.getItem('shipinsure_pricingTemplate') || 'percentage'
                 };
 
                 // Set values if they exist
@@ -608,6 +696,7 @@
                 document.getElementById('attachRate').value = savedValues.attachRate;
                 document.getElementById('protectionPremium').value = savedValues.protectionPremium;
                 document.getElementById('timeframe').value = savedValues.timeframe;
+                document.getElementById('pricingTemplate').value = savedValues.pricingTemplate;
             }
         }
 
@@ -624,7 +713,8 @@
                 share: removeCommas(document.getElementById('revenueShare').value) || '30',
                 attach: removeCommas(document.getElementById('attachRate').value) || '60',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
-                view: document.getElementById('timeframe').value || 'monthly'
+                view: document.getElementById('timeframe').value || 'monthly',
+                template: document.getElementById('pricingTemplate').value || 'percentage'
             });
             
             const shareableUrl = `${baseUrl}?${params.toString()}`;
@@ -680,6 +770,12 @@
             calculate();
         });
 
+        // Add event listener to pricing template dropdown
+        document.getElementById('pricingTemplate').addEventListener('change', function() {
+            toggleProtectionPremiumVisibility();
+            calculate();
+        });
+
         // Add event listener to generate link button
         document.getElementById('generateLink').addEventListener('click', generateShareableLink);
 
@@ -688,6 +784,7 @@
 
         // Load saved values and calculate on page load
         loadSavedValues();
+        toggleProtectionPremiumVisibility();
         calculate();
     </script>
 </body>
