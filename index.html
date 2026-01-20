@@ -285,8 +285,37 @@
             </div>
 
             <div class="header-controls">
-                <button id="generateLink" style="padding: 12px 24px; font-size: 0.95em; border-radius: 8px; border: none; background: white; color: #5b6dd1; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%;">
-                    📋 Generate Shareable Link
+                <div style="display: flex; gap: 12px; width: 100%;">
+                    <div class="view-selector" style="flex: 1;">
+                        <label for="timeframe">View:</label>
+                        <select id="timeframe">
+                            <option value="monthly">Monthly</option>
+                            <option value="annual">Annual</option>
+                        </select>
+                    </div>
+                    <div class="view-selector" style="flex: 1;">
+                        <label for="pricingTemplate">Pricing:</label>
+                        <select id="pricingTemplate" style="padding: 8px 10px; font-size: 0.85em; border-radius: 6px; border: 2px solid #e0e0e0; background: white; color: #4a5fc1; font-weight: 600; cursor: pointer;">
+                            <option value="percentage">%-Based</option>
+                            <option value="1.5_accurate">1.5% Acc</option>
+                            <option value="2_accurate">2% Acc</option>
+                            <option value="2_round_50">2% Round</option>
+                            <option value="2.5_accurate">2.5% Acc</option>
+                            <option value="3_accurate">3% Acc</option>
+                            <option value="3.5_accurate">3.5% Acc</option>
+                            <option value="static_1.50_300_2.00">Static $1.50/$2</option>
+                            <option value="flat_1.50">Flat $1.50</option>
+                            <option value="flat_5.95">Flat $5.95</option>
+                            <option value="2_flat_0.98">2% Min $0.98</option>
+                            <option value="3_accurate_100_1.95">3% Min $1.95</option>
+                            <option value="3.25_1.55">3.25% Min $1.55</option>
+                            <option value="2.5_1.95">2.5% Min $1.95</option>
+                            <option value="born_primitive">Born Prim</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="generateLink" style="padding: 10px 20px; font-size: 0.85em; border-radius: 8px; border: none; background: white; color: #5b6dd1; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%;">
+                    📋 Generate Link
                 </button>
                 <div id="linkDisplay" style="width: 100%; display: none; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                     <p style="margin-bottom: 10px; font-size: 0.85em; color: #666;">Share this link:</p>
@@ -337,27 +366,6 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Pricing Template</label>
-                    <select id="pricingTemplate" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 1.1em; background: white; color: #333; font-weight: 500; cursor: pointer;">
-                        <option value="percentage">Percentage-Based</option>
-                        <option value="1.5_accurate">1.5% Accurate</option>
-                        <option value="2_accurate">2% Accurate</option>
-                        <option value="2_round_50">2% Round to $0.50</option>
-                        <option value="2.5_accurate">2.5% Accurate</option>
-                        <option value="3_accurate">3% Accurate</option>
-                        <option value="3.5_accurate">3.5% Accurate</option>
-                        <option value="static_1.50_300_2.00">Static $1.50&lt;$300, $2.00&gt;$300</option>
-                        <option value="flat_1.50">Flat $1.50</option>
-                        <option value="flat_5.95">Flat $5.95</option>
-                        <option value="2_flat_0.98">2% Flat $0.98 Min</option>
-                        <option value="3_accurate_100_1.95">3% Accurate &lt;$100=$1.95</option>
-                        <option value="3.25_1.55">3.25% $1.55 Min</option>
-                        <option value="2.5_1.95">2.5% $1.95 Min</option>
-                        <option value="born_primitive">Born Primitive Custom</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
                     <label>Expected Attach Rate %</label>
                     <input type="text" id="attachRate" value="60" placeholder="ex: 60%" inputmode="decimal">
                 </div>
@@ -369,14 +377,7 @@
             </div>
 
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <div class="view-selector">
-                    <label for="timeframe">View:</label>
-                    <select id="timeframe">
-                        <option value="monthly">Monthly</option>
-                        <option value="annual">Annual</option>
-                    </select>
-                </div>
-                <div style="flex: 1; margin-left: 20px;">
+                <div style="flex: 1;">
                     <div class="metrics-grid" style="margin-bottom: 0;">
                         <div class="metric-item" id="annualOrdersMetric" style="display: none;">
                             <h4>Annual Orders</h4>
@@ -433,6 +434,9 @@
                 <div class="result-card positive">
                     <h3>Extra Revenue With ShipInsure</h3>
                     <div class="result-value positive" id="extraRevenue">$0</div>
+                    <div style="margin-top: 10px; font-size: 1.1em; color: #28a745; font-weight: 600;">
+                        = <span id="percentOfPremiums">0%</span> of Premiums
+                    </div>
                     <div class="metrics-grid" style="margin-top: 20px;">
                         <div class="metric-item">
                             <h4>SI Second Sale Per Reship</h4>
@@ -634,6 +638,10 @@
             const postClaimBalance = premiumPool - siFundedReships;
             const revenueShareAmount = postClaimBalance * revenueShare;
             const extraRevenue = lostRevenue + revenueShareAmount;
+            
+            // Calculate percentage of premiums merchant keeps
+            const totalNewRevenue = lostRevenue + revenueShareAmount;
+            const percentOfPremiums = premiumPool > 0 ? (totalNewRevenue / premiumPool) * 100 : 0;
 
             // Update DOM
             document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
@@ -652,6 +660,7 @@
             document.getElementById('siFundedReships').textContent = formatCurrency(siFundedReships);
             document.getElementById('revenueShareAmount').textContent = formatCurrency(revenueShareAmount);
             document.getElementById('extraRevenue').textContent = formatCurrency(extraRevenue);
+            document.getElementById('percentOfPremiums').textContent = percentOfPremiums.toFixed(1) + '%';
         }
 
         // Load values from URL parameters or localStorage
@@ -704,6 +713,18 @@
         function generateShareableLink() {
             const baseUrl = 'https://drewshafe.github.io/si-roi-calculator';
             
+            const pricingTemplate = document.getElementById('pricingTemplate').value;
+            const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
+            
+            // Calculate actual avg premium from template
+            let avgPremiumValue = 0;
+            if (pricingTemplate !== 'percentage') {
+                avgPremiumValue = getTieredPremium(avgOrderValue, pricingTemplate);
+            } else {
+                const protectionPremium = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
+                avgPremiumValue = avgOrderValue * protectionPremium;
+            }
+            
             const params = new URLSearchParams({
                 orders: removeCommas(document.getElementById('annualOrders').value) || '',
                 aov: removeCommas(document.getElementById('avgOrderValue').value) || '',
@@ -713,6 +734,7 @@
                 share: removeCommas(document.getElementById('revenueShare').value) || '30',
                 attach: removeCommas(document.getElementById('attachRate').value) || '60',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
+                avg_premium: avgPremiumValue.toFixed(2),
                 view: document.getElementById('timeframe').value || 'monthly',
                 template: document.getElementById('pricingTemplate').value || 'percentage'
             });
