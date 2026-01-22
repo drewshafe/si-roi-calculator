@@ -637,11 +637,10 @@
             const siFundedReships = claimsOffset * avgOrderValue;
             const postClaimBalance = premiumPool - siFundedReships;
             const revenueShareAmount = postClaimBalance * revenueShare;
-            const extraRevenue = lostRevenue + revenueShareAmount;
+            const extraRevenue = siFundedReships + revenueShareAmount;
             
-            // Calculate percentage of premiums merchant keeps
-            const totalNewRevenue = lostRevenue + revenueShareAmount;
-            const percentOfPremiums = premiumPool > 0 ? (totalNewRevenue / premiumPool) * 100 : 0;
+            // Calculate percentage of premiums
+            const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
 
             // Update DOM
             document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
