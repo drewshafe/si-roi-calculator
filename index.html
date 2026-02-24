@@ -376,6 +376,7 @@
                             <option value="3.25_1.55">3.25% Min $1.55</option>
                             <option value="2.5_1.95">2.5% Min $1.95</option>
                             <option value="born_primitive">Born Prim</option>
+                            <option value="og_6.5_19.99_3">OG 6.5%/$19.99/3%</option>
                         </select>
                     </div>
                 </div>
@@ -627,7 +628,8 @@
             "3_accurate_100_1.95": "USE_PERCENTAGE_3.0_MIN_1.95",
             "3.25_1.55": "USE_PERCENTAGE_3.25_MIN_1.55",
             "2.5_1.95": "USE_PERCENTAGE_2.5_MIN_1.95",
-            "born_primitive": [{min:1,max:50,premium:2.25},{min:50,max:100,premium:2.75},{min:100,max:150,premium:3.25},{min:150,max:200,premium:3.75},{min:200,max:300,premium:4.95},{min:300,max:500,premium:5.95},{min:500,max:10000,premium:6.95}]
+            "born_primitive": [{min:1,max:50,premium:2.25},{min:50,max:100,premium:2.75},{min:100,max:150,premium:3.25},{min:150,max:200,premium:3.75},{min:200,max:300,premium:4.95},{min:300,max:500,premium:5.95},{min:500,max:10000,premium:6.95}],
+            "og_6.5_19.99_3": [{min:0,max:310,pct:0.065},{min:310,max:670,premium:19.99},{min:670,max:10000,pct:0.03}]
         };
 
         function getTieredPremium(orderValue, template) {
@@ -650,10 +652,11 @@
 
             for (let tier of tiers) {
                 if (orderValue >= tier.min && orderValue < tier.max) {
-                    return tier.premium;
+                    return tier.pct ? orderValue * tier.pct : tier.premium;
                 }
             }
-            return tiers[tiers.length - 1].premium;
+            const last = tiers[tiers.length - 1];
+            return last.pct ? orderValue * last.pct : last.premium;
         }
 
         function toggleProtectionPremiumVisibility() {
