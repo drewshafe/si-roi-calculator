@@ -236,21 +236,6 @@
             opacity: 0.92;
         }
 
-        /* SVG arrows between cards and impact box */
-        .arrows-row {
-            display: flex;
-            justify-content: center;
-            position: relative;
-            height: 48px;
-            pointer-events: none;
-        }
-
-        .arrows-row svg {
-            width: 100%;
-            height: 48px;
-            overflow: visible;
-        }
-
         /* Two-column card row */
         .results-section {
             display: grid;
@@ -578,24 +563,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Arrow connectors -->
-            <div class="arrows-row" id="arrowsRow">
-                <svg id="arrowSvg" viewBox="0 0 1000 48" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Left arrow: from left card → center box -->
-                    <line id="arrowLeft" x1="250" y1="0" x2="500" y2="48" stroke="#dc3545" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowheadRed)"/>
-                    <!-- Right arrow: from right card → center box -->
-                    <line id="arrowRight" x1="750" y1="0" x2="500" y2="48" stroke="#28a745" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowheadGreen)"/>
-                    <defs>
-                        <marker id="arrowheadRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                            <polygon points="0 0, 8 3, 0 6" fill="#dc3545"/>
-                        </marker>
-                        <marker id="arrowheadGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                            <polygon points="0 0, 8 3, 0 6" fill="#28a745"/>
-                        </marker>
-                    </defs>
-                </svg>
             </div>
 
             <!-- Two cards -->
