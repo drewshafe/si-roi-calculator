@@ -879,7 +879,7 @@
 
         // Revenue Impact box
         document.getElementById('revenueImpact').textContent = formatCurrency(revenueImpact);
-        document.getElementById('percentOfPremiums').textContent = percentOfPremiums.toFixed(1) + '% of Premiums';
+        document.getElementById('percentOfPremiums').textContent = 'You Keep ' + percentOfPremiums.toFixed(1) + '% of Premiums';
 
         // % of premiums bubbles
         const showBubbles = premiumPool > 0;
