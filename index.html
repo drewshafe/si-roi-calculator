@@ -476,7 +476,7 @@
                 <div class="results-row">
                     <div class="result-card positive">
                         <div class="card-header">
-                            <h3>Annual Orders</h3>
+                            <h3 id="ordersCardLabel">Monthly Orders</h3>
                             <div class="card-total positive" id="annualOrdersDisplay">0</div>
                         </div>
                         <div class="metrics-grid">
@@ -830,10 +830,12 @@
                 periodPlatformCost = monthlyPlatformCost * 12;
                 document.getElementById('annualOrdersMetric').style.display = 'block';
                 document.getElementById('annualOrdersDisplaySub').textContent = formatNumber(periodOrders);
+                document.getElementById('ordersCardLabel').textContent = 'Annual Orders';
             } else {
                 periodOrders = monthlyOrders;
                 periodPlatformCost = monthlyPlatformCost;
                 document.getElementById('annualOrdersMetric').style.display = 'none';
+                document.getElementById('ordersCardLabel').textContent = 'Monthly Orders';
             }
 
             const protectedOrders = periodOrders * attachRate;
