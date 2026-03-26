@@ -448,7 +448,106 @@
             .outputs-inner { flex-wrap: wrap; }
             .inputs-row { flex-wrap: wrap; }
             .input-group { max-width: 100%; }
+            .bd-cols { grid-template-columns: 1fr; }
         }
+
+        /* ── Calculation Breakdown ── */
+        .calc-breakdown {
+            border-top: 2px solid #e0e3f5;
+        }
+
+        .calc-toggle {
+            width: 100%;
+            padding: 11px 16px;
+            background: #f4f5fb;
+            border: none;
+            color: #4a5fc1;
+            font-family: inherit;
+            font-size: 0.8em;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+            transition: background 0.15s;
+            letter-spacing: 0.2px;
+        }
+
+        .calc-toggle:hover { background: #e8eaf6; }
+
+        .calc-toggle-arrow {
+            font-size: 0.7em;
+            color: #9ca3af;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .calc-toggle-arrow.open { transform: rotate(90deg); }
+
+        .bd-body {
+            display: none;
+            border-top: 1px solid #e0e3f5;
+            background: white;
+        }
+
+        .bd-body.visible { display: block; }
+
+        .bd-shared-section {
+            padding: 10px 16px 12px;
+            border-bottom: 1px solid #e0e3f5;
+            background: #fafbff;
+        }
+
+        .bd-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .bd-col {
+            padding: 10px 16px 14px;
+        }
+
+        .bd-col:first-child { border-right: 1px solid #e0e3f5; }
+
+        .bd-title {
+            font-size: 0.67em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e0e3f5;
+        }
+
+        .bd-title.shared { color: #6c757d; }
+        .bd-title.negative { color: #dc3545; }
+        .bd-title.positive { color: #28a745; }
+
+        .bd-row {
+            display: grid;
+            grid-template-columns: 155px 1fr auto;
+            gap: 6px;
+            align-items: baseline;
+            padding: 2px 0;
+            font-size: 0.74em;
+            border-bottom: 1px solid rgba(0,0,0,0.035);
+        }
+
+        .bd-lbl { color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bd-eq { font-family: 'Courier New', monospace; color: #495057; opacity: 0.65; font-size: 0.88em; }
+        .bd-val { font-family: 'Courier New', monospace; color: #212529; font-weight: 600; text-align: right; white-space: nowrap; }
+
+        .bd-row.sep {
+            border-top: 1px solid #dee2e6;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-bottom: none;
+        }
+
+        .bd-row.sep .bd-lbl { color: #212529; font-weight: 700; }
+        .bd-row.sep.negative .bd-val { color: #dc3545; font-weight: 700; }
+        .bd-row.sep.positive .bd-val { color: #28a745; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -713,10 +812,35 @@
             </div>
         </div><!-- /inputs-strip -->
 
+        <!-- Calculation Breakdown dropdown -->
+        <div class="calc-breakdown">
+            <button class="calc-toggle" onclick="toggleBreakdown(this)">
+                <span class="calc-toggle-arrow" id="bdArrow">▶</span>
+                📋 Show Calculation Breakdown
+            </button>
+            <div class="bd-body" id="bdBody">
+                <div class="bd-shared-section">
+                    <div class="bd-title shared">Inputs &amp; Derived Values</div>
+                    <div id="bd-shared"></div>
+                </div>
+                <div class="bd-cols">
+                    <div class="bd-col">
+                        <div class="bd-title negative">Cost Without ShipInsure</div>
+                        <div id="bd-cost"></div>
+                    </div>
+                    <div class="bd-col">
+                        <div class="bd-title positive">Revenue With ShipInsure</div>
+                        <div id="bd-revenue"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /container -->
 
     <script>
         let returnsEnabled = false;
+        let _bd = {};
 
         function formatNumberWithCommas(value) {
             if (!value) return '';
@@ -1022,6 +1146,21 @@
                 siFundedPctEl.style.display = 'none';
                 revenueSharePctEl.style.display = 'none';
             }
+
+            // Store breakdown data
+            _bd = {
+                ready: true,
+                orders: periodOrders, aov: avgOrderValue, cogsP: cogsPercent, claimsP: claimsRate,
+                csPerClaim: csCostPerClaim, attachP: attachRate, avgPremium, revShareP: revenueShare,
+                protectedOrders, totalClaims, protectedClaims: claimsOffset,
+                costPerReship, csCostTotal: csCost, cogsAmount: cogs, totalLost,
+                premiumPool, siFundedReships, postClaimBalance, revenueShareAmount, extraRevenue,
+                percentOfPremiums, siFundedPct, revenueSharePct,
+                returnsEnabled, totalReturns, returnLabelsCostTotal, periodPlatformCost,
+                totalReturnsCost, siCoveredLabels, siCoveredPlatform, totalReturnsOffset,
+                returnsRate, returnLabelCost
+            };
+            if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
         }
 
         function loadSavedValues() {
@@ -1113,6 +1252,74 @@
                     copyBtn.style.background = '#28a745';
                 }, 2000);
             });
+        }
+
+        function toggleBreakdown(btn) {
+            const body  = document.getElementById('bdBody');
+            const arrow = document.getElementById('bdArrow');
+            const open  = body.classList.toggle('visible');
+            arrow.classList.toggle('open', open);
+            btn.querySelector('.calc-toggle-arrow').textContent = open ? '▼' : '▶';
+            if (open) renderBreakdown();
+        }
+
+        function renderBreakdown() {
+            const d = _bd;
+            if (!d.ready) return;
+            const row = (lbl, eq, val, cls='') =>
+                `<div class="bd-row ${cls}"><span class="bd-lbl">${lbl}</span><span class="bd-eq">${eq}</span><span class="bd-val">${val}</span></div>`;
+            const pct = v => (v * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
+            const fp  = v => v.toFixed(1) + '%';
+            const fn  = v => formatNumber(v);
+            const fc  = v => formatCurrency(v);
+            const fcc = v => formatCurrencyWithCents(v);
+
+            // ── Shared inputs & derived values ──
+            document.getElementById('bd-shared').innerHTML =
+                row('Orders (period)', '',            fn(d.orders)) +
+                row('AOV', '',                        fcc(d.aov)) +
+                row('COGS %', '',                     pct(d.cogsP)) +
+                row('Claims Rate', '',                pct(d.claimsP)) +
+                row('CS Cost / Claim', '',            fc(d.csPerClaim)) +
+                row('Attach Rate', '',                pct(d.attachP)) +
+                row('Avg Premium / Order', '',        fcc(d.avgPremium)) +
+                row('Rev Share %', '',                pct(d.revShareP)) +
+                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
+
+            // ── Cost without ShipInsure ──
+            let costHTML =
+                row('Total Claims', `${fn(d.orders)} × ${pct(d.claimsP)}`,             fn(d.totalClaims)) +
+                row('CS Cost',      `${fn(d.totalClaims)} × ${fc(d.csPerClaim)}`,      fc(d.csCostTotal)) +
+                row('COGS',         `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
+            if (d.returnsEnabled) {
+                costHTML +=
+                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.returnLabelCost)}`,    fc(d.returnLabelsCostTotal)) +
+                    row('Returns Platform', 'monthly fee',                                       fc(d.periodPlatformCost)) +
+                    row('Total Returns Cost', 'labels + platform',                               fc(d.totalReturnsCost));
+            }
+            costHTML += row('Total Cost Without SI', d.returnsEnabled ? 'claims + returns' : 'CS + COGS',
+                            '-' + fc(d.totalLost), 'sep negative');
+            document.getElementById('bd-cost').innerHTML = costHTML;
+
+            // ── Revenue with ShipInsure ──
+            let revHTML =
+                row('Protected Orders',   `${fn(d.orders)} × ${pct(d.attachP)}`,             fn(d.protectedOrders)) +
+                row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
+                row('Protected Claims',   `${fn(d.protectedOrders)} × ${pct(d.claimsP)}`,    fn(d.protectedClaims)) +
+                row('SI Funded (@ AOV)',  `${fn(d.protectedClaims)} claims × ${fcc(d.aov)}`, fc(d.siFundedReships)) +
+                row('Post-Claim Balance', `Premiums − SI Funded`,                             fc(d.postClaimBalance)) +
+                row('Rev Share',         `${fc(d.postClaimBalance)} × ${pct(d.revShareP)}`,  fc(d.revenueShareAmount));
+            if (d.returnsEnabled) {
+                revHTML +=
+                    row('SI Covered Labels',   'from premiums', fc(d.siCoveredLabels)) +
+                    row('SI Covered Platform', 'from premiums', fc(d.siCoveredPlatform));
+            }
+            revHTML +=
+                row('Extra Revenue With SI', d.returnsEnabled ? 'funded + rev share + returns offset' : 'funded + rev share',
+                    fc(d.extraRevenue), 'sep positive') +
+                row('% of Premiums Kept', `${fc(d.extraRevenue)} ÷ ${fc(d.premiumPool)}`,
+                    fp(d.percentOfPremiums), 'sep positive');
+            document.getElementById('bd-revenue').innerHTML = revHTML;
         }
 
         function resetAll() {
