@@ -660,7 +660,7 @@
                     <input type="text" id="annualOrders" placeholder="0">
                 </div>
                 <div class="input-group">
-                    <label for="avgOrderValue">Average Order Value</label>
+                    <label for="avgOrderValue">AOV</label>
                     <input type="text" id="avgOrderValue" placeholder="$">
                 </div>
                 <div class="input-group">
@@ -676,15 +676,15 @@
                     <input type="text" id="csCostPerClaim" placeholder="$">
                 </div>
                 <div class="input-group" id="protectionPremiumGroup">
-                    <label for="protectionPremium">Protection Premium %</label>
+                    <label for="protectionPremium">SI Premium %</label>
                     <input type="text" id="protectionPremium" placeholder="0">
                 </div>
                 <div class="input-group">
-                    <label for="attachRate">Expected Attach Rate %</label>
+                    <label for="attachRate">Attach Rate %</label>
                     <input type="text" id="attachRate" placeholder="0">
                 </div>
                 <div class="input-group">
-                    <label for="revenueShare">Rev Share % (Post Claims)</label>
+                    <label for="revenueShare">Rev Share %</label>
                     <input type="text" id="revenueShare" placeholder="0">
                 </div>
             </div>
@@ -1032,8 +1032,8 @@
                 document.getElementById('claimsRate').value = urlParams.get('claims') || '';
                 document.getElementById('cogsPercent').value = urlParams.get('cogs') || '';
                 document.getElementById('csCostPerClaim').value = urlParams.get('cs') || '';
-                document.getElementById('revenueShare').value = urlParams.get('share') || '30';
-                document.getElementById('attachRate').value = urlParams.get('attach') || '60';
+                document.getElementById('revenueShare').value = urlParams.get('share') || '35';
+                document.getElementById('attachRate').value = urlParams.get('attach') || '68';
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
                 document.getElementById('pricingTemplate').value = urlParams.get('template') || 'percentage';
@@ -1050,8 +1050,8 @@
                 if (s('claimsRate')) document.getElementById('claimsRate').value = s('claimsRate');
                 if (s('cogsPercent')) document.getElementById('cogsPercent').value = s('cogsPercent');
                 if (s('csCostPerClaim')) document.getElementById('csCostPerClaim').value = s('csCostPerClaim');
-                document.getElementById('revenueShare').value = s('revenueShare') || '30';
-                document.getElementById('attachRate').value = s('attachRate') || '60';
+                document.getElementById('revenueShare').value = s('revenueShare') || '35';
+                document.getElementById('attachRate').value = s('attachRate') || '68';
                 document.getElementById('protectionPremium').value = s('protectionPremium') || '3.00';
                 document.getElementById('timeframe').value = s('timeframe') || 'monthly';
                 document.getElementById('pricingTemplate').value = s('pricingTemplate') || 'percentage';
@@ -1080,8 +1080,8 @@
                 claims: removeCommas(document.getElementById('claimsRate').value) || '',
                 cogs: removeCommas(document.getElementById('cogsPercent').value) || '',
                 cs: removeCommas(document.getElementById('csCostPerClaim').value) || '',
-                share: removeCommas(document.getElementById('revenueShare').value) || '30',
-                attach: removeCommas(document.getElementById('attachRate').value) || '60',
+                share: removeCommas(document.getElementById('revenueShare').value) || '35',
+                attach: removeCommas(document.getElementById('attachRate').value) || '68',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
                 avg_premium: avgPremiumValue.toFixed(2),
                 view: document.getElementById('timeframe').value || 'monthly',
@@ -1122,8 +1122,8 @@
             document.getElementById('claimsRate').value = '';
             document.getElementById('csCostPerClaim').value = '';
             document.getElementById('protectionPremium').value = '3.00';
-            document.getElementById('attachRate').value = '60';
-            document.getElementById('revenueShare').value = '30';
+            document.getElementById('attachRate').value = '68';
+            document.getElementById('revenueShare').value = '35';
             document.getElementById('returnsRate').value = '';
             document.getElementById('returnsPlatformCost').value = '';
             document.getElementById('returnLabelCost').value = '';
