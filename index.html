@@ -87,115 +87,122 @@
             cursor: pointer;
         }
 
-        /* ── Two-column body ── */
-        .main-body {
+        /* ── Outputs strip: gray metric boxes across top ── */
+        .outputs-strip {
+            background: #f4f5fb;
+            border-bottom: 2px solid #e0e3f5;
+            padding: 10px 16px;
+        }
+
+        .outputs-inner {
             display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
             align-items: stretch;
         }
 
-        /* Left panel: inputs */
-        .inputs-panel {
-            flex: 0 0 256px;
-            background: #f4f5fb;
-            border-right: 2px solid #e0e3f5;
-            padding: 14px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .input-group {
-            background: linear-gradient(135deg, #5b6dd1 0%, #7b8de8 100%);
-            padding: 9px 12px;
-            border-radius: 8px;
-        }
-
-        .input-group.returns {
-            background: linear-gradient(135deg, #e67e22 0%, #f0a04b 100%);
-        }
-
-        .input-group label {
-            display: block;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 5px;
-            font-size: 0.78em;
-            letter-spacing: 0.2px;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 7px 10px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9em;
+        .output-metric {
             background: white;
-            color: #333;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            flex: 1;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .output-metric.primary-metric {
+            flex: 0 0 auto;
+            min-width: 120px;
+            border: 1px solid rgba(40,167,69,0.3);
+            background: linear-gradient(135deg, #f0fff4 0%, rgba(212,244,221,0.6) 100%);
+        }
+
+        .om-label {
+            font-size: 0.65em;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            margin-bottom: 3px;
+        }
+
+        .om-big {
+            font-size: 1.5em;
+            font-weight: 800;
+            color: #28a745;
+            line-height: 1.1;
+        }
+
+        .om-value {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        .om-sub {
+            margin-top: 4px;
+            font-size: 0.68em;
+            color: #6c757d;
             font-weight: 500;
         }
 
-        .input-group input::placeholder { color: #bbb; font-weight: 400; }
-        .input-group input:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
-
-        .returns-toggle-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px 12px;
-            font-size: 0.82em;
-            border-radius: 7px;
-            border: 2px solid #e67e22;
-            background: white;
-            color: #e67e22;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .returns-toggle-btn:hover { background: #fef9f3; }
-        .returns-toggle-btn.active { background: #e67e22; color: white; }
-
-        .returns-section { display: none; flex-direction: column; gap: 8px; }
-        .returns-section.visible { display: flex; }
-
-        .panel-spacer { flex: 1; min-height: 8px; }
-
-        .generate-link-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 9px 12px;
-            font-size: 0.82em;
-            border-radius: 7px;
-            border: 2px solid #4a5fc1;
-            background: #4a5fc1;
-            color: white;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .generate-link-btn:hover { background: #3a4fa8; }
-
-        .link-display { display: none; flex-direction: column; gap: 5px; }
-        .link-display p { font-size: 0.72em; color: #6c757d; }
-        .link-row { display: flex; gap: 5px; }
-        .link-row input { flex: 1; padding: 5px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 0.72em; }
-        .copy-btn { padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 5px; font-size: 0.72em; font-weight: 700; cursor: pointer; white-space: nowrap; }
-
-        /* Right panel: results */
-        .results-panel {
-            flex: 1;
-            padding: 16px;
+        /* ── Middle section ── */
+        .middle-section {
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            min-width: 0;
+            gap: 12px;
+            background: white;
         }
 
-        .results-row {
+        /* ── Revenue Impact: centered above cards ── */
+        .revenue-impact-row {
+            display: flex;
+            justify-content: center;
+        }
+
+        .revenue-impact-box {
+            background: linear-gradient(135deg, #4a5fc1 0%, #6b7fd7 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 36px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(74,95,193,0.3);
+            min-width: 200px;
+        }
+
+        .impact-label {
+            font-size: 0.72em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.85;
+            margin-bottom: 2px;
+        }
+
+        .impact-value {
+            font-size: 2.8em;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .impact-sublabel {
+            font-size: 0.8em;
+            opacity: 0.88;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        .impact-returns-note {
+            font-size: 0.68em;
+            opacity: 0.72;
+            margin-top: 2px;
+            display: none;
+        }
+
+        /* ── Cards row: red left | green right ── */
+        .cards-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
@@ -302,55 +309,135 @@
         .returns-results { display: none; }
         .returns-results.visible { display: block; }
 
-        /* ── Revenue Impact: % of premiums kept ── */
-        .revenue-impact-row {
+        /* ── Inputs strip at bottom ── */
+        .inputs-strip {
+            background: #f4f5fb;
+            border-top: 2px solid #e0e3f5;
+            padding: 10px 16px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .revenue-impact-box {
-            background: linear-gradient(135deg, #4a5fc1 0%, #6b7fd7 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 12px 36px;
-            text-align: center;
-            box-shadow: 0 6px 20px rgba(74,95,193,0.3);
-            min-width: 200px;
+        .inputs-strip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
-        .impact-label {
+        .inputs-strip-title {
             font-size: 0.72em;
-            font-weight: 700;
+            font-weight: 800;
+            color: #4a5fc1;
             text-transform: uppercase;
             letter-spacing: 1px;
-            opacity: 0.85;
-            margin-bottom: 2px;
         }
 
-        .impact-value {
-            font-size: 2.8em;
-            font-weight: 800;
-            line-height: 1;
+        .inputs-strip-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .impact-sublabel {
-            font-size: 0.8em;
-            opacity: 0.88;
-            margin-top: 5px;
+        .inputs-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 130px;
+            max-width: 190px;
+            background: linear-gradient(135deg, #5b6dd1 0%, #7b8de8 100%);
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+
+        .input-group.returns {
+            background: linear-gradient(135deg, #e67e22 0%, #f0a04b 100%);
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 5px;
+            font-size: 0.78em;
+            letter-spacing: 0.2px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-group input::placeholder { color: #bbb; font-weight: 400; }
+        .input-group input:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
+
+        .returns-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 12px;
+            font-size: 0.82em;
+            border-radius: 7px;
+            border: 2px solid #e67e22;
+            background: white;
+            color: #e67e22;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
 
-        .impact-returns-note {
-            font-size: 0.68em;
-            opacity: 0.72;
-            margin-top: 2px;
-            display: none;
+        .returns-toggle-btn:hover { background: #fef9f3; }
+        .returns-toggle-btn.active { background: #e67e22; color: white; }
+
+        .returns-section { display: none; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+        .returns-section.visible { display: flex; }
+
+        .generate-link-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 12px;
+            font-size: 0.82em;
+            border-radius: 7px;
+            border: 2px solid #4a5fc1;
+            background: #4a5fc1;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
         }
+
+        .generate-link-btn:hover { background: #3a4fa8; }
+
+        .link-display { display: none; flex-direction: column; gap: 5px; }
+        .link-display p { font-size: 0.72em; color: #6c757d; }
+        .link-row { display: flex; gap: 5px; }
+        .link-row input { flex: 1; padding: 5px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 0.72em; }
+        .copy-btn { padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 5px; font-size: 0.72em; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
         @media (max-width: 900px) {
-            .main-body { flex-direction: column; }
-            .inputs-panel { flex: none; }
-            .results-row { grid-template-columns: 1fr; }
+            .cards-row { grid-template-columns: 1fr; }
+            .outputs-inner { flex-wrap: wrap; }
+            .inputs-row { flex-wrap: wrap; }
+            .input-group { max-width: 100%; }
         }
     </style>
 </head>
@@ -397,11 +484,163 @@
             </div>
         </div>
 
-        <!-- Two-column body: inputs left, results right -->
-        <div class="main-body">
+        <!-- Outputs strip: gray metric boxes across the top -->
+        <div class="outputs-strip">
+            <div class="outputs-inner">
 
-            <!-- LEFT: Inputs + link -->
-            <div class="inputs-panel">
+                <!-- Featured: orders count -->
+                <div class="output-metric primary-metric">
+                    <div class="om-label" id="ordersCardLabel">Monthly Orders</div>
+                    <div class="om-big" id="annualOrdersDisplay">0</div>
+                    <div id="annualOrdersMetric" style="display:none;" class="om-sub">
+                        Annual: <span id="annualOrdersDisplaySub">0</span>
+                    </div>
+                </div>
+
+                <div class="output-metric">
+                    <div class="om-label">Total Claims</div>
+                    <div class="om-value" id="totalClaims">0</div>
+                </div>
+                <div class="output-metric">
+                    <div class="om-label">Protected Orders</div>
+                    <div class="om-value" id="protectedOrders">0</div>
+                </div>
+                <div class="output-metric">
+                    <div class="om-label">Avg Premium</div>
+                    <div class="om-value" id="avgPremium">$0</div>
+                </div>
+                <div class="output-metric">
+                    <div class="om-label">Protected Claims</div>
+                    <div class="om-value" id="protectedClaims">0</div>
+                </div>
+                <div class="output-metric">
+                    <div class="om-label">Premiums</div>
+                    <div class="om-value" id="premiumsPaid">$0</div>
+                </div>
+                <div class="output-metric">
+                    <div class="om-label">Post-Claim Balance</div>
+                    <div class="om-value" id="postClaimBalance">$0</div>
+                </div>
+                <div class="output-metric" id="totalReturnsMetric" style="display:none;">
+                    <div class="om-label">Total Returns</div>
+                    <div class="om-value" id="totalReturns">0</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Middle section: % box centered above, red | green cards below -->
+        <div class="middle-section">
+
+            <!-- Blue % of premiums you keep — centered above the two cards -->
+            <div class="revenue-impact-row">
+                <div class="revenue-impact-box">
+                    <div class="impact-label">Of Premiums You Keep</div>
+                    <div class="impact-value" id="percentOfPremiums">0%</div>
+                    <div class="impact-sublabel" id="revenueImpactSub">$0 extra revenue</div>
+                    <div class="impact-returns-note" id="premiumsBadgeSub">including Returns Offset</div>
+                </div>
+            </div>
+
+            <!-- Red | Green cards -->
+            <div class="cards-row">
+
+                <!-- Left: Total Cost Without ShipInsure -->
+                <div class="result-card negative">
+                    <div class="card-header">
+                        <h3 id="lostRevenueLabel">Total Cost Without ShipInsure</h3>
+                        <div class="card-total negative" id="lostRevenue">$0</div>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <h4>Cost Per Reship</h4>
+                            <div class="value" id="costPerReship">$0</div>
+                        </div>
+                        <div class="metric-item">
+                            <h4>CS Cost</h4>
+                            <div class="value" id="csCost">$0</div>
+                        </div>
+                        <div class="metric-item">
+                            <h4>COGS</h4>
+                            <div class="value" id="cogs">$0</div>
+                        </div>
+                    </div>
+                    <div id="returnsCostResults" class="returns-results">
+                        <div class="sub-section-label">Returns Costs</div>
+                        <div class="metrics-grid">
+                            <div class="metric-item returns-highlight">
+                                <h4>Return Labels Cost</h4>
+                                <div class="value" id="returnLabelsCost">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>Returns Platform Cost</h4>
+                                <div class="value" id="returnsPlatformCostDisplay">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>Total Returns Cost</h4>
+                                <div class="value" id="totalReturnsCost">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Extra Revenue With ShipInsure -->
+                <div class="result-card positive">
+                    <div class="card-header">
+                        <h3>Extra Revenue With ShipInsure</h3>
+                        <div class="card-total positive" id="extraRevenue">$0</div>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <h4>SI Second Sale Per Reship</h4>
+                            <div class="value" id="secondSale">$0</div>
+                        </div>
+                        <div class="metric-item">
+                            <h4>SI Funded Reships/Refunds</h4>
+                            <div class="value" id="siFundedReships">$0</div>
+                            <div class="pct-bubble" id="siFundedPct"></div>
+                        </div>
+                        <div class="metric-item">
+                            <h4>Revenue Share</h4>
+                            <div class="value" id="revenueShareAmount">$0</div>
+                            <div class="pct-bubble" id="revenueSharePct"></div>
+                        </div>
+                    </div>
+                    <div id="returnsOffsetResults" class="returns-results">
+                        <div class="sub-section-label">Returns Offset</div>
+                        <div class="metrics-grid">
+                            <div class="metric-item returns-highlight">
+                                <h4>SI Covered Return Labels</h4>
+                                <div class="value" id="siCoveredReturnLabels">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>SI Covered Platform Cost</h4>
+                                <div class="value" id="siCoveredPlatformCost">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>Total Returns Offset</h4>
+                                <div class="value" id="totalReturnsOffset">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /cards-row -->
+        </div><!-- /middle-section -->
+
+        <!-- Bottom: Merchant Inputs strip -->
+        <div class="inputs-strip">
+            <div class="inputs-strip-header">
+                <span class="inputs-strip-title">Merchant Inputs</span>
+                <div class="inputs-strip-actions">
+                    <button id="returnsToggle" class="returns-toggle-btn">
+                        <span>＋</span> Enable Returns Offset
+                    </button>
+                    <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
+                </div>
+            </div>
+
+            <div class="inputs-row">
                 <div class="input-group">
                     <label for="annualOrders">Monthly Orders</label>
                     <input type="text" id="annualOrders" placeholder="0">
@@ -434,181 +673,32 @@
                     <label for="revenueShare">Rev Share % (Post Claims)</label>
                     <input type="text" id="revenueShare" placeholder="0">
                 </div>
+            </div>
 
-                <button id="returnsToggle" class="returns-toggle-btn">
-                    <span>＋</span> Enable Returns Offset
-                </button>
-
-                <div id="returnsInputs" class="returns-section">
-                    <div class="input-group returns">
-                        <label for="returnsRate">Returns Rate %</label>
-                        <input type="text" id="returnsRate" placeholder="0">
-                    </div>
-                    <div class="input-group returns">
-                        <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
-                        <input type="text" id="returnsPlatformCost" placeholder="$">
-                    </div>
-                    <div class="input-group returns">
-                        <label for="returnLabelCost">Avg Return Label Cost</label>
-                        <input type="text" id="returnLabelCost" placeholder="$">
-                    </div>
+            <div id="returnsInputs" class="returns-section">
+                <div class="input-group returns">
+                    <label for="returnsRate">Returns Rate %</label>
+                    <input type="text" id="returnsRate" placeholder="0">
                 </div>
-
-                <div class="panel-spacer"></div>
-
-                <button id="generateLink" class="generate-link-btn">
-                    📋 Generate Link
-                </button>
-
-                <div id="linkDisplay" class="link-display">
-                    <p>Share this link:</p>
-                    <div class="link-row">
-                        <input type="text" id="shareableLink" readonly>
-                        <button id="copyLink" class="copy-btn">Copy</button>
-                    </div>
+                <div class="input-group returns">
+                    <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
+                    <input type="text" id="returnsPlatformCost" placeholder="$">
+                </div>
+                <div class="input-group returns">
+                    <label for="returnLabelCost">Avg Return Label Cost</label>
+                    <input type="text" id="returnLabelCost" placeholder="$">
                 </div>
             </div>
 
-            <!-- RIGHT: Results -->
-            <div class="results-panel">
-
-                <!-- Row 1: Order metrics + DIY cost -->
-                <div class="results-row">
-                    <div class="result-card positive">
-                        <div class="card-header">
-                            <h3 id="ordersCardLabel">Monthly Orders</h3>
-                            <div class="card-total positive" id="annualOrdersDisplay">0</div>
-                        </div>
-                        <div class="metrics-grid">
-                            <div class="metric-item" id="annualOrdersMetric" style="display:none;">
-                                <h4>Annual Orders</h4>
-                                <div class="value" id="annualOrdersDisplaySub">0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>Total Claims</h4>
-                                <div class="value" id="totalClaims">0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>Protected Orders</h4>
-                                <div class="value" id="protectedOrders">0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>Avg Premium</h4>
-                                <div class="value" id="avgPremium">$0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>Protected Claims</h4>
-                                <div class="value" id="protectedClaims">0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>Premiums</h4>
-                                <div class="value" id="premiumsPaid">$0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>Post-Claim Balance</h4>
-                                <div class="value" id="postClaimBalance">$0</div>
-                            </div>
-                            <div class="metric-item" id="totalReturnsMetric" style="display:none;">
-                                <h4>Total Returns</h4>
-                                <div class="value" id="totalReturns">0</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="result-card negative">
-                        <div class="card-header">
-                            <h3 id="lostRevenueLabel">Total Cost Without ShipInsure</h3>
-                            <div class="card-total negative" id="lostRevenue">$0</div>
-                        </div>
-                        <div class="metrics-grid">
-                            <div class="metric-item">
-                                <h4>Cost Per Reship</h4>
-                                <div class="value" id="costPerReship">$0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>CS Cost</h4>
-                                <div class="value" id="csCost">$0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>COGS</h4>
-                                <div class="value" id="cogs">$0</div>
-                            </div>
-                        </div>
-                        <div id="returnsCostResults" class="returns-results">
-                            <div class="sub-section-label">Returns Costs</div>
-                            <div class="metrics-grid">
-                                <div class="metric-item returns-highlight">
-                                    <h4>Return Labels Cost</h4>
-                                    <div class="value" id="returnLabelsCost">$0</div>
-                                </div>
-                                <div class="metric-item returns-highlight">
-                                    <h4>Returns Platform Cost</h4>
-                                    <div class="value" id="returnsPlatformCostDisplay">$0</div>
-                                </div>
-                                <div class="metric-item returns-highlight">
-                                    <h4>Total Returns Cost</h4>
-                                    <div class="value" id="totalReturnsCost">$0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div id="linkDisplay" class="link-display">
+                <p>Share this link:</p>
+                <div class="link-row">
+                    <input type="text" id="shareableLink" readonly>
+                    <button id="copyLink" class="copy-btn">Copy</button>
                 </div>
+            </div>
+        </div><!-- /inputs-strip -->
 
-                <!-- Revenue Impact: % of premiums kept as the headline metric -->
-                <div class="revenue-impact-row">
-                    <div class="revenue-impact-box">
-                        <div class="impact-label">Of Premiums You Keep</div>
-                        <div class="impact-value" id="percentOfPremiums">0%</div>
-                        <div class="impact-sublabel" id="revenueImpactSub">$0 extra revenue</div>
-                        <div class="impact-returns-note" id="premiumsBadgeSub">including Returns Offset</div>
-                    </div>
-                </div>
-
-                <!-- Row 2: Extra Revenue With ShipInsure -->
-                <div class="results-row">
-                    <div class="result-card positive">
-                        <div class="card-header">
-                            <h3>Extra Revenue With ShipInsure</h3>
-                            <div class="card-total positive" id="extraRevenue">$0</div>
-                        </div>
-                        <div class="metrics-grid">
-                            <div class="metric-item">
-                                <h4>SI Second Sale Per Reship</h4>
-                                <div class="value" id="secondSale">$0</div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>SI Funded Reships/Refunds</h4>
-                                <div class="value" id="siFundedReships">$0</div>
-                                <div class="pct-bubble" id="siFundedPct"></div>
-                            </div>
-                            <div class="metric-item">
-                                <h4>Revenue Share</h4>
-                                <div class="value" id="revenueShareAmount">$0</div>
-                                <div class="pct-bubble" id="revenueSharePct"></div>
-                            </div>
-                        </div>
-                        <div id="returnsOffsetResults" class="returns-results">
-                            <div class="sub-section-label">Returns Offset</div>
-                            <div class="metrics-grid">
-                                <div class="metric-item returns-highlight">
-                                    <h4>SI Covered Return Labels</h4>
-                                    <div class="value" id="siCoveredReturnLabels">$0</div>
-                                </div>
-                                <div class="metric-item returns-highlight">
-                                    <h4>SI Covered Platform Cost</h4>
-                                    <div class="value" id="siCoveredPlatformCost">$0</div>
-                                </div>
-                                <div class="metric-item returns-highlight">
-                                    <h4>Total Returns Offset</h4>
-                                    <div class="value" id="totalReturnsOffset">$0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div><!-- /results-panel -->
-        </div><!-- /main-body -->
     </div><!-- /container -->
 
     <script>
