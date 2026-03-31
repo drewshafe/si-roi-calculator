@@ -621,7 +621,7 @@
                 </div>
 
                 <div class="output-metric">
-                    <div class="om-label">Total Claims</div>
+                    <div class="om-label" id="totalClaimsLabel">Total Claims</div>
                     <div class="om-value" id="totalClaims">0</div>
                 </div>
                 <div class="output-metric">
@@ -1203,7 +1203,13 @@
 
             // Update DOM
             document.getElementById('annualOrdersDisplay').textContent = formatNumber(periodOrders);
-            document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
+            if (_claimsType === 'count') {
+                document.getElementById('totalClaimsLabel').textContent = 'Claims Rate';
+                document.getElementById('totalClaims').textContent = (claimsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
+            } else {
+                document.getElementById('totalClaimsLabel').textContent = 'Total Claims';
+                document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
+            }
             document.getElementById('protectedOrders').textContent = formatNumber(protectedOrders);
             document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
             document.getElementById('protectedClaims').textContent = formatNumber(claimsOffset);
