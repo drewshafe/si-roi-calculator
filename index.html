@@ -616,7 +616,7 @@
                     <div class="om-label" id="ordersCardLabel">Monthly Orders</div>
                     <div class="om-big" id="annualOrdersDisplay">0</div>
                     <div id="annualOrdersMetric" style="display:none;" class="om-sub">
-                        Annual: <span id="annualOrdersDisplaySub">0</span>
+                        <span id="annualOrdersDisplaySub">0</span>
                     </div>
                 </div>
 
@@ -1492,7 +1492,18 @@
             input.addEventListener('input', calculate);
         });
 
-        document.getElementById('timeframe').addEventListener('change', calculate);
+        document.getElementById('timeframe').addEventListener('change', function() {
+            const ordersEl = document.getElementById('annualOrders');
+            const val = parseFloat(removeCommas(ordersEl.value)) || 0;
+            if (val > 0) {
+                if (this.value === 'annual') {
+                    ordersEl.value = formatNumberWithCommas(String(Math.round(val * 12)));
+                } else {
+                    ordersEl.value = formatNumberWithCommas(String(Math.round(val / 12)));
+                }
+            }
+            calculate();
+        });
         document.getElementById('pricingTemplate').addEventListener('change', function() {
             toggleProtectionPremiumVisibility();
             calculate();
