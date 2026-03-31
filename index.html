@@ -395,6 +395,20 @@
         .input-group input::placeholder { color: #bbb; font-weight: 400; }
         .input-group input:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
 
+        /* Type toggle buttons inside input groups */
+        .input-with-type { display: flex; }
+        .input-with-type input { border-radius: 6px 0 0 6px; flex: 1; min-width: 0; }
+        .itype-btn {
+            padding: 0 8px; font-size: 0.72em; font-weight: 700;
+            border: none; border-left: 1px solid #ddd;
+            background: #f0f0f0; cursor: pointer; color: #666;
+            transition: all 0.15s; white-space: nowrap;
+        }
+        .itype-btn:last-child { border-radius: 0 6px 6px 0; }
+        .itype-btn.active { background: #4a5fc1; color: white; }
+        .input-group.returns .itype-btn.active { background: #c0641a; color: white; }
+        .input-group.returns .itype-btn { border-left-color: #f5c89a; }
+
         .returns-toggle-btn {
             display: flex;
             align-items: center;
@@ -649,6 +663,7 @@
                     <div class="impact-breakdown">
                         <div class="impact-pct-line" id="claimsImpactPct">0% from claims</div>
                         <div class="impact-pct-line" id="revShareImpactPct">0% from rev share</div>
+                        <div class="impact-pct-line" id="returnsOffsetImpactPct" style="display:none;">0% from returns</div>
                     </div>
                     <div id="revenueImpactSub" style="display:none;"></div>
                     <div class="impact-returns-note" id="premiumsBadgeSub">including Returns Offset</div>
@@ -763,15 +778,27 @@
                     <input type="text" id="avgOrderValue" placeholder="$">
                 </div>
                 <div class="input-group">
-                    <label for="cogsPercent">COGS %</label>
-                    <input type="text" id="cogsPercent" placeholder="0">
+                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
+                    <div class="input-with-type">
+                        <input type="text" id="cogsPercent" placeholder="0">
+                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
+                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
+                    </div>
                 </div>
                 <div class="input-group">
-                    <label for="claimsRate">Claims Rate %</label>
-                    <input type="text" id="claimsRate" placeholder="0">
+                    <label id="claimsRateLabel" for="claimsRate">Claims Rate %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="claimsRate" placeholder="0">
+                        <button class="itype-btn active" id="claimsPctBtn" onclick="setClaimsType('pct')">%</button>
+                        <button class="itype-btn" id="claimsCountBtn" onclick="setClaimsType('count')">#</button>
+                    </div>
                 </div>
                 <div class="input-group">
-                    <label for="csCostPerClaim">CS Cost Per Claim</label>
+                    <label for="avgShipping">Avg Shipping</label>
+                    <input type="text" id="avgShipping" placeholder="$">
+                </div>
+                <div class="input-group">
+                    <label for="csCostPerClaim">Avg Ticket Cost</label>
                     <input type="text" id="csCostPerClaim" placeholder="$">
                 </div>
                 <div class="input-group" id="protectionPremiumGroup">
@@ -790,16 +817,16 @@
 
             <div id="returnsInputs" class="returns-section">
                 <div class="input-group returns">
-                    <label for="returnsRate">Returns Rate %</label>
-                    <input type="text" id="returnsRate" placeholder="0">
+                    <label id="returnsRateLabel" for="returnsRate">Returns Rate %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="returnsRate" placeholder="0">
+                        <button class="itype-btn active" id="retPctBtn" onclick="setReturnsType('pct')">%</button>
+                        <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
+                    </div>
                 </div>
                 <div class="input-group returns">
                     <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
                     <input type="text" id="returnsPlatformCost" placeholder="$">
-                </div>
-                <div class="input-group returns">
-                    <label for="returnLabelCost">Avg Return Label Cost</label>
-                    <input type="text" id="returnLabelCost" placeholder="$">
                 </div>
             </div>
 
@@ -840,6 +867,48 @@
 
     <script>
         let returnsEnabled = false;
+        let _cogsType    = 'pct';   // 'pct' | 'flat'
+        let _claimsType  = 'pct';   // 'pct' | 'count'
+        let _returnsType = 'pct';   // 'pct' | 'count'
+
+        function setCogsType(t) {
+            _cogsType = t;
+            document.getElementById('cogsPctBtn').classList.toggle('active', t === 'pct');
+            document.getElementById('cogsFlatBtn').classList.toggle('active', t === 'flat');
+            document.getElementById('cogsLabel').textContent = t === 'flat' ? 'Product Cost $' : 'Product Cost';
+            document.getElementById('cogsPercent').placeholder = t === 'flat' ? '$' : '0';
+            calculate();
+        }
+
+        function setClaimsType(t) {
+            _claimsType = t;
+            document.getElementById('claimsPctBtn').classList.toggle('active', t === 'pct');
+            document.getElementById('claimsCountBtn').classList.toggle('active', t === 'count');
+            updateDynamicLabels();
+            calculate();
+        }
+
+        function setReturnsType(t) {
+            _returnsType = t;
+            document.getElementById('retPctBtn').classList.toggle('active', t === 'pct');
+            document.getElementById('retCountBtn').classList.toggle('active', t === 'count');
+            updateDynamicLabels();
+            calculate();
+        }
+
+        function updateDynamicLabels() {
+            const isAnn = document.getElementById('timeframe').value === 'annual';
+            const claimsLbl = document.getElementById('claimsRateLabel');
+            const returnsLbl = document.getElementById('returnsRateLabel');
+            if (claimsLbl) {
+                if (_claimsType === 'pct') claimsLbl.textContent = 'Claims Rate %';
+                else claimsLbl.textContent = isAnn ? 'Annual Claims' : 'Monthly Claims';
+            }
+            if (returnsLbl) {
+                if (_returnsType === 'pct') returnsLbl.textContent = 'Returns Rate %';
+                else returnsLbl.textContent = isAnn ? 'Annual Returns' : 'Monthly Returns';
+            }
+        }
         let _bd = {};
 
         function formatNumberWithCommas(value) {
@@ -1020,15 +1089,27 @@
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const monthlyOrders = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
-            const claimsRate = parseFloat(removeCommas(document.getElementById('claimsRate').value)) / 100 || 0;
-            const cogsPercent = parseFloat(removeCommas(document.getElementById('cogsPercent').value)) / 100 || 0;
+            const avgShipping   = parseFloat(removeCommas(document.getElementById('avgShipping').value)) || 0;
             const csCostPerClaim = parseFloat(removeCommas(document.getElementById('csCostPerClaim').value)) || 0;
             const revenueShare = parseFloat(removeCommas(document.getElementById('revenueShare').value)) / 100 || 0;
             const attachRate = parseFloat(removeCommas(document.getElementById('attachRate').value)) / 100 || 0;
             const protectionPremium = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
-            const returnsRate = parseFloat(removeCommas(document.getElementById('returnsRate').value)) / 100 || 0;
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('returnsPlatformCost').value)) || 0;
-            const returnLabelCost = parseFloat(removeCommas(document.getElementById('returnLabelCost').value)) || 0;
+
+            // COGS: % or flat $
+            const cogsRaw = parseFloat(removeCommas(document.getElementById('cogsPercent').value)) || 0;
+            const cogsPercent = _cogsType === 'flat'
+                ? (avgOrderValue > 0 ? cogsRaw / avgOrderValue : 0)
+                : cogsRaw / 100;
+
+            // Claims: % or count (count is per period, resolved after periodOrders computed)
+            const claimsRaw = parseFloat(removeCommas(document.getElementById('claimsRate').value)) || 0;
+
+            // Returns: % or count (resolved after periodOrders computed)
+            const returnsRaw = parseFloat(removeCommas(document.getElementById('returnsRate').value)) || 0;
+
+            // Return label cost = avg shipping (no separate input)
+            const returnLabelCost = avgShipping;
 
             const urlParams = new URLSearchParams(window.location.search);
             if (!urlParams.toString()) {
@@ -1036,6 +1117,7 @@
                 localStorage.setItem('shipinsure_avgOrderValue', document.getElementById('avgOrderValue').value);
                 localStorage.setItem('shipinsure_claimsRate', document.getElementById('claimsRate').value);
                 localStorage.setItem('shipinsure_cogsPercent', document.getElementById('cogsPercent').value);
+                localStorage.setItem('shipinsure_avgShipping', document.getElementById('avgShipping').value);
                 localStorage.setItem('shipinsure_csCostPerClaim', document.getElementById('csCostPerClaim').value);
                 localStorage.setItem('shipinsure_revenueShare', document.getElementById('revenueShare').value);
                 localStorage.setItem('shipinsure_attachRate', document.getElementById('attachRate').value);
@@ -1044,14 +1126,17 @@
                 localStorage.setItem('shipinsure_pricingTemplate', pricingTemplate);
                 localStorage.setItem('shipinsure_returnsRate', document.getElementById('returnsRate').value);
                 localStorage.setItem('shipinsure_returnsPlatformCost', document.getElementById('returnsPlatformCost').value);
-                localStorage.setItem('shipinsure_returnLabelCost', document.getElementById('returnLabelCost').value);
                 localStorage.setItem('shipinsure_returnsEnabled', returnsEnabled ? '1' : '0');
+                localStorage.setItem('shipinsure_cogsType', _cogsType);
+                localStorage.setItem('shipinsure_claimsType', _claimsType);
+                localStorage.setItem('shipinsure_returnsType', _returnsType);
             }
 
             if (document.getElementById('linkDisplay').style.display === 'flex') {
                 generateShareableLink();
             }
 
+            updateDynamicLabels();
             let periodOrders, periodPlatformCost;
             if (timeframe === 'annual') {
                 periodOrders = monthlyOrders * 12;
@@ -1065,6 +1150,14 @@
                 document.getElementById('annualOrdersMetric').style.display = 'none';
                 document.getElementById('ordersCardLabel').textContent = 'Monthly Orders';
             }
+
+            // Resolve claims and returns rates from raw values (% or count)
+            const claimsRate = _claimsType === 'count'
+                ? (periodOrders > 0 ? claimsRaw / periodOrders : 0)
+                : claimsRaw / 100;
+            const returnsRate = _returnsType === 'count'
+                ? (periodOrders > 0 ? returnsRaw / periodOrders : 0)
+                : returnsRaw / 100;
 
             const protectedOrders = periodOrders * attachRate;
             let avgPremium;
@@ -1103,6 +1196,7 @@
             const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
             const siFundedPct = premiumPool > 0 ? (siFundedReships / premiumPool) * 100 : 0;
             const revenueSharePct = premiumPool > 0 ? (revenueShareAmount / premiumPool) * 100 : 0;
+            const returnsOffsetPct = (returnsEnabled && premiumPool > 0) ? (totalReturnsOffset / premiumPool) * 100 : 0;
 
             // Update DOM
             document.getElementById('annualOrdersDisplay').textContent = formatNumber(periodOrders);
@@ -1132,6 +1226,8 @@
             document.getElementById('percentOfPremiums').textContent = percentOfPremiums.toFixed(1) + '%';
             document.getElementById('claimsImpactPct').textContent = siFundedPct.toFixed(1) + '% from claims';
             document.getElementById('revShareImpactPct').textContent = revenueSharePct.toFixed(1) + '% from rev share';
+            document.getElementById('returnsOffsetImpactPct').textContent = returnsOffsetPct.toFixed(1) + '% from returns';
+            document.getElementById('returnsOffsetImpactPct').style.display = returnsEnabled ? '' : 'none';
 
             // % bubbles
             const showBubbles = premiumPool > 0;
@@ -1156,9 +1252,11 @@
                 costPerReship, csCostTotal: csCost, cogsAmount: cogs, totalLost,
                 premiumPool, siFundedReships, postClaimBalance, revenueShareAmount, extraRevenue,
                 percentOfPremiums, siFundedPct, revenueSharePct,
+                avgShipping,
                 returnsEnabled, totalReturns, returnLabelsCostTotal, periodPlatformCost,
                 totalReturnsCost, siCoveredLabels, siCoveredPlatform, totalReturnsOffset,
-                returnsRate, returnLabelCost
+                returnsRate, returnsOffsetPct,
+                cogsRaw, claimsRaw, returnsRaw
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
         }
@@ -1170,16 +1268,19 @@
                 document.getElementById('avgOrderValue').value = urlParams.get('aov') || '';
                 document.getElementById('claimsRate').value = urlParams.get('claims') || '';
                 document.getElementById('cogsPercent').value = urlParams.get('cogs') || '';
+                document.getElementById('avgShipping').value = urlParams.get('aship') || '';
                 document.getElementById('csCostPerClaim').value = urlParams.get('cs') || '';
                 document.getElementById('revenueShare').value = urlParams.get('share') || '35';
                 document.getElementById('attachRate').value = urlParams.get('attach') || '68';
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
                 document.getElementById('pricingTemplate').value = urlParams.get('template') || 'percentage';
+                if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
+                if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 document.getElementById('returnsRate').value = urlParams.get('rr') || '';
                 document.getElementById('returnsPlatformCost').value = urlParams.get('rpc') || '';
-                document.getElementById('returnLabelCost').value = urlParams.get('rlc') || '';
-                if (urlParams.get('rr') || urlParams.get('rpc') || urlParams.get('rlc')) {
+                if (urlParams.get('rtype')) setReturnsType(urlParams.get('rtype'));
+                if (urlParams.get('rr') || urlParams.get('rpc')) {
                     toggleReturns();
                 }
             } else {
@@ -1188,15 +1289,18 @@
                 if (s('avgOrderValue')) document.getElementById('avgOrderValue').value = s('avgOrderValue');
                 if (s('claimsRate')) document.getElementById('claimsRate').value = s('claimsRate');
                 if (s('cogsPercent')) document.getElementById('cogsPercent').value = s('cogsPercent');
+                if (s('avgShipping')) document.getElementById('avgShipping').value = s('avgShipping');
                 if (s('csCostPerClaim')) document.getElementById('csCostPerClaim').value = s('csCostPerClaim');
                 document.getElementById('revenueShare').value = s('revenueShare') || '35';
                 document.getElementById('attachRate').value = s('attachRate') || '68';
                 document.getElementById('protectionPremium').value = s('protectionPremium') || '3.00';
                 document.getElementById('timeframe').value = s('timeframe') || 'monthly';
                 document.getElementById('pricingTemplate').value = s('pricingTemplate') || 'percentage';
+                if (s('cogsType')) setCogsType(s('cogsType'));
+                if (s('claimsType')) setClaimsType(s('claimsType'));
                 if (s('returnsRate')) document.getElementById('returnsRate').value = s('returnsRate');
                 if (s('returnsPlatformCost')) document.getElementById('returnsPlatformCost').value = s('returnsPlatformCost');
-                if (s('returnLabelCost')) document.getElementById('returnLabelCost').value = s('returnLabelCost');
+                if (s('returnsType')) setReturnsType(s('returnsType'));
                 if (s('returnsEnabled') === '1') toggleReturns();
             }
         }
@@ -1218,19 +1322,24 @@
                 aov: removeCommas(document.getElementById('avgOrderValue').value) || '',
                 claims: removeCommas(document.getElementById('claimsRate').value) || '',
                 cogs: removeCommas(document.getElementById('cogsPercent').value) || '',
+                aship: removeCommas(document.getElementById('avgShipping').value) || '',
                 cs: removeCommas(document.getElementById('csCostPerClaim').value) || '',
                 share: removeCommas(document.getElementById('revenueShare').value) || '35',
                 attach: removeCommas(document.getElementById('attachRate').value) || '68',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
                 avg_premium: avgPremiumValue.toFixed(2),
                 view: document.getElementById('timeframe').value || 'monthly',
-                template: document.getElementById('pricingTemplate').value || 'percentage'
+                template: document.getElementById('pricingTemplate').value || 'percentage',
+                cogstype: _cogsType,
+                claimstype: _claimsType
             });
 
             if (returnsEnabled) {
                 params.set('rr', removeCommas(document.getElementById('returnsRate').value) || '');
                 params.set('rpc', removeCommas(document.getElementById('returnsPlatformCost').value) || '');
-                params.set('rlc', removeCommas(document.getElementById('returnLabelCost').value) || '');
+                // rlc = avgShipping for proposal generator backward compat
+                params.set('rlc', removeCommas(document.getElementById('avgShipping').value) || '');
+                params.set('rtype', _returnsType);
             }
 
             const shareableUrl = `${baseUrl}?${params.toString()}`;
@@ -1278,13 +1387,14 @@
             document.getElementById('bd-shared').innerHTML =
                 row('Orders (period)', '',            fn(d.orders)) +
                 row('AOV', '',                        fcc(d.aov)) +
-                row('COGS %', '',                     pct(d.cogsP)) +
+                row('Product Cost', '',               d.cogsP < 1 ? pct(d.cogsP) : '$' + d.aov.toFixed(2) + ' × ' + pct(d.cogsP)) +
                 row('Claims Rate', '',                pct(d.claimsP)) +
-                row('CS Cost / Claim', '',            fc(d.csPerClaim)) +
+                row('Avg Shipping', '',               fc(d.avgShipping)) +
+                row('Avg Ticket Cost', '',            fc(d.csPerClaim)) +
                 row('Attach Rate', '',                pct(d.attachP)) +
                 row('Avg Premium / Order', '',        fcc(d.avgPremium)) +
                 row('Rev Share %', '',                pct(d.revShareP)) +
-                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
+                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.avgShipping)} + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
 
             // ── Cost without ShipInsure ──
             let costHTML =
@@ -1293,7 +1403,7 @@
                 row('COGS',         `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
             if (d.returnsEnabled) {
                 costHTML +=
-                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.returnLabelCost)}`,    fc(d.returnLabelsCostTotal)) +
+                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.avgShipping)}`,         fc(d.returnLabelsCostTotal)) +
                     row('Returns Platform', 'monthly fee',                                       fc(d.periodPlatformCost)) +
                     row('Total Returns Cost', 'labels + platform',                               fc(d.totalReturnsCost));
             }
@@ -1327,18 +1437,22 @@
             document.getElementById('avgOrderValue').value = '';
             document.getElementById('cogsPercent').value = '';
             document.getElementById('claimsRate').value = '';
+            document.getElementById('avgShipping').value = '';
             document.getElementById('csCostPerClaim').value = '';
             document.getElementById('protectionPremium').value = '3.00';
             document.getElementById('attachRate').value = '68';
             document.getElementById('revenueShare').value = '35';
             document.getElementById('returnsRate').value = '';
             document.getElementById('returnsPlatformCost').value = '';
-            document.getElementById('returnLabelCost').value = '';
             document.getElementById('timeframe').value = 'monthly';
             document.getElementById('pricingTemplate').value = 'percentage';
-            ['annualOrders','avgOrderValue','claimsRate','cogsPercent','csCostPerClaim',
+            setCogsType('pct');
+            setClaimsType('pct');
+            setReturnsType('pct');
+            ['annualOrders','avgOrderValue','claimsRate','cogsPercent','avgShipping','csCostPerClaim',
              'revenueShare','attachRate','protectionPremium','timeframe','pricingTemplate',
-             'returnsRate','returnsPlatformCost','returnLabelCost','returnsEnabled'].forEach(k => {
+             'returnsRate','returnsPlatformCost','returnsEnabled',
+             'cogsType','claimsType','returnsType'].forEach(k => {
                 localStorage.removeItem('shipinsure_' + k);
             });
             if (returnsEnabled) toggleReturns();
