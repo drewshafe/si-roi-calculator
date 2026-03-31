@@ -645,7 +645,7 @@
                     <div class="om-value" id="postClaimBalance">$0</div>
                 </div>
                 <div class="output-metric" id="totalReturnsMetric" style="display:none;">
-                    <div class="om-label">Total Returns</div>
+                    <div class="om-label" id="totalReturnsLabel">Total Returns</div>
                     <div class="om-value" id="totalReturns">0</div>
                 </div>
 
@@ -1215,7 +1215,13 @@
             document.getElementById('protectedClaims').textContent = formatNumber(claimsOffset);
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
-            document.getElementById('totalReturns').textContent = formatNumber(totalReturns);
+            if (_returnsType === 'count') {
+                document.getElementById('totalReturnsLabel').textContent = 'Returns Rate';
+                document.getElementById('totalReturns').textContent = (returnsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
+            } else {
+                document.getElementById('totalReturnsLabel').textContent = 'Total Returns';
+                document.getElementById('totalReturns').textContent = formatNumber(totalReturns);
+            }
             document.getElementById('costPerReship').textContent = formatCurrency(costPerReship);
             document.getElementById('csCost').textContent = formatCurrency(csShippingCost);
             document.getElementById('cogs').textContent = formatCurrency(cogs);
