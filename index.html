@@ -685,7 +685,7 @@
                             <div class="value" id="costPerReship">$0</div>
                         </div>
                         <div class="metric-item">
-                            <h4>CS Cost</h4>
+                            <h4>CS & Shipping</h4>
                             <div class="value" id="csCost">$0</div>
                         </div>
                         <div class="metric-item">
@@ -770,7 +770,7 @@
 
             <div class="inputs-row">
                 <div class="input-group">
-                    <label for="annualOrders">Monthly Orders</label>
+                    <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
                     <input type="text" id="annualOrders" placeholder="0">
                 </div>
                 <div class="input-group">
@@ -898,6 +898,8 @@
 
         function updateDynamicLabels() {
             const isAnn = document.getElementById('timeframe').value === 'annual';
+            const ordersLbl = document.getElementById('ordersInputLabel');
+            if (ordersLbl) ordersLbl.textContent = isAnn ? 'Annual Orders' : 'Monthly Orders';
             const claimsLbl = document.getElementById('claimsRateLabel');
             const returnsLbl = document.getElementById('returnsRateLabel');
             if (claimsLbl) {
@@ -1087,7 +1089,7 @@
         function calculate() {
             const timeframe = document.getElementById('timeframe').value;
             const pricingTemplate = document.getElementById('pricingTemplate').value;
-            const monthlyOrders = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
+            const ordersInput = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             const avgShipping   = parseFloat(removeCommas(document.getElementById('avgShipping').value)) || 0;
             const csCostPerClaim = parseFloat(removeCommas(document.getElementById('csCostPerClaim').value)) || 0;
@@ -1139,15 +1141,16 @@
             updateDynamicLabels();
             let periodOrders, periodPlatformCost;
             if (timeframe === 'annual') {
-                periodOrders = monthlyOrders * 12;
+                periodOrders = ordersInput;
                 periodPlatformCost = monthlyPlatformCost * 12;
                 document.getElementById('annualOrdersMetric').style.display = 'block';
-                document.getElementById('annualOrdersDisplaySub').textContent = formatNumber(periodOrders);
+                document.getElementById('annualOrdersDisplaySub').textContent = 'Monthly: ' + formatNumber(Math.round(ordersInput / 12));
                 document.getElementById('ordersCardLabel').textContent = 'Annual Orders';
             } else {
-                periodOrders = monthlyOrders;
+                periodOrders = ordersInput;
                 periodPlatformCost = monthlyPlatformCost;
-                document.getElementById('annualOrdersMetric').style.display = 'none';
+                document.getElementById('annualOrdersMetric').style.display = 'block';
+                document.getElementById('annualOrdersDisplaySub').textContent = 'Annual: ' + formatNumber(ordersInput * 12);
                 document.getElementById('ordersCardLabel').textContent = 'Monthly Orders';
             }
 
@@ -1169,10 +1172,10 @@
 
             const totalClaims = periodOrders * claimsRate;
             const claimsOffset = protectedOrders * claimsRate;
-            const costPerReship = (avgOrderValue * cogsPercent) + csCostPerClaim;
-            const csCost = totalClaims * csCostPerClaim;
+            const costPerReship = (avgOrderValue * cogsPercent) + avgShipping + csCostPerClaim;
+            const csShippingCost = totalClaims * (csCostPerClaim + avgShipping);
             const cogs = totalClaims * (avgOrderValue * cogsPercent);
-            const lostRevenue = csCost + cogs;
+            const lostRevenue = csShippingCost + cogs;
             const premiumPool = protectedOrders * avgPremium;
             const siFundedReships = claimsOffset * avgOrderValue;
             const postClaimBalance = premiumPool - siFundedReships;
@@ -1208,7 +1211,7 @@
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
             document.getElementById('totalReturns').textContent = formatNumber(totalReturns);
             document.getElementById('costPerReship').textContent = formatCurrency(costPerReship);
-            document.getElementById('csCost').textContent = formatCurrency(csCost);
+            document.getElementById('csCost').textContent = formatCurrency(csShippingCost);
             document.getElementById('cogs').textContent = formatCurrency(cogs);
             document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalLost);
             document.getElementById('returnLabelsCost').textContent = formatCurrency(returnLabelsCostTotal);
@@ -1249,7 +1252,7 @@
                 orders: periodOrders, aov: avgOrderValue, cogsP: cogsPercent, claimsP: claimsRate,
                 csPerClaim: csCostPerClaim, attachP: attachRate, avgPremium, revShareP: revenueShare,
                 protectedOrders, totalClaims, protectedClaims: claimsOffset,
-                costPerReship, csCostTotal: csCost, cogsAmount: cogs, totalLost,
+                costPerReship, csCostTotal: csShippingCost, cogsAmount: cogs, totalLost,
                 premiumPool, siFundedReships, postClaimBalance, revenueShareAmount, extraRevenue,
                 percentOfPremiums, siFundedPct, revenueSharePct,
                 avgShipping,
@@ -1399,7 +1402,7 @@
             // ── Cost without ShipInsure ──
             let costHTML =
                 row('Total Claims', `${fn(d.orders)} × ${pct(d.claimsP)}`,             fn(d.totalClaims)) +
-                row('CS Cost',      `${fn(d.totalClaims)} × ${fc(d.csPerClaim)}`,      fc(d.csCostTotal)) +
+                row('CS & Shipping', `${fn(d.totalClaims)} × (${fc(d.avgShipping)} + ${fc(d.csPerClaim)})`, fc(d.csCostTotal)) +
                 row('COGS',         `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
             if (d.returnsEnabled) {
                 costHTML +=
