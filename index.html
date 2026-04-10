@@ -587,6 +587,7 @@
                     <label for="pricingTemplate">Pricing:</label>
                     <select id="pricingTemplate">
                         <option value="percentage">%-Based</option>
+                        <option value="flat_dollar">$-Based</option>
                         <option value="1.5_accurate">1.5% Acc</option>
                         <option value="2_accurate">2% Acc</option>
                         <option value="2_round_50">2% Round</option>
@@ -802,7 +803,7 @@
                     <input type="text" id="csCostPerClaim" placeholder="$">
                 </div>
                 <div class="input-group" id="protectionPremiumGroup">
-                    <label for="protectionPremium">SI Premium %</label>
+                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
                     <input type="text" id="protectionPremium" placeholder="0">
                 </div>
                 <div class="input-group">
@@ -1040,7 +1041,16 @@
         function toggleProtectionPremiumVisibility() {
             const template = document.getElementById('pricingTemplate').value;
             const premiumGroup = document.getElementById('protectionPremiumGroup');
-            premiumGroup.style.display = (template === 'percentage') ? 'block' : 'none';
+            const premiumLabel = document.getElementById('protectionPremiumLabel');
+            if (template === 'percentage') {
+                premiumGroup.style.display = 'block';
+                premiumLabel.textContent = 'SI Premium %';
+            } else if (template === 'flat_dollar') {
+                premiumGroup.style.display = 'block';
+                premiumLabel.textContent = 'SI Premium $';
+            } else {
+                premiumGroup.style.display = 'none';
+            }
         }
 
         function formatCurrency(value) {
@@ -1095,7 +1105,8 @@
             const csCostPerClaim = parseFloat(removeCommas(document.getElementById('csCostPerClaim').value)) || 0;
             const revenueShare = parseFloat(removeCommas(document.getElementById('revenueShare').value)) / 100 || 0;
             const attachRate = parseFloat(removeCommas(document.getElementById('attachRate').value)) / 100 || 0;
-            const protectionPremium = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
+            const protectionPremiumRaw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
+            const protectionPremium = pricingTemplate === 'percentage' ? protectionPremiumRaw / 100 : protectionPremiumRaw;
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('returnsPlatformCost').value)) || 0;
 
             // COGS: % or flat $
@@ -1164,10 +1175,12 @@
 
             const protectedOrders = periodOrders * attachRate;
             let avgPremium;
-            if (pricingTemplate !== 'percentage') {
-                avgPremium = getTieredPremium(avgOrderValue, pricingTemplate);
-            } else {
+            if (pricingTemplate === 'percentage') {
                 avgPremium = avgOrderValue * protectionPremium;
+            } else if (pricingTemplate === 'flat_dollar') {
+                avgPremium = protectionPremium;
+            } else {
+                avgPremium = getTieredPremium(avgOrderValue, pricingTemplate);
             }
 
             const totalClaims = periodOrders * claimsRate;
@@ -1328,11 +1341,13 @@
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             let avgPremiumValue = 0;
-            if (pricingTemplate !== 'percentage') {
-                avgPremiumValue = getTieredPremium(avgOrderValue, pricingTemplate);
-            } else {
+            if (pricingTemplate === 'percentage') {
                 const pp = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
                 avgPremiumValue = avgOrderValue * pp;
+            } else if (pricingTemplate === 'flat_dollar') {
+                avgPremiumValue = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
+            } else {
+                avgPremiumValue = getTieredPremium(avgOrderValue, pricingTemplate);
             }
 
             const params = new URLSearchParams({
