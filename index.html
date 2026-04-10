@@ -1178,10 +1178,8 @@
             const lostRevenue = csShippingCost + cogs;
             const premiumPool = protectedOrders * avgPremium;
             const siFundedReships = claimsOffset * avgOrderValue;
-            const postClaimBalance = premiumPool - siFundedReships;
-            const revenueShareAmount = postClaimBalance * revenueShare;
-            const claimsExtra = siFundedReships + revenueShareAmount;
 
+            // Compute returns first so label costs can be deducted before rev share is calculated
             let totalReturns = 0, returnLabelsCostTotal = 0, totalReturnsCost = 0;
             let siCoveredLabels = 0, siCoveredPlatform = 0, totalReturnsOffset = 0;
             if (returnsEnabled) {
@@ -1193,6 +1191,11 @@
                 siCoveredPlatform = periodPlatformCost;
                 totalReturnsOffset = siCoveredLabels + siCoveredPlatform;
             }
+
+            // Return label costs deducted from post-claim balance before rev share is applied
+            const postClaimBalance = premiumPool - siFundedReships - (returnsEnabled ? siCoveredLabels + siCoveredPlatform : 0);
+            const revenueShareAmount = Math.max(0, postClaimBalance) * revenueShare;
+            const claimsExtra = siFundedReships + revenueShareAmount;
 
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
             const extraRevenue = claimsExtra + (returnsEnabled ? totalReturnsOffset : 0);
@@ -1432,7 +1435,7 @@
                 row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
                 row('Protected Claims',   `${fn(d.protectedOrders)} × ${pct(d.claimsP)}`,    fn(d.protectedClaims)) +
                 row('SI Funded (@ AOV)',  `${fn(d.protectedClaims)} claims × ${fcc(d.aov)}`, fc(d.siFundedReships)) +
-                row('Post-Claim Balance', `Premiums − SI Funded`,                             fc(d.postClaimBalance)) +
+                row('Post-Claim Balance', d.returnsEnabled ? `Premiums − SI Funded − Return Labels` : `Premiums − SI Funded`, fc(d.postClaimBalance)) +
                 row('Rev Share',         `${fc(d.postClaimBalance)} × ${pct(d.revShareP)}`,  fc(d.revenueShareAmount));
             if (d.returnsEnabled) {
                 revHTML +=
