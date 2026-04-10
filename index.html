@@ -630,7 +630,7 @@
                     <div class="om-value" id="protectedOrders">0</div>
                 </div>
                 <div class="output-metric">
-                    <div class="om-label">Avg Premium</div>
+                    <div class="om-label" id="avgPremiumLabel">Avg Premium</div>
                     <div class="om-value" id="avgPremium">$0</div>
                 </div>
                 <div class="output-metric">
@@ -1227,7 +1227,14 @@
                 document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
             }
             document.getElementById('protectedOrders').textContent = formatNumber(protectedOrders);
-            document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
+            if (pricingTemplate === 'flat_dollar') {
+                const impliedPct = avgOrderValue > 0 ? (avgPremium / avgOrderValue * 100) : 0;
+                document.getElementById('avgPremiumLabel').textContent = 'SI Premium %';
+                document.getElementById('avgPremium').textContent = impliedPct.toFixed(2) + '%';
+            } else {
+                document.getElementById('avgPremiumLabel').textContent = 'Avg Premium';
+                document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
+            }
             document.getElementById('protectedClaims').textContent = formatNumber(claimsOffset);
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
