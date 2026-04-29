@@ -806,7 +806,7 @@
                                 <div class="value" id="cashbackSoftwareSavings">$0</div>
                             </div>
                             <div class="metric-item cashback-highlight">
-                                <h4>Loyalty Rev Share Saved</h4>
+                                <h4>Repeat Revenue Driven</h4>
                                 <div class="value" id="totalCashbackValue">$0</div>
                             </div>
                         </div>
@@ -905,10 +905,6 @@
                 <div class="input-group cashback">
                     <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
                     <input type="text" id="cashbackRedemptionRate" placeholder="15" value="15">
-                </div>
-                <div class="input-group cashback">
-                    <label for="cashbackPlatformCost">Loyalty Platform Rev Share %</label>
-                    <input type="text" id="cashbackPlatformCost" placeholder="0">
                 </div>
             </div>
 
@@ -1211,7 +1207,6 @@
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('returnsPlatformCost').value)) || 0;
             const cashbackRate        = (parseFloat(removeCommas(document.getElementById('cashbackRate').value)) || 5) / 100;
             const minCashback         = parseFloat(removeCommas(document.getElementById('minCashback').value)) || 5;
-            const loyaltyRevSharePct      = (parseFloat(removeCommas(document.getElementById('cashbackPlatformCost').value)) || 0) / 100;
             const cashbackRedemptionRate  = (parseFloat(removeCommas(document.getElementById('cashbackRedemptionRate').value)) || 15) / 100;
 
             // COGS: % or flat $
@@ -1252,7 +1247,6 @@
                 localStorage.setItem('shipinsure_cashbackRate', document.getElementById('cashbackRate').value);
                 localStorage.setItem('shipinsure_minCashback', document.getElementById('minCashback').value);
                 localStorage.setItem('shipinsure_cashbackRedemptionRate', document.getElementById('cashbackRedemptionRate').value);
-                localStorage.setItem('shipinsure_cashbackPlatformCost', document.getElementById('cashbackPlatformCost').value);
             }
 
             if (document.getElementById('linkDisplay').style.display === 'flex') {
@@ -1320,11 +1314,12 @@
             let cashbackRedeemed = 0;
             if (cashbackEnabled) {
                 cashbackPerOrder = Math.max(avgOrderValue * cashbackRate, minCashback);
-                siSponsoredCashbackTotal = protectedOrders * cashbackPerOrder;  // total funded/issued by SI
-                cashbackRedeemed = siSponsoredCashbackTotal * cashbackRedemptionRate; // actual cost from premium pool
-                // Merchant benefit: loyalty platform rev share they avoid on cashback-driven repeat purchases
-                cashbackSoftwareSavingsTotal = protectedOrders * cashbackRedemptionRate * avgOrderValue * loyaltyRevSharePct;
-                totalCashbackValueTotal = cashbackSoftwareSavingsTotal; // only savings flow to extraRevenue
+                siSponsoredCashbackTotal = protectedOrders * cashbackPerOrder;       // total funded/issued by SI
+                cashbackRedeemed = siSponsoredCashbackTotal * cashbackRedemptionRate; // deducted from premium pool
+                // Repeat revenue driven: redemption-driven orders × AOV (comes back to merchant)
+                const redemptionCount = cashbackPerOrder > 0 ? cashbackRedeemed / cashbackPerOrder : 0;
+                totalCashbackValueTotal = redemptionCount * avgOrderValue;
+                cashbackSoftwareSavingsTotal = cashbackRedeemed; // display alias
             }
 
             // All SI costs deducted from premium pool before rev share is applied
@@ -1337,8 +1332,8 @@
 
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
             const extraRevenue = claimsExtra
-                + (returnsEnabled  ? totalReturnsOffset    : 0)
-                + (cashbackEnabled ? totalCashbackValueTotal : 0);
+                + (returnsEnabled  ? totalReturnsOffset : 0)
+                + (cashbackEnabled ? cashbackRedeemed   : 0);  // redeemed cashback flows back to merchant as repeat revenue
             const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
             const siFundedPct = premiumPool > 0 ? (siFundedReships / premiumPool) * 100 : 0;
             const revenueSharePct = premiumPool > 0 ? (revenueShareAmount / premiumPool) * 100 : 0;
@@ -1388,7 +1383,7 @@
             document.getElementById('totalReturnsOffset').textContent = formatCurrency(totalReturnsOffset);
             document.getElementById('siSponsoredCashback').textContent = formatCurrency(siSponsoredCashbackTotal);
             document.getElementById('cashbackSoftwareSavings').textContent = formatCurrency(cashbackRedeemed);
-            document.getElementById('totalCashbackValue').textContent = formatCurrency(cashbackSoftwareSavingsTotal);
+            document.getElementById('totalCashbackValue').textContent = formatCurrency(totalCashbackValueTotal);
             document.getElementById('cashbackPerOrderDisplay').textContent = cashbackEnabled ? formatCurrencyWithCents(cashbackPerOrder) : '$0';
 
             // Revenue Impact box: % as main metric, breakdown by claims + rev share
@@ -1397,7 +1392,7 @@
             document.getElementById('revShareImpactPct').textContent = revenueSharePct.toFixed(1) + '% from rev share';
             document.getElementById('returnsOffsetImpactPct').textContent = returnsOffsetPct.toFixed(1) + '% from returns';
             document.getElementById('returnsOffsetImpactPct').style.display = returnsEnabled ? '' : 'none';
-            const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (totalCashbackValueTotal / premiumPool) * 100 : 0;
+            const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (cashbackRedeemed / premiumPool) * 100 : 0;
             document.getElementById('cashbackImpactPct').textContent = cashbackPct.toFixed(1) + '% from cashback';
             document.getElementById('cashbackImpactPct').style.display = cashbackEnabled ? '' : 'none';
 
@@ -1430,8 +1425,8 @@
                 returnsRate, returnsOffsetPct,
                 cogsRaw, claimsRaw, returnsRaw,
                 cashbackEnabled, cashbackPerOrder, siSponsoredCashbackTotal,
-                cashbackRedeemed, cashbackSoftwareSavingsTotal, totalCashbackValueTotal, cashbackPct,
-                cashbackRate, minCashback, loyaltyRevSharePct, cashbackRedemptionRate
+                cashbackRedeemed, totalCashbackValueTotal, cashbackPct,
+                cashbackRate, minCashback, cashbackRedemptionRate
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
         }
@@ -1461,7 +1456,6 @@
                 if (urlParams.get('cb')) document.getElementById('cashbackRate').value = urlParams.get('cb');
                 if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
                 if (urlParams.get('cbrr')) document.getElementById('cashbackRedemptionRate').value = urlParams.get('cbrr');
-                if (urlParams.get('cbpc')) document.getElementById('cashbackPlatformCost').value = urlParams.get('cbpc');
                 if (urlParams.get('cb') || urlParams.get('cbpc')) {
                     toggleCashback();
                 }
@@ -1487,7 +1481,6 @@
                 if (s('cashbackRate')) document.getElementById('cashbackRate').value = s('cashbackRate');
                 if (s('minCashback')) document.getElementById('minCashback').value = s('minCashback');
                 if (s('cashbackRedemptionRate')) document.getElementById('cashbackRedemptionRate').value = s('cashbackRedemptionRate');
-                if (s('cashbackPlatformCost')) document.getElementById('cashbackPlatformCost').value = s('cashbackPlatformCost');
                 if (s('cashbackEnabled') === '1') toggleCashback();
             }
         }
@@ -1534,7 +1527,6 @@
                 params.set('cb',   removeCommas(document.getElementById('cashbackRate').value) || '5');
                 params.set('mincb', removeCommas(document.getElementById('minCashback').value) || '5');
                 params.set('cbrr', removeCommas(document.getElementById('cashbackRedemptionRate').value) || '15');
-                params.set('cbpc', removeCommas(document.getElementById('cashbackPlatformCost').value) || '');
             }
 
             const shareableUrl = `${baseUrl}?${params.toString()}`;
@@ -1627,8 +1619,8 @@
                 revHTML +=
                     row('Cashback Per Order', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
                     row('SI Cashback Funded', `${fn(d.protectedOrders)} × ${fcc(d.cashbackPerOrder)}`, fc(d.siSponsoredCashbackTotal)) +
-                    row('Est. Redeemed', `${fc(d.siSponsoredCashbackTotal)} × ${pct(d.cashbackRedemptionRate)}`, fc(d.cashbackRedeemed)) +
-                    row('Loyalty Rev Share Saved', `${fn(d.protectedOrders)} × ${pct(d.cashbackRedemptionRate)} × ${fcc(d.aov)} × ${pct(d.loyaltyRevSharePct)}`, fc(d.cashbackSoftwareSavingsTotal));
+                    row('Est. Cashback Redeemed', `${fc(d.siSponsoredCashbackTotal)} × ${pct(d.cashbackRedemptionRate)}`, fc(d.cashbackRedeemed)) +
+                    row('Repeat Revenue Driven', `(${fc(d.cashbackRedeemed)} ÷ ${fcc(d.cashbackPerOrder)}) redemptions × ${fcc(d.aov)}`, fc(d.totalCashbackValueTotal));
             }
             const extraLabel = [
                 'funded + rev share',
@@ -1657,7 +1649,6 @@
             document.getElementById('cashbackRate').value = '5';
             document.getElementById('minCashback').value = '5';
             document.getElementById('cashbackRedemptionRate').value = '15';
-            document.getElementById('cashbackPlatformCost').value = '';
             document.getElementById('timeframe').value = 'monthly';
             document.getElementById('pricingTemplate').value = 'percentage';
             setCogsType('pct');
@@ -1667,7 +1658,7 @@
              'revenueShare','attachRate','protectionPremium','timeframe','pricingTemplate',
              'returnsRate','returnsPlatformCost','returnsEnabled',
              'cogsType','claimsType','returnsType',
-             'cashbackEnabled','cashbackRate','minCashback','cashbackRedemptionRate','cashbackPlatformCost'].forEach(k => {
+             'cashbackEnabled','cashbackRate','minCashback','cashbackRedemptionRate'].forEach(k => {
                 localStorage.removeItem('shipinsure_' + k);
             });
             if (returnsEnabled) toggleReturns();
@@ -1713,7 +1704,7 @@
         document.getElementById('copyLink').addEventListener('click', copyToClipboard);
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
         document.getElementById('cashbackToggle').addEventListener('click', toggleCashback);
-        ['cashbackRate','minCashback','cashbackRedemptionRate','cashbackPlatformCost'].forEach(id => {
+        ['cashbackRate','minCashback','cashbackRedemptionRate'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculate);
         });
         document.querySelector('.logo-area').style.cursor = 'pointer';
