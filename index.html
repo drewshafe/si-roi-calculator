@@ -904,7 +904,7 @@
                 </div>
                 <div class="input-group cashback">
                     <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
-                    <input type="text" id="cashbackRedemptionRate" placeholder="15" value="15">
+                    <input type="text" id="cashbackRedemptionRate" placeholder="5" value="5">
                 </div>
             </div>
 
@@ -1207,7 +1207,8 @@
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('returnsPlatformCost').value)) || 0;
             const cashbackRate        = (parseFloat(removeCommas(document.getElementById('cashbackRate').value)) || 5) / 100;
             const minCashback         = parseFloat(removeCommas(document.getElementById('minCashback').value)) || 5;
-            const cashbackRedemptionRate  = (parseFloat(removeCommas(document.getElementById('cashbackRedemptionRate').value)) || 15) / 100;
+            const _cbrRaw = document.getElementById('cashbackRedemptionRate').value.trim();
+            const cashbackRedemptionRate  = (_cbrRaw === '' ? 5 : (parseFloat(removeCommas(_cbrRaw)) || 0)) / 100;
 
             // COGS: % or flat $
             const cogsRaw = parseFloat(removeCommas(document.getElementById('cogsPercent').value)) || 0;
@@ -1526,7 +1527,7 @@
             if (cashbackEnabled) {
                 params.set('cb',   removeCommas(document.getElementById('cashbackRate').value) || '5');
                 params.set('mincb', removeCommas(document.getElementById('minCashback').value) || '5');
-                params.set('cbrr', removeCommas(document.getElementById('cashbackRedemptionRate').value) || '15');
+                params.set('cbrr', document.getElementById('cashbackRedemptionRate').value);
             }
 
             const shareableUrl = `${baseUrl}?${params.toString()}`;
@@ -1648,7 +1649,7 @@
             document.getElementById('returnsPlatformCost').value = '';
             document.getElementById('cashbackRate').value = '5';
             document.getElementById('minCashback').value = '5';
-            document.getElementById('cashbackRedemptionRate').value = '15';
+            document.getElementById('cashbackRedemptionRate').value = '5';
             document.getElementById('timeframe').value = 'monthly';
             document.getElementById('pricingTemplate').value = 'percentage';
             setCogsType('pct');
