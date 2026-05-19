@@ -478,6 +478,15 @@
         .metric-item.guarantee-highlight { border: 1px solid #9b59b6; background: #f8f3ff; }
         .metric-item.guarantee-highlight h4 { color: #764ba2; }
 
+        .returns-offset-toggle-btn {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 7px 12px; font-size: 0.82em; border-radius: 7px;
+            border: 2px solid #0ea5e9; background: white; color: #0ea5e9;
+            font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+        }
+        .returns-offset-toggle-btn:hover { background: #f0f9ff; }
+        .returns-offset-toggle-btn.active { background: #0ea5e9; color: white; }
+
         .input-group.cashback {
             background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
         }
@@ -673,28 +682,28 @@
                     </div>
                 </div>
 
-                <div class="output-metric">
+                <div class="output-metric" id="totalClaimsMetric">
                     <div class="om-label" id="totalClaimsLabel">Total Claims</div>
                     <div class="om-value" id="totalClaims">0</div>
                 </div>
-                <div class="output-metric">
-                    <div class="om-label">Protected Orders</div>
+                <div class="output-metric" id="protectedOrdersMetric">
+                    <div class="om-label" id="protectedOrdersLabel">Protected Orders</div>
                     <div class="om-value" id="protectedOrders">0</div>
                 </div>
-                <div class="output-metric">
+                <div class="output-metric" id="avgPremiumMetric">
                     <div class="om-label" id="avgPremiumLabel">Avg Premium</div>
                     <div class="om-value" id="avgPremium">$0</div>
                 </div>
-                <div class="output-metric">
+                <div class="output-metric" id="protectedClaimsMetric">
                     <div class="om-label">Protected Claims</div>
                     <div class="om-value" id="protectedClaims">0</div>
                 </div>
-                <div class="output-metric">
+                <div class="output-metric" id="premiumsMetric">
                     <div class="om-label">Premiums</div>
                     <div class="om-value" id="premiumsPaid">$0</div>
                 </div>
-                <div class="output-metric">
-                    <div class="om-label">Post-Claim Balance</div>
+                <div class="output-metric" id="postClaimMetric">
+                    <div class="om-label" id="postClaimBalanceLabel">Post-Claim Balance</div>
                     <div class="om-value" id="postClaimBalance">$0</div>
                 </div>
                 <div class="output-metric" id="totalReturnsMetric" style="display:none;">
@@ -737,7 +746,7 @@
                         <h3 id="lostRevenueLabel">Total Cost Without ShipInsure</h3>
                         <div class="card-total negative" id="lostRevenue">$0</div>
                     </div>
-                    <div class="metrics-grid">
+                    <div class="metrics-grid" id="mainCostGrid">
                         <div class="metric-item">
                             <h4>Cost Per Reship</h4>
                             <div class="value" id="costPerReship">$0</div>
@@ -776,7 +785,7 @@
                         <h3>Extra Revenue With ShipInsure</h3>
                         <div class="card-total positive" id="extraRevenue">$0</div>
                     </div>
-                    <div class="metrics-grid">
+                    <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
                             <h4>SI Second Sale Per Reship</h4>
                             <div class="value" id="secondSale">$0</div>
@@ -862,14 +871,17 @@
             <div class="inputs-strip-header">
                 <span class="inputs-strip-title">Merchant Inputs</span>
                 <div class="inputs-strip-actions">
+                    <button id="returnsOffsetModeToggle" class="returns-offset-toggle-btn">
+                        <span>＋</span> Returns Offset
+                    </button>
                     <button id="returnsToggle" class="returns-toggle-btn">
-                        <span>＋</span> Enable Returns Offset
+                        <span>＋</span> Protection + Returns
                     </button>
                     <button id="cashbackToggle" class="cashback-toggle-btn">
-                        <span>＋</span> Enable Customer Cashback
+                        <span>＋</span> Protection + Customer Cashback
                     </button>
                     <button id="guaranteeToggle" class="guarantee-toggle-btn">
-                        <span>＋</span> Enable Guarantee
+                        <span>＋</span> Protection + Guarantee
                     </button>
                     <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
                 </div>
@@ -884,7 +896,7 @@
                     <label for="avgOrderValue">AOV</label>
                     <input type="text" id="avgOrderValue" placeholder="$">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="cogsGroup">
                     <label id="cogsLabel" for="cogsPercent">Product Cost</label>
                     <div class="input-with-type">
                         <input type="text" id="cogsPercent" placeholder="0">
@@ -892,7 +904,7 @@
                         <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
                     </div>
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="claimsRateGroup">
                     <label id="claimsRateLabel" for="claimsRate">Claims Rate %</label>
                     <div class="input-with-type">
                         <input type="text" id="claimsRate" placeholder="0">
@@ -904,7 +916,7 @@
                     <label for="avgShipping">Avg Shipping</label>
                     <input type="text" id="avgShipping" placeholder="$">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="csCostGroup">
                     <label for="csCostPerClaim">Avg Ticket Cost</label>
                     <input type="text" id="csCostPerClaim" placeholder="$">
                 </div>
@@ -988,9 +1000,10 @@
     </div><!-- /container -->
 
     <script>
-        let returnsEnabled   = false;
-        let cashbackEnabled  = false;
-        let guaranteeEnabled = false;
+        let returnsEnabled      = false;
+        let cashbackEnabled     = false;
+        let guaranteeEnabled    = false;
+        let returnsOffsetMode   = false;
         let _cogsType    = 'pct';   // 'pct' | 'flat'
         let _claimsType  = 'pct';   // 'pct' | 'count'
         let _returnsType = 'pct';   // 'pct' | 'count'
@@ -1201,7 +1214,7 @@
             const btn = document.getElementById('returnsToggle');
             if (returnsEnabled) {
                 btn.classList.add('active');
-                btn.innerHTML = '<span>✓</span> Returns Offset Enabled';
+                btn.innerHTML = '<span>✓</span> Protection + Returns';
                 document.getElementById('returnsInputs').classList.add('visible');
                 document.getElementById('returnsCostResults').classList.add('visible');
                 document.getElementById('returnsOffsetResults').classList.add('visible');
@@ -1209,7 +1222,7 @@
                 document.getElementById('premiumsBadgeSub').style.display = '';
             } else {
                 btn.classList.remove('active');
-                btn.innerHTML = '<span>＋</span> Enable Returns Offset';
+                btn.innerHTML = '<span>＋</span> Protection + Returns';
                 document.getElementById('returnsInputs').classList.remove('visible');
                 document.getElementById('returnsCostResults').classList.remove('visible');
                 document.getElementById('returnsOffsetResults').classList.remove('visible');
@@ -1224,13 +1237,13 @@
             const btn = document.getElementById('cashbackToggle');
             if (cashbackEnabled) {
                 btn.classList.add('active');
-                btn.innerHTML = '<span>✓</span> Customer Cashback Enabled';
+                btn.innerHTML = '<span>✓</span> Protection + Customer Cashback';
                 document.getElementById('cashbackInputs').classList.add('visible');
                 document.getElementById('cashbackOffsetResults').classList.add('visible');
                 document.getElementById('cashbackMetric').style.display = 'block';
             } else {
                 btn.classList.remove('active');
-                btn.innerHTML = '<span>＋</span> Enable Customer Cashback';
+                btn.innerHTML = '<span>＋</span> Protection + Customer Cashback';
                 document.getElementById('cashbackInputs').classList.remove('visible');
                 document.getElementById('cashbackOffsetResults').classList.remove('visible');
                 document.getElementById('cashbackMetric').style.display = 'none';
@@ -1243,13 +1256,103 @@
             const btn = document.getElementById('guaranteeToggle');
             if (guaranteeEnabled) {
                 btn.classList.add('active');
-                btn.innerHTML = '<span>✓</span> Guarantee Enabled';
+                btn.innerHTML = '<span>✓</span> Protection + Guarantee';
                 document.getElementById('guaranteeResults').classList.add('visible');
             } else {
                 btn.classList.remove('active');
-                btn.innerHTML = '<span>＋</span> Enable Guarantee';
+                btn.innerHTML = '<span>＋</span> Protection + Guarantee';
                 document.getElementById('guaranteeResults').classList.remove('visible');
             }
+            calculate();
+        }
+
+        function toggleReturnsOffsetMode() {
+            returnsOffsetMode = !returnsOffsetMode;
+            const btn = document.getElementById('returnsOffsetModeToggle');
+
+            const roHideOutputs = ['totalClaimsMetric', 'protectedClaimsMetric'];
+            const roHideInputs  = ['cogsGroup', 'claimsRateGroup', 'csCostGroup'];
+            const roHideCardGrids = ['mainCostGrid', 'mainRevenueGrid'];
+            const roHideToggleBtns = ['returnsToggle', 'cashbackToggle', 'guaranteeToggle'];
+
+            if (returnsOffsetMode) {
+                btn.classList.add('active');
+                btn.innerHTML = '<span>✓</span> Returns Offset';
+
+                // Force returns on (needed for returns calculations to run)
+                if (!returnsEnabled) toggleReturns();
+
+                // Disable cashback/guarantee if enabled
+                if (cashbackEnabled) toggleCashback();
+                if (guaranteeEnabled) toggleGuarantee();
+
+                // Hide irrelevant output metrics
+                roHideOutputs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+
+                // Relabel outputs
+                document.getElementById('protectedOrdersLabel').textContent = 'Covered Orders';
+                document.getElementById('postClaimBalanceLabel').textContent = 'Post-Returns Balance';
+
+                // Hide main card metrics-grids (keep only returns sub-sections)
+                roHideCardGrids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+
+                // Hide irrelevant inputs
+                roHideInputs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+
+                // Hide the Protection+ toggle buttons (returns handled by this mode)
+                roHideToggleBtns.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+
+                // Hide revenue-impact % box (not meaningful in pure returns offset context)
+                document.querySelector('.revenue-impact-row').style.display = 'none';
+
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span>＋</span> Returns Offset';
+
+                // Restore output metrics
+                roHideOutputs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = '';
+                });
+
+                // Restore labels
+                document.getElementById('protectedOrdersLabel').textContent = 'Protected Orders';
+                document.getElementById('postClaimBalanceLabel').textContent = 'Post-Claim Balance';
+
+                // Restore main card grids
+                roHideCardGrids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = '';
+                });
+
+                // Restore inputs
+                roHideInputs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = '';
+                });
+
+                // Restore toggle buttons
+                roHideToggleBtns.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = '';
+                });
+
+                // Restore revenue-impact % box
+                document.querySelector('.revenue-impact-row').style.display = '';
+            }
+
             calculate();
         }
 
@@ -1470,6 +1573,18 @@
             } else {
                 siFundedPctEl.style.display = 'none';
                 revenueSharePctEl.style.display = 'none';
+            }
+
+            // Returns Offset Mode — override relevant display values
+            if (returnsOffsetMode) {
+                // Post-Returns Balance = Premiums − Return Labels − Platform Cost (no claims deduction)
+                const roBalance = premiumPool - siCoveredLabels - siCoveredPlatform;
+                const roRevShare = Math.max(0, roBalance) * revenueShare;
+                document.getElementById('postClaimBalance').textContent = formatCurrency(roBalance);
+                // Left card total = total returns cost only
+                document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalReturnsCost);
+                // Right card total = returns offset only
+                document.getElementById('extraRevenue').textContent = formatCurrency(totalReturnsOffset + roRevShare);
             }
 
             // Guarantee section — 1.5× claim rate
@@ -1778,6 +1893,7 @@
         });
         document.getElementById('generateLink').addEventListener('click', generateShareableLink);
         document.getElementById('copyLink').addEventListener('click', copyToClipboard);
+        document.getElementById('returnsOffsetModeToggle').addEventListener('click', toggleReturnsOffsetMode);
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
         document.getElementById('cashbackToggle').addEventListener('click', toggleCashback);
         document.getElementById('guaranteeToggle').addEventListener('click', toggleGuarantee);
