@@ -320,6 +320,15 @@
         .returns-results { display: none; }
         .returns-results.visible { display: block; }
 
+        .cashback-results { display: none; }
+        .cashback-results.visible { display: block; }
+
+        .metric-item.cashback-highlight {
+            border: 1px solid #8b5cf6;
+            background: #f5f3ff;
+        }
+        .metric-item.cashback-highlight h4 { color: #8b5cf6; }
+
         /* ── Inputs strip at bottom ── */
         .inputs-strip {
             background: #f4f5fb;
@@ -395,6 +404,20 @@
         .input-group input::placeholder { color: #bbb; font-weight: 400; }
         .input-group input:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
 
+        /* Type toggle buttons inside input groups */
+        .input-with-type { display: flex; }
+        .input-with-type input { border-radius: 6px 0 0 6px; flex: 1; min-width: 0; }
+        .itype-btn {
+            padding: 0 8px; font-size: 0.72em; font-weight: 700;
+            border: none; border-left: 1px solid #ddd;
+            background: #f0f0f0; cursor: pointer; color: #666;
+            transition: all 0.15s; white-space: nowrap;
+        }
+        .itype-btn:last-child { border-radius: 0 6px 6px 0; }
+        .itype-btn.active { background: #4a5fc1; color: white; }
+        .input-group.returns .itype-btn.active { background: #c0641a; color: white; }
+        .input-group.returns .itype-btn { border-left-color: #f5c89a; }
+
         .returns-toggle-btn {
             display: flex;
             align-items: center;
@@ -418,7 +441,7 @@
         .returns-section { display: none; flex-direction: row; flex-wrap: wrap; gap: 8px; }
         .returns-section.visible { display: flex; }
 
-        .guarantee-toggle-btn {
+        .cashback-toggle-btn {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -426,13 +449,25 @@
             padding: 7px 12px;
             font-size: 0.82em;
             border-radius: 7px;
-            border: 2px solid #764ba2;
+            border: 2px solid #8b5cf6;
             background: white;
-            color: #764ba2;
+            color: #8b5cf6;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
+        }
+        .cashback-toggle-btn:hover { background: #f5f3ff; }
+        .cashback-toggle-btn.active { background: #8b5cf6; color: white; }
+
+        .cashback-section { display: none; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+        .cashback-section.visible { display: flex; }
+
+        .guarantee-toggle-btn {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 7px 12px; font-size: 0.82em; border-radius: 7px;
+            border: 2px solid #764ba2; background: white; color: #764ba2;
+            font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
         }
         .guarantee-toggle-btn:hover { background: #f8f3ff; }
         .guarantee-toggle-btn.active { background: #764ba2; color: white; }
@@ -440,11 +475,14 @@
         .guarantee-results { display: none; }
         .guarantee-results.visible { display: block; }
 
-        .metric-item.guarantee-highlight {
-            border: 1px solid #9b59b6;
-            background: #f8f3ff;
-        }
+        .metric-item.guarantee-highlight { border: 1px solid #9b59b6; background: #f8f3ff; }
         .metric-item.guarantee-highlight h4 { color: #764ba2; }
+
+        .input-group.cashback {
+            background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        }
+        .input-group.cashback .itype-btn.active { background: #5b21b6; color: white; }
+        .input-group.cashback .itype-btn { border-left-color: #c4b5fd; }
 
         .generate-link-btn {
             display: flex;
@@ -601,7 +639,7 @@
                     <label for="pricingTemplate">Pricing:</label>
                     <select id="pricingTemplate">
                         <option value="percentage">%-Based</option>
-                        <option value="dollar">$-Based</option>
+                        <option value="flat_dollar">$-Based</option>
                         <option value="1.5_accurate">1.5% Acc</option>
                         <option value="2_accurate">2% Acc</option>
                         <option value="2_round_50">2% Round</option>
@@ -631,12 +669,12 @@
                     <div class="om-label" id="ordersCardLabel">Monthly Orders</div>
                     <div class="om-big" id="annualOrdersDisplay">0</div>
                     <div id="annualOrdersMetric" style="display:none;" class="om-sub">
-                        Annual: <span id="annualOrdersDisplaySub">0</span>
+                        <span id="annualOrdersDisplaySub">0</span>
                     </div>
                 </div>
 
                 <div class="output-metric">
-                    <div class="om-label">Total Claims</div>
+                    <div class="om-label" id="totalClaimsLabel">Total Claims</div>
                     <div class="om-value" id="totalClaims">0</div>
                 </div>
                 <div class="output-metric">
@@ -644,7 +682,7 @@
                     <div class="om-value" id="protectedOrders">0</div>
                 </div>
                 <div class="output-metric">
-                    <div class="om-label">Avg Premium</div>
+                    <div class="om-label" id="avgPremiumLabel">Avg Premium</div>
                     <div class="om-value" id="avgPremium">$0</div>
                 </div>
                 <div class="output-metric">
@@ -660,8 +698,12 @@
                     <div class="om-value" id="postClaimBalance">$0</div>
                 </div>
                 <div class="output-metric" id="totalReturnsMetric" style="display:none;">
-                    <div class="om-label">Total Returns</div>
+                    <div class="om-label" id="totalReturnsLabel">Total Returns</div>
                     <div class="om-value" id="totalReturns">0</div>
+                </div>
+                <div class="output-metric" id="cashbackMetric" style="display:none;">
+                    <div class="om-label">Cashback / Order</div>
+                    <div class="om-value" id="cashbackPerOrderDisplay">$0</div>
                 </div>
 
             </div>
@@ -678,6 +720,8 @@
                     <div class="impact-breakdown">
                         <div class="impact-pct-line" id="claimsImpactPct">0% from claims</div>
                         <div class="impact-pct-line" id="revShareImpactPct">0% from rev share</div>
+                        <div class="impact-pct-line" id="returnsOffsetImpactPct" style="display:none;">0% from returns</div>
+                        <div class="impact-pct-line" id="cashbackImpactPct" style="display:none;">0% from cashback</div>
                     </div>
                     <div id="revenueImpactSub" style="display:none;"></div>
                     <div class="impact-returns-note" id="premiumsBadgeSub">including Returns Offset</div>
@@ -699,7 +743,7 @@
                             <div class="value" id="costPerReship">$0</div>
                         </div>
                         <div class="metric-item">
-                            <h4>CS Cost</h4>
+                            <h4>CS & Shipping</h4>
                             <div class="value" id="csCost">$0</div>
                         </div>
                         <div class="metric-item">
@@ -748,6 +792,23 @@
                             <div class="pct-bubble" id="revenueSharePct"></div>
                         </div>
                     </div>
+                    <div id="returnsOffsetResults" class="returns-results">
+                        <div class="sub-section-label">Returns Offset</div>
+                        <div class="metrics-grid">
+                            <div class="metric-item returns-highlight">
+                                <h4>SI Covered Return Labels</h4>
+                                <div class="value" id="siCoveredReturnLabels">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>SI Covered Platform Cost</h4>
+                                <div class="value" id="siCoveredPlatformCost">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>Total Returns Offset</h4>
+                                <div class="value" id="totalReturnsOffset">$0</div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="guaranteeResults" class="guarantee-results">
                         <div class="sub-section-label">Quality / Satisfaction Guarantee</div>
                         <div class="metrics-grid">
@@ -774,20 +835,20 @@
                         </div>
                     </div>
 
-                    <div id="returnsOffsetResults" class="returns-results">
-                        <div class="sub-section-label">Returns Offset</div>
+                    <div id="cashbackOffsetResults" class="cashback-results">
+                        <div class="sub-section-label">Customer Cashback</div>
                         <div class="metrics-grid">
-                            <div class="metric-item returns-highlight">
-                                <h4>SI Covered Return Labels</h4>
-                                <div class="value" id="siCoveredReturnLabels">$0</div>
+                            <div class="metric-item cashback-highlight">
+                                <h4>SI Cashback Funded</h4>
+                                <div class="value" id="siSponsoredCashback">$0</div>
                             </div>
-                            <div class="metric-item returns-highlight">
-                                <h4>SI Covered Platform Cost</h4>
-                                <div class="value" id="siCoveredPlatformCost">$0</div>
+                            <div class="metric-item cashback-highlight">
+                                <h4>Est. Cashback Redeemed</h4>
+                                <div class="value" id="cashbackSoftwareSavings">$0</div>
                             </div>
-                            <div class="metric-item returns-highlight">
-                                <h4>Total Returns Offset</h4>
-                                <div class="value" id="totalReturnsOffset">$0</div>
+                            <div class="metric-item cashback-highlight">
+                                <h4>Repeat Revenue Driven</h4>
+                                <div class="value" id="totalCashbackValue">$0</div>
                             </div>
                         </div>
                     </div>
@@ -804,6 +865,9 @@
                     <button id="returnsToggle" class="returns-toggle-btn">
                         <span>＋</span> Enable Returns Offset
                     </button>
+                    <button id="cashbackToggle" class="cashback-toggle-btn">
+                        <span>＋</span> Enable Customer Cashback
+                    </button>
                     <button id="guaranteeToggle" class="guarantee-toggle-btn">
                         <span>＋</span> Enable Guarantee
                     </button>
@@ -813,7 +877,7 @@
 
             <div class="inputs-row">
                 <div class="input-group">
-                    <label for="annualOrders">Monthly Orders</label>
+                    <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
                     <input type="text" id="annualOrders" placeholder="0">
                 </div>
                 <div class="input-group">
@@ -821,19 +885,31 @@
                     <input type="text" id="avgOrderValue" placeholder="$">
                 </div>
                 <div class="input-group">
-                    <label for="cogsPercent">COGS %</label>
-                    <input type="text" id="cogsPercent" placeholder="0">
+                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
+                    <div class="input-with-type">
+                        <input type="text" id="cogsPercent" placeholder="0">
+                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
+                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
+                    </div>
                 </div>
                 <div class="input-group">
-                    <label for="claimsRate">Claims Rate %</label>
-                    <input type="text" id="claimsRate" placeholder="0">
+                    <label id="claimsRateLabel" for="claimsRate">Claims Rate %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="claimsRate" placeholder="0">
+                        <button class="itype-btn active" id="claimsPctBtn" onclick="setClaimsType('pct')">%</button>
+                        <button class="itype-btn" id="claimsCountBtn" onclick="setClaimsType('count')">#</button>
+                    </div>
                 </div>
                 <div class="input-group">
-                    <label for="csCostPerClaim">CS Cost Per Claim</label>
+                    <label for="avgShipping">Avg Shipping</label>
+                    <input type="text" id="avgShipping" placeholder="$">
+                </div>
+                <div class="input-group">
+                    <label for="csCostPerClaim">Avg Ticket Cost</label>
                     <input type="text" id="csCostPerClaim" placeholder="$">
                 </div>
                 <div class="input-group" id="protectionPremiumGroup">
-                    <label for="protectionPremium">SI Premium %</label>
+                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
                     <input type="text" id="protectionPremium" placeholder="0">
                 </div>
                 <div class="input-group">
@@ -848,16 +924,31 @@
 
             <div id="returnsInputs" class="returns-section">
                 <div class="input-group returns">
-                    <label for="returnsRate">Returns Rate %</label>
-                    <input type="text" id="returnsRate" placeholder="0">
+                    <label id="returnsRateLabel" for="returnsRate">Returns Rate %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="returnsRate" placeholder="0">
+                        <button class="itype-btn active" id="retPctBtn" onclick="setReturnsType('pct')">%</button>
+                        <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
+                    </div>
                 </div>
                 <div class="input-group returns">
                     <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
                     <input type="text" id="returnsPlatformCost" placeholder="$">
                 </div>
-                <div class="input-group returns">
-                    <label for="returnLabelCost">Avg Return Label Cost</label>
-                    <input type="text" id="returnLabelCost" placeholder="$">
+            </div>
+
+            <div id="cashbackInputs" class="cashback-section">
+                <div class="input-group cashback">
+                    <label for="cashbackRate">Customer Cashback %</label>
+                    <input type="text" id="cashbackRate" placeholder="5" value="5">
+                </div>
+                <div class="input-group cashback">
+                    <label for="minCashback">Min Cashback Amount ($)</label>
+                    <input type="text" id="minCashback" placeholder="5" value="5">
+                </div>
+                <div class="input-group cashback">
+                    <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
+                    <input type="text" id="cashbackRedemptionRate" placeholder="5" value="5">
                 </div>
             </div>
 
@@ -897,8 +988,53 @@
     </div><!-- /container -->
 
     <script>
-        let returnsEnabled = false;
+        let returnsEnabled   = false;
+        let cashbackEnabled  = false;
         let guaranteeEnabled = false;
+        let _cogsType    = 'pct';   // 'pct' | 'flat'
+        let _claimsType  = 'pct';   // 'pct' | 'count'
+        let _returnsType = 'pct';   // 'pct' | 'count'
+
+        function setCogsType(t) {
+            _cogsType = t;
+            document.getElementById('cogsPctBtn').classList.toggle('active', t === 'pct');
+            document.getElementById('cogsFlatBtn').classList.toggle('active', t === 'flat');
+            document.getElementById('cogsLabel').textContent = t === 'flat' ? 'Product Cost $' : 'Product Cost';
+            document.getElementById('cogsPercent').placeholder = t === 'flat' ? '$' : '0';
+            calculate();
+        }
+
+        function setClaimsType(t) {
+            _claimsType = t;
+            document.getElementById('claimsPctBtn').classList.toggle('active', t === 'pct');
+            document.getElementById('claimsCountBtn').classList.toggle('active', t === 'count');
+            updateDynamicLabels();
+            calculate();
+        }
+
+        function setReturnsType(t) {
+            _returnsType = t;
+            document.getElementById('retPctBtn').classList.toggle('active', t === 'pct');
+            document.getElementById('retCountBtn').classList.toggle('active', t === 'count');
+            updateDynamicLabels();
+            calculate();
+        }
+
+        function updateDynamicLabels() {
+            const isAnn = document.getElementById('timeframe').value === 'annual';
+            const ordersLbl = document.getElementById('ordersInputLabel');
+            if (ordersLbl) ordersLbl.textContent = isAnn ? 'Annual Orders' : 'Monthly Orders';
+            const claimsLbl = document.getElementById('claimsRateLabel');
+            const returnsLbl = document.getElementById('returnsRateLabel');
+            if (claimsLbl) {
+                if (_claimsType === 'pct') claimsLbl.textContent = 'Claims Rate %';
+                else claimsLbl.textContent = isAnn ? 'Annual Claims' : 'Monthly Claims';
+            }
+            if (returnsLbl) {
+                if (_returnsType === 'pct') returnsLbl.textContent = 'Returns Rate %';
+                else returnsLbl.textContent = isAnn ? 'Annual Returns' : 'Monthly Returns';
+            }
+        }
         let _bd = {};
 
         function formatNumberWithCommas(value) {
@@ -1028,16 +1164,13 @@
         function toggleProtectionPremiumVisibility() {
             const template = document.getElementById('pricingTemplate').value;
             const premiumGroup = document.getElementById('protectionPremiumGroup');
-            const lbl = premiumGroup.querySelector('label');
-            const inp = document.getElementById('protectionPremium');
+            const premiumLabel = document.getElementById('protectionPremiumLabel');
             if (template === 'percentage') {
                 premiumGroup.style.display = 'block';
-                lbl.textContent = 'SI Premium %';
-                inp.placeholder = '0';
-            } else if (template === 'dollar') {
+                premiumLabel.textContent = 'SI Premium %';
+            } else if (template === 'flat_dollar') {
                 premiumGroup.style.display = 'block';
-                lbl.textContent = 'SI Premium $';
-                inp.placeholder = '0.00';
+                premiumLabel.textContent = 'SI Premium $';
             } else {
                 premiumGroup.style.display = 'none';
             }
@@ -1063,21 +1196,6 @@
             }).format(value);
         }
 
-        function toggleGuarantee() {
-            guaranteeEnabled = !guaranteeEnabled;
-            const btn = document.getElementById('guaranteeToggle');
-            if (guaranteeEnabled) {
-                btn.classList.add('active');
-                btn.innerHTML = '<span>✓</span> Guarantee Enabled';
-                document.getElementById('guaranteeResults').classList.add('visible');
-            } else {
-                btn.classList.remove('active');
-                btn.innerHTML = '<span>＋</span> Enable Guarantee';
-                document.getElementById('guaranteeResults').classList.remove('visible');
-            }
-            calculate();
-        }
-
         function toggleReturns() {
             returnsEnabled = !returnsEnabled;
             const btn = document.getElementById('returnsToggle');
@@ -1101,21 +1219,71 @@
             calculate();
         }
 
+        function toggleCashback() {
+            cashbackEnabled = !cashbackEnabled;
+            const btn = document.getElementById('cashbackToggle');
+            if (cashbackEnabled) {
+                btn.classList.add('active');
+                btn.innerHTML = '<span>✓</span> Customer Cashback Enabled';
+                document.getElementById('cashbackInputs').classList.add('visible');
+                document.getElementById('cashbackOffsetResults').classList.add('visible');
+                document.getElementById('cashbackMetric').style.display = 'block';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span>＋</span> Enable Customer Cashback';
+                document.getElementById('cashbackInputs').classList.remove('visible');
+                document.getElementById('cashbackOffsetResults').classList.remove('visible');
+                document.getElementById('cashbackMetric').style.display = 'none';
+            }
+            calculate();
+        }
+
+        function toggleGuarantee() {
+            guaranteeEnabled = !guaranteeEnabled;
+            const btn = document.getElementById('guaranteeToggle');
+            if (guaranteeEnabled) {
+                btn.classList.add('active');
+                btn.innerHTML = '<span>✓</span> Guarantee Enabled';
+                document.getElementById('guaranteeResults').classList.add('visible');
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span>＋</span> Enable Guarantee';
+                document.getElementById('guaranteeResults').classList.remove('visible');
+            }
+            calculate();
+        }
+
         function calculate() {
             const timeframe = document.getElementById('timeframe').value;
             const pricingTemplate = document.getElementById('pricingTemplate').value;
-            const monthlyOrders = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
+            const ordersInput = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
-            const claimsRate = parseFloat(removeCommas(document.getElementById('claimsRate').value)) / 100 || 0;
-            const cogsPercent = parseFloat(removeCommas(document.getElementById('cogsPercent').value)) / 100 || 0;
+            const avgShipping   = parseFloat(removeCommas(document.getElementById('avgShipping').value)) || 0;
             const csCostPerClaim = parseFloat(removeCommas(document.getElementById('csCostPerClaim').value)) || 0;
             const revenueShare = parseFloat(removeCommas(document.getElementById('revenueShare').value)) / 100 || 0;
             const attachRate = parseFloat(removeCommas(document.getElementById('attachRate').value)) / 100 || 0;
             const protectionPremiumRaw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
-            const protectionPremium = protectionPremiumRaw / 100;
-            const returnsRate = parseFloat(removeCommas(document.getElementById('returnsRate').value)) / 100 || 0;
+            const protectionPremium = pricingTemplate === 'percentage' ? protectionPremiumRaw / 100 : protectionPremiumRaw;
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('returnsPlatformCost').value)) || 0;
-            const returnLabelCost = parseFloat(removeCommas(document.getElementById('returnLabelCost').value)) || 0;
+            const cashbackRate        = (parseFloat(removeCommas(document.getElementById('cashbackRate').value)) || 5) / 100;
+            const minCashback         = parseFloat(removeCommas(document.getElementById('minCashback').value)) || 5;
+            const _cbrRaw = document.getElementById('cashbackRedemptionRate').value.trim();
+            const cashbackRedemptionRate  = (_cbrRaw === '' ? 5 : (parseFloat(removeCommas(_cbrRaw)) || 0)) / 100;
+
+            // COGS: % or flat $
+            const cogsRaw = parseFloat(removeCommas(document.getElementById('cogsPercent').value)) || 0;
+            const cogsPercent = _cogsType === 'flat'
+                ? (avgOrderValue > 0 ? cogsRaw / avgOrderValue : 0)
+                : cogsRaw / 100;
+
+            // Claims: % or count (count is per period, resolved after periodOrders computed)
+            const claimsRaw = parseFloat(removeCommas(document.getElementById('claimsRate').value)) || 0;
+
+            // Returns: % or count (resolved after periodOrders computed)
+            const returnsRaw = parseFloat(removeCommas(document.getElementById('returnsRate').value)) || 0;
+
+            // Return label cost = avg shipping (no separate input)
+            const returnLabelCost = avgShipping;
 
             const urlParams = new URLSearchParams(window.location.search);
             if (!urlParams.toString()) {
@@ -1123,6 +1291,7 @@
                 localStorage.setItem('shipinsure_avgOrderValue', document.getElementById('avgOrderValue').value);
                 localStorage.setItem('shipinsure_claimsRate', document.getElementById('claimsRate').value);
                 localStorage.setItem('shipinsure_cogsPercent', document.getElementById('cogsPercent').value);
+                localStorage.setItem('shipinsure_avgShipping', document.getElementById('avgShipping').value);
                 localStorage.setItem('shipinsure_csCostPerClaim', document.getElementById('csCostPerClaim').value);
                 localStorage.setItem('shipinsure_revenueShare', document.getElementById('revenueShare').value);
                 localStorage.setItem('shipinsure_attachRate', document.getElementById('attachRate').value);
@@ -1131,51 +1300,65 @@
                 localStorage.setItem('shipinsure_pricingTemplate', pricingTemplate);
                 localStorage.setItem('shipinsure_returnsRate', document.getElementById('returnsRate').value);
                 localStorage.setItem('shipinsure_returnsPlatformCost', document.getElementById('returnsPlatformCost').value);
-                localStorage.setItem('shipinsure_returnLabelCost', document.getElementById('returnLabelCost').value);
                 localStorage.setItem('shipinsure_returnsEnabled', returnsEnabled ? '1' : '0');
+                localStorage.setItem('shipinsure_cogsType', _cogsType);
+                localStorage.setItem('shipinsure_claimsType', _claimsType);
+                localStorage.setItem('shipinsure_returnsType', _returnsType);
+                localStorage.setItem('shipinsure_cashbackEnabled', cashbackEnabled ? '1' : '0');
                 localStorage.setItem('shipinsure_guaranteeEnabled', guaranteeEnabled ? '1' : '0');
+                localStorage.setItem('shipinsure_cashbackRate', document.getElementById('cashbackRate').value);
+                localStorage.setItem('shipinsure_minCashback', document.getElementById('minCashback').value);
+                localStorage.setItem('shipinsure_cashbackRedemptionRate', document.getElementById('cashbackRedemptionRate').value);
             }
 
             if (document.getElementById('linkDisplay').style.display === 'flex') {
                 generateShareableLink();
             }
 
+            updateDynamicLabels();
             let periodOrders, periodPlatformCost;
             if (timeframe === 'annual') {
-                periodOrders = monthlyOrders * 12;
+                periodOrders = ordersInput;
                 periodPlatformCost = monthlyPlatformCost * 12;
                 document.getElementById('annualOrdersMetric').style.display = 'block';
-                document.getElementById('annualOrdersDisplaySub').textContent = formatNumber(periodOrders);
+                document.getElementById('annualOrdersDisplaySub').textContent = 'Monthly: ' + formatNumber(Math.round(ordersInput / 12));
                 document.getElementById('ordersCardLabel').textContent = 'Annual Orders';
             } else {
-                periodOrders = monthlyOrders;
+                periodOrders = ordersInput;
                 periodPlatformCost = monthlyPlatformCost;
-                document.getElementById('annualOrdersMetric').style.display = 'none';
+                document.getElementById('annualOrdersMetric').style.display = 'block';
+                document.getElementById('annualOrdersDisplaySub').textContent = 'Annual: ' + formatNumber(ordersInput * 12);
                 document.getElementById('ordersCardLabel').textContent = 'Monthly Orders';
             }
 
+            // Resolve claims and returns rates from raw values (% or count)
+            const claimsRate = _claimsType === 'count'
+                ? (periodOrders > 0 ? claimsRaw / periodOrders : 0)
+                : claimsRaw / 100;
+            const returnsRate = _returnsType === 'count'
+                ? (periodOrders > 0 ? returnsRaw / periodOrders : 0)
+                : returnsRaw / 100;
+
             const protectedOrders = periodOrders * attachRate;
             let avgPremium;
-            if (pricingTemplate === 'dollar') {
-                avgPremium = protectionPremiumRaw;
-            } else if (pricingTemplate !== 'percentage') {
-                avgPremium = getTieredPremium(avgOrderValue, pricingTemplate);
-            } else {
+            if (pricingTemplate === 'percentage') {
                 avgPremium = avgOrderValue * protectionPremium;
+            } else if (pricingTemplate === 'flat_dollar') {
+                avgPremium = protectionPremium;
+            } else {
+                avgPremium = getTieredPremium(avgOrderValue, pricingTemplate);
             }
 
             const totalClaims = periodOrders * claimsRate;
             const claimsOffset = protectedOrders * claimsRate;
-            const costPerReship = (avgOrderValue * cogsPercent) + csCostPerClaim;
-            const csCost = totalClaims * csCostPerClaim;
+            const costPerReship = (avgOrderValue * cogsPercent) + avgShipping + csCostPerClaim;
+            const csShippingCost = totalClaims * (csCostPerClaim + avgShipping);
             const cogs = totalClaims * (avgOrderValue * cogsPercent);
-            const lostRevenue = csCost + cogs;
+            const lostRevenue = csShippingCost + cogs;
             const premiumPool = protectedOrders * avgPremium;
             const siFundedReships = claimsOffset * avgOrderValue;
-            const postClaimBalance = premiumPool - siFundedReships;
-            const revenueShareAmount = postClaimBalance * revenueShare;
-            const claimsExtra = siFundedReships + revenueShareAmount;
 
+            // Compute returns first so label costs can be deducted before rev share is calculated
             let totalReturns = 0, returnLabelsCostTotal = 0, totalReturnsCost = 0;
             let siCoveredLabels = 0, siCoveredPlatform = 0, totalReturnsOffset = 0;
             if (returnsEnabled) {
@@ -1188,23 +1371,66 @@
                 totalReturnsOffset = siCoveredLabels + siCoveredPlatform;
             }
 
+            // Cashback calculations
+            let cashbackPerOrder = 0, siSponsoredCashbackTotal = 0, cashbackSoftwareSavingsTotal = 0, totalCashbackValueTotal = 0;
+            let cashbackRedeemed = 0;
+            if (cashbackEnabled) {
+                cashbackPerOrder = Math.max(avgOrderValue * cashbackRate, minCashback);
+                siSponsoredCashbackTotal = protectedOrders * cashbackPerOrder;       // total funded/issued by SI
+                cashbackRedeemed = siSponsoredCashbackTotal * cashbackRedemptionRate; // deducted from premium pool
+                // Repeat revenue driven: redemption-driven orders × AOV (comes back to merchant)
+                const redemptionCount = cashbackPerOrder > 0 ? cashbackRedeemed / cashbackPerOrder : 0;
+                totalCashbackValueTotal = redemptionCount * avgOrderValue;
+                cashbackSoftwareSavingsTotal = cashbackRedeemed; // display alias
+            }
+
+            // All SI costs deducted from premium pool before rev share is applied
+            const postClaimBalance = premiumPool
+                - siFundedReships
+                - (returnsEnabled  ? siCoveredLabels + siCoveredPlatform : 0)
+                - (cashbackEnabled ? cashbackRedeemed : 0);
+            const revenueShareAmount = Math.max(0, postClaimBalance) * revenueShare;
+            const claimsExtra = siFundedReships + revenueShareAmount;
+
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
-            const extraRevenue = claimsExtra + (returnsEnabled ? totalReturnsOffset : 0);
+            const extraRevenue = claimsExtra
+                + (returnsEnabled  ? totalReturnsOffset : 0)
+                + (cashbackEnabled ? cashbackRedeemed   : 0);  // redeemed cashback flows back to merchant as repeat revenue
             const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
             const siFundedPct = premiumPool > 0 ? (siFundedReships / premiumPool) * 100 : 0;
             const revenueSharePct = premiumPool > 0 ? (revenueShareAmount / premiumPool) * 100 : 0;
+            const returnsOffsetPct = (returnsEnabled && premiumPool > 0) ? (totalReturnsOffset / premiumPool) * 100 : 0;
 
             // Update DOM
             document.getElementById('annualOrdersDisplay').textContent = formatNumber(periodOrders);
-            document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
+            if (_claimsType === 'count') {
+                document.getElementById('totalClaimsLabel').textContent = 'Claims Rate';
+                document.getElementById('totalClaims').textContent = (claimsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
+            } else {
+                document.getElementById('totalClaimsLabel').textContent = 'Total Claims';
+                document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
+            }
             document.getElementById('protectedOrders').textContent = formatNumber(protectedOrders);
-            document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
+            if (pricingTemplate === 'flat_dollar') {
+                const impliedPct = avgOrderValue > 0 ? (avgPremium / avgOrderValue * 100) : 0;
+                document.getElementById('avgPremiumLabel').textContent = 'SI Premium %';
+                document.getElementById('avgPremium').textContent = impliedPct.toFixed(2) + '%';
+            } else {
+                document.getElementById('avgPremiumLabel').textContent = 'Avg Premium';
+                document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
+            }
             document.getElementById('protectedClaims').textContent = formatNumber(claimsOffset);
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
-            document.getElementById('totalReturns').textContent = formatNumber(totalReturns);
+            if (_returnsType === 'count') {
+                document.getElementById('totalReturnsLabel').textContent = 'Returns Rate';
+                document.getElementById('totalReturns').textContent = (returnsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
+            } else {
+                document.getElementById('totalReturnsLabel').textContent = 'Total Returns';
+                document.getElementById('totalReturns').textContent = formatNumber(totalReturns);
+            }
             document.getElementById('costPerReship').textContent = formatCurrency(costPerReship);
-            document.getElementById('csCost').textContent = formatCurrency(csCost);
+            document.getElementById('csCost').textContent = formatCurrency(csShippingCost);
             document.getElementById('cogs').textContent = formatCurrency(cogs);
             document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalLost);
             document.getElementById('returnLabelsCost').textContent = formatCurrency(returnLabelsCostTotal);
@@ -1217,11 +1443,20 @@
             document.getElementById('siCoveredReturnLabels').textContent = formatCurrency(siCoveredLabels);
             document.getElementById('siCoveredPlatformCost').textContent = formatCurrency(siCoveredPlatform);
             document.getElementById('totalReturnsOffset').textContent = formatCurrency(totalReturnsOffset);
+            document.getElementById('siSponsoredCashback').textContent = formatCurrency(siSponsoredCashbackTotal);
+            document.getElementById('cashbackSoftwareSavings').textContent = formatCurrency(cashbackRedeemed);
+            document.getElementById('totalCashbackValue').textContent = formatCurrency(totalCashbackValueTotal);
+            document.getElementById('cashbackPerOrderDisplay').textContent = cashbackEnabled ? formatCurrencyWithCents(cashbackPerOrder) : '$0';
 
             // Revenue Impact box: % as main metric, breakdown by claims + rev share
             document.getElementById('percentOfPremiums').textContent = percentOfPremiums.toFixed(1) + '%';
             document.getElementById('claimsImpactPct').textContent = siFundedPct.toFixed(1) + '% from claims';
             document.getElementById('revShareImpactPct').textContent = revenueSharePct.toFixed(1) + '% from rev share';
+            document.getElementById('returnsOffsetImpactPct').textContent = returnsOffsetPct.toFixed(1) + '% from returns';
+            document.getElementById('returnsOffsetImpactPct').style.display = returnsEnabled ? '' : 'none';
+            const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (cashbackRedeemed / premiumPool) * 100 : 0;
+            document.getElementById('cashbackImpactPct').textContent = cashbackPct.toFixed(1) + '% from cashback';
+            document.getElementById('cashbackImpactPct').style.display = cashbackEnabled ? '' : 'none';
 
             // % bubbles
             const showBubbles = premiumPool > 0;
@@ -1240,9 +1475,8 @@
             // Guarantee section — 1.5× claim rate
             if (guaranteeEnabled) {
                 const gClaimsRate = claimsRate * 1.5;
-                const gProtectedClaims = protectedOrders * gClaimsRate;
-                const gPayout = gProtectedClaims * avgOrderValue;
-                const gPostClaim = Math.max(0, premiumPool - gPayout - (returnsEnabled ? totalReturnsOffset : 0));
+                const gPayout = protectedOrders * gClaimsRate * avgOrderValue;
+                const gPostClaim = Math.max(0, premiumPool - gPayout - (returnsEnabled ? siCoveredLabels + siCoveredPlatform : 0) - (cashbackEnabled ? cashbackRedeemed : 0));
                 const gNetMRR = gPostClaim * revenueShare;
                 document.getElementById('guaranteeClaimRate').textContent = (gClaimsRate * 100).toFixed(2) + '%';
                 document.getElementById('guaranteePayout').textContent = formatCurrency(gPayout);
@@ -1257,12 +1491,17 @@
                 orders: periodOrders, aov: avgOrderValue, cogsP: cogsPercent, claimsP: claimsRate,
                 csPerClaim: csCostPerClaim, attachP: attachRate, avgPremium, revShareP: revenueShare,
                 protectedOrders, totalClaims, protectedClaims: claimsOffset,
-                costPerReship, csCostTotal: csCost, cogsAmount: cogs, totalLost,
+                costPerReship, csCostTotal: csShippingCost, cogsAmount: cogs, totalLost,
                 premiumPool, siFundedReships, postClaimBalance, revenueShareAmount, extraRevenue,
                 percentOfPremiums, siFundedPct, revenueSharePct,
+                avgShipping,
                 returnsEnabled, totalReturns, returnLabelsCostTotal, periodPlatformCost,
                 totalReturnsCost, siCoveredLabels, siCoveredPlatform, totalReturnsOffset,
-                returnsRate, returnLabelCost
+                returnsRate, returnsOffsetPct,
+                cogsRaw, claimsRaw, returnsRaw,
+                cashbackEnabled, cashbackPerOrder, siSponsoredCashbackTotal,
+                cashbackRedeemed, totalCashbackValueTotal, cashbackPct,
+                cashbackRate, minCashback, cashbackRedemptionRate
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
         }
@@ -1274,17 +1513,26 @@
                 document.getElementById('avgOrderValue').value = urlParams.get('aov') || '';
                 document.getElementById('claimsRate').value = urlParams.get('claims') || '';
                 document.getElementById('cogsPercent').value = urlParams.get('cogs') || '';
+                document.getElementById('avgShipping').value = urlParams.get('aship') || '';
                 document.getElementById('csCostPerClaim').value = urlParams.get('cs') || '';
                 document.getElementById('revenueShare').value = urlParams.get('share') || '35';
                 document.getElementById('attachRate').value = urlParams.get('attach') || '68';
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
                 document.getElementById('pricingTemplate').value = urlParams.get('template') || 'percentage';
+                if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
+                if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 document.getElementById('returnsRate').value = urlParams.get('rr') || '';
                 document.getElementById('returnsPlatformCost').value = urlParams.get('rpc') || '';
-                document.getElementById('returnLabelCost').value = urlParams.get('rlc') || '';
-                if (urlParams.get('rr') || urlParams.get('rpc') || urlParams.get('rlc')) {
+                if (urlParams.get('rtype')) setReturnsType(urlParams.get('rtype'));
+                if (urlParams.get('rr') || urlParams.get('rpc')) {
                     toggleReturns();
+                }
+                if (urlParams.get('cb')) document.getElementById('cashbackRate').value = urlParams.get('cb');
+                if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
+                if (urlParams.get('cbrr')) document.getElementById('cashbackRedemptionRate').value = urlParams.get('cbrr');
+                if (urlParams.get('cb') || urlParams.get('cbpc')) {
+                    toggleCashback();
                 }
             } else {
                 const s = k => localStorage.getItem('shipinsure_' + k);
@@ -1292,16 +1540,23 @@
                 if (s('avgOrderValue')) document.getElementById('avgOrderValue').value = s('avgOrderValue');
                 if (s('claimsRate')) document.getElementById('claimsRate').value = s('claimsRate');
                 if (s('cogsPercent')) document.getElementById('cogsPercent').value = s('cogsPercent');
+                if (s('avgShipping')) document.getElementById('avgShipping').value = s('avgShipping');
                 if (s('csCostPerClaim')) document.getElementById('csCostPerClaim').value = s('csCostPerClaim');
                 document.getElementById('revenueShare').value = s('revenueShare') || '35';
                 document.getElementById('attachRate').value = s('attachRate') || '68';
                 document.getElementById('protectionPremium').value = s('protectionPremium') || '3.00';
                 document.getElementById('timeframe').value = s('timeframe') || 'monthly';
                 document.getElementById('pricingTemplate').value = s('pricingTemplate') || 'percentage';
+                if (s('cogsType')) setCogsType(s('cogsType'));
+                if (s('claimsType')) setClaimsType(s('claimsType'));
                 if (s('returnsRate')) document.getElementById('returnsRate').value = s('returnsRate');
                 if (s('returnsPlatformCost')) document.getElementById('returnsPlatformCost').value = s('returnsPlatformCost');
-                if (s('returnLabelCost')) document.getElementById('returnLabelCost').value = s('returnLabelCost');
+                if (s('returnsType')) setReturnsType(s('returnsType'));
                 if (s('returnsEnabled') === '1') toggleReturns();
+                if (s('cashbackRate')) document.getElementById('cashbackRate').value = s('cashbackRate');
+                if (s('minCashback')) document.getElementById('minCashback').value = s('minCashback');
+                if (s('cashbackRedemptionRate')) document.getElementById('cashbackRedemptionRate').value = s('cashbackRedemptionRate');
+                if (s('cashbackEnabled') === '1') toggleCashback();
                 if (s('guaranteeEnabled') === '1') toggleGuarantee();
             }
         }
@@ -1311,13 +1566,13 @@
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             let avgPremiumValue = 0;
-            const _rawPrem = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
-            if (pricingTemplate === 'dollar') {
-                avgPremiumValue = _rawPrem;
-            } else if (pricingTemplate !== 'percentage') {
-                avgPremiumValue = getTieredPremium(avgOrderValue, pricingTemplate);
+            if (pricingTemplate === 'percentage') {
+                const pp = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
+                avgPremiumValue = avgOrderValue * pp;
+            } else if (pricingTemplate === 'flat_dollar') {
+                avgPremiumValue = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
             } else {
-                avgPremiumValue = avgOrderValue * (_rawPrem / 100);
+                avgPremiumValue = getTieredPremium(avgOrderValue, pricingTemplate);
             }
 
             const params = new URLSearchParams({
@@ -1325,19 +1580,29 @@
                 aov: removeCommas(document.getElementById('avgOrderValue').value) || '',
                 claims: removeCommas(document.getElementById('claimsRate').value) || '',
                 cogs: removeCommas(document.getElementById('cogsPercent').value) || '',
+                aship: removeCommas(document.getElementById('avgShipping').value) || '',
                 cs: removeCommas(document.getElementById('csCostPerClaim').value) || '',
                 share: removeCommas(document.getElementById('revenueShare').value) || '35',
                 attach: removeCommas(document.getElementById('attachRate').value) || '68',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
                 avg_premium: avgPremiumValue.toFixed(2),
                 view: document.getElementById('timeframe').value || 'monthly',
-                template: document.getElementById('pricingTemplate').value || 'percentage'
+                template: document.getElementById('pricingTemplate').value || 'percentage',
+                cogstype: _cogsType,
+                claimstype: _claimsType
             });
 
             if (returnsEnabled) {
                 params.set('rr', removeCommas(document.getElementById('returnsRate').value) || '');
                 params.set('rpc', removeCommas(document.getElementById('returnsPlatformCost').value) || '');
-                params.set('rlc', removeCommas(document.getElementById('returnLabelCost').value) || '');
+                // rlc = avgShipping for proposal generator backward compat
+                params.set('rlc', removeCommas(document.getElementById('avgShipping').value) || '');
+                params.set('rtype', _returnsType);
+            }
+            if (cashbackEnabled) {
+                params.set('cb',   removeCommas(document.getElementById('cashbackRate').value) || '5');
+                params.set('mincb', removeCommas(document.getElementById('minCashback').value) || '5');
+                params.set('cbrr', document.getElementById('cashbackRedemptionRate').value);
             }
 
             const shareableUrl = `${baseUrl}?${params.toString()}`;
@@ -1385,22 +1650,23 @@
             document.getElementById('bd-shared').innerHTML =
                 row('Orders (period)', '',            fn(d.orders)) +
                 row('AOV', '',                        fcc(d.aov)) +
-                row('COGS %', '',                     pct(d.cogsP)) +
+                row('Product Cost', '',               d.cogsP < 1 ? pct(d.cogsP) : '$' + d.aov.toFixed(2) + ' × ' + pct(d.cogsP)) +
                 row('Claims Rate', '',                pct(d.claimsP)) +
-                row('CS Cost / Claim', '',            fc(d.csPerClaim)) +
+                row('Avg Shipping', '',               fc(d.avgShipping)) +
+                row('Avg Ticket Cost', '',            fc(d.csPerClaim)) +
                 row('Attach Rate', '',                pct(d.attachP)) +
                 row('Avg Premium / Order', '',        fcc(d.avgPremium)) +
                 row('Rev Share %', '',                pct(d.revShareP)) +
-                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
+                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.avgShipping)} + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
 
             // ── Cost without ShipInsure ──
             let costHTML =
                 row('Total Claims', `${fn(d.orders)} × ${pct(d.claimsP)}`,             fn(d.totalClaims)) +
-                row('CS Cost',      `${fn(d.totalClaims)} × ${fc(d.csPerClaim)}`,      fc(d.csCostTotal)) +
+                row('CS & Shipping', `${fn(d.totalClaims)} × (${fc(d.avgShipping)} + ${fc(d.csPerClaim)})`, fc(d.csCostTotal)) +
                 row('COGS',         `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
             if (d.returnsEnabled) {
                 costHTML +=
-                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.returnLabelCost)}`,    fc(d.returnLabelsCostTotal)) +
+                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.avgShipping)}`,         fc(d.returnLabelsCostTotal)) +
                     row('Returns Platform', 'monthly fee',                                       fc(d.periodPlatformCost)) +
                     row('Total Returns Cost', 'labels + platform',                               fc(d.totalReturnsCost));
             }
@@ -1414,16 +1680,31 @@
                 row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
                 row('Protected Claims',   `${fn(d.protectedOrders)} × ${pct(d.claimsP)}`,    fn(d.protectedClaims)) +
                 row('SI Funded (@ AOV)',  `${fn(d.protectedClaims)} claims × ${fcc(d.aov)}`, fc(d.siFundedReships)) +
-                row('Post-Claim Balance', `Premiums − SI Funded`,                             fc(d.postClaimBalance)) +
+                row('Post-Claim Balance', [
+                    'Premiums − SI Funded',
+                    d.returnsEnabled  ? '− Return Labels' : '',
+                    d.cashbackEnabled ? '− Cashback Redeemed' : ''
+                ].filter(Boolean).join(' '), fc(d.postClaimBalance)) +
                 row('Rev Share',         `${fc(d.postClaimBalance)} × ${pct(d.revShareP)}`,  fc(d.revenueShareAmount));
             if (d.returnsEnabled) {
                 revHTML +=
                     row('SI Covered Labels',   'from premiums', fc(d.siCoveredLabels)) +
                     row('SI Covered Platform', 'from premiums', fc(d.siCoveredPlatform));
             }
+            if (d.cashbackEnabled) {
+                revHTML +=
+                    row('Cashback Per Order', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
+                    row('SI Cashback Funded', `${fn(d.protectedOrders)} × ${fcc(d.cashbackPerOrder)}`, fc(d.siSponsoredCashbackTotal)) +
+                    row('Est. Cashback Redeemed', `${fc(d.siSponsoredCashbackTotal)} × ${pct(d.cashbackRedemptionRate)}`, fc(d.cashbackRedeemed)) +
+                    row('Repeat Revenue Driven', `(${fc(d.cashbackRedeemed)} ÷ ${fcc(d.cashbackPerOrder)}) redemptions × ${fcc(d.aov)}`, fc(d.totalCashbackValueTotal));
+            }
+            const extraLabel = [
+                'funded + rev share',
+                d.returnsEnabled ? '+ returns offset' : '',
+                d.cashbackEnabled ? '+ cashback' : ''
+            ].filter(Boolean).join(' ');
             revHTML +=
-                row('Extra Revenue With SI', d.returnsEnabled ? 'funded + rev share + returns offset' : 'funded + rev share',
-                    fc(d.extraRevenue), 'sep positive') +
+                row('Extra Revenue With SI', extraLabel, fc(d.extraRevenue), 'sep positive') +
                 row('% of Premiums Kept', `${fc(d.extraRevenue)} ÷ ${fc(d.premiumPool)}`,
                     fp(d.percentOfPremiums), 'sep positive');
             document.getElementById('bd-revenue').innerHTML = revHTML;
@@ -1434,22 +1715,30 @@
             document.getElementById('avgOrderValue').value = '';
             document.getElementById('cogsPercent').value = '';
             document.getElementById('claimsRate').value = '';
+            document.getElementById('avgShipping').value = '';
             document.getElementById('csCostPerClaim').value = '';
             document.getElementById('protectionPremium').value = '3.00';
             document.getElementById('attachRate').value = '68';
             document.getElementById('revenueShare').value = '35';
             document.getElementById('returnsRate').value = '';
             document.getElementById('returnsPlatformCost').value = '';
-            document.getElementById('returnLabelCost').value = '';
+            document.getElementById('cashbackRate').value = '5';
+            document.getElementById('minCashback').value = '5';
+            document.getElementById('cashbackRedemptionRate').value = '5';
             document.getElementById('timeframe').value = 'monthly';
             document.getElementById('pricingTemplate').value = 'percentage';
-            ['annualOrders','avgOrderValue','claimsRate','cogsPercent','csCostPerClaim',
+            setCogsType('pct');
+            setClaimsType('pct');
+            setReturnsType('pct');
+            ['annualOrders','avgOrderValue','claimsRate','cogsPercent','avgShipping','csCostPerClaim',
              'revenueShare','attachRate','protectionPremium','timeframe','pricingTemplate',
-             'returnsRate','returnsPlatformCost','returnLabelCost','returnsEnabled'].forEach(k => {
+             'returnsRate','returnsPlatformCost','returnsEnabled',
+             'cogsType','claimsType','returnsType',
+             'cashbackEnabled','cashbackRate','minCashback','cashbackRedemptionRate'].forEach(k => {
                 localStorage.removeItem('shipinsure_' + k);
             });
             if (returnsEnabled) toggleReturns();
-            if (guaranteeEnabled) toggleGuarantee();
+            if (cashbackEnabled) toggleCashback();
             toggleProtectionPremiumVisibility();
             calculate();
         }
@@ -1471,7 +1760,18 @@
             input.addEventListener('input', calculate);
         });
 
-        document.getElementById('timeframe').addEventListener('change', calculate);
+        document.getElementById('timeframe').addEventListener('change', function() {
+            const ordersEl = document.getElementById('annualOrders');
+            const val = parseFloat(removeCommas(ordersEl.value)) || 0;
+            if (val > 0) {
+                if (this.value === 'annual') {
+                    ordersEl.value = formatNumberWithCommas(String(Math.round(val * 12)));
+                } else {
+                    ordersEl.value = formatNumberWithCommas(String(Math.round(val / 12)));
+                }
+            }
+            calculate();
+        });
         document.getElementById('pricingTemplate').addEventListener('change', function() {
             toggleProtectionPremiumVisibility();
             calculate();
@@ -1479,7 +1779,11 @@
         document.getElementById('generateLink').addEventListener('click', generateShareableLink);
         document.getElementById('copyLink').addEventListener('click', copyToClipboard);
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
+        document.getElementById('cashbackToggle').addEventListener('click', toggleCashback);
         document.getElementById('guaranteeToggle').addEventListener('click', toggleGuarantee);
+        ['cashbackRate','minCashback','cashbackRedemptionRate'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculate);
+        });
         document.querySelector('.logo-area').style.cursor = 'pointer';
         document.querySelector('.logo-area').addEventListener('click', resetAll);
 
