@@ -732,6 +732,7 @@
                 <img id="gBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/sgbadge.png" alt="Guarantee" style="display:none;" onerror="this.style.display='none'">
             </div>
             <div class="controls-area">
+                <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
                 <div class="view-selector">
                     <label for="timeframe">View:</label>
                     <select id="timeframe">
@@ -941,9 +942,7 @@
         <div class="inputs-strip">
             <div class="inputs-strip-header">
                 <span class="inputs-strip-title">Merchant Inputs</span>
-                <div class="inputs-strip-actions">
-                    <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
-                </div>
+                <div class="inputs-strip-actions"></div>
             </div>
 
             <div class="inputs-row">
@@ -1061,11 +1060,11 @@
             <div class="si-inputs-header">
                 <span class="si-inputs-title">ShipInsure Inputs</span>
                 <label class="view-inputs-label">
-                    <input type="checkbox" id="viewInputsCheck" checked>
+                    <input type="checkbox" id="viewInputsCheck">
                     View Inputs
                 </label>
             </div>
-            <div class="si-inputs-body" id="siInputsBody">
+            <div class="si-inputs-body hidden" id="siInputsBody">
                 <button id="returnsOffsetModeToggle" class="returns-offset-toggle-btn">
                     <span>＋</span> Returns Offset
                 </button>
@@ -1995,6 +1994,9 @@
             });
             if (returnsEnabled) toggleReturns();
             if (cashbackEnabled) toggleCashback();
+            // Reset ShipInsure Inputs to hidden
+            document.getElementById('viewInputsCheck').checked = false;
+            document.getElementById('siInputsBody').classList.add('hidden');
             toggleProtectionPremiumVisibility();
             calculate();
         }
