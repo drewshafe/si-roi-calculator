@@ -1059,7 +1059,7 @@
                     </div>
                     <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
-                            <h4 id="siClaimLabel">SI Funded Claim (Reship = 2nd Sale)</h4>
+                            <h4 id="siClaimLabel">SI Funded Claim</h4>
                             <div class="value" id="siFundedReships">$0</div>
                         </div>
                         <div class="metric-item">
@@ -1168,10 +1168,6 @@
                 <span class="add-inputs-arrow" id="addInputsArrow">▶</span> Additional Inputs
             </button>
             <div class="additional-inputs-body" id="additionalInputsBody">
-                <div class="input-group" id="attachRateGroup">
-                    <label for="attachRate">Attach Rate %</label>
-                    <input type="text" id="attachRate" placeholder="0" value="68">
-                </div>
                 <div class="input-group" id="cogsGroup">
                     <label id="cogsLabel" for="cogsPercent">Product Cost</label>
                     <div class="input-with-type">
@@ -1187,6 +1183,10 @@
                 <div class="input-group" id="csCostGroup">
                     <label for="csCostPerClaim">Avg Ticket Cost</label>
                     <input type="text" id="csCostPerClaim" placeholder="$" value="5">
+                </div>
+                <div class="input-group" id="attachRateGroup">
+                    <label for="attachRate">Attach Rate %</label>
+                    <input type="text" id="attachRate" placeholder="0" value="68">
                 </div>
                 <div class="input-group">
                     <label for="revenueShare">Rev Share %</label>
@@ -1499,8 +1499,8 @@
             if (sel && sel.value !== t) sel.value = t;
             const lbl = document.getElementById('siClaimLabel');
             if (lbl) lbl.textContent = t === 'cogs'
-                ? 'SI Funded Claim (Reship @ COGS)'
-                : 'SI Funded Claim (Reship = 2nd Sale)';
+                ? 'SI Funded Claim'
+                : 'SI Funded Claim';
             calculate();
         }
 
