@@ -2416,12 +2416,16 @@
         function loadSavedValues() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.toString()) {
-                document.getElementById('annualOrders').value = urlParams.get('orders') ? formatNumberWithCommas(urlParams.get('orders')) : '';
-                document.getElementById('avgOrderValue').value = urlParams.get('aov') || '';
-                document.getElementById('claimsRate').value = urlParams.get('claims') || '';
-                document.getElementById('cogsPercent').value = urlParams.get('cogs') || '';
-                document.getElementById('avgShipping').value = urlParams.get('aship') || '';
-                document.getElementById('csCostPerClaim').value = urlParams.get('cs') || '';
+                const up = (id, key, fmt) => {
+                    const v = urlParams.get(key);
+                    if (v !== null) document.getElementById(id).value = fmt ? fmt(v) : v;
+                };
+                up('annualOrders', 'orders', formatNumberWithCommas);
+                up('avgOrderValue', 'aov');
+                up('claimsRate', 'claims');
+                up('cogsPercent', 'cogs');
+                up('avgShipping', 'aship');
+                up('csCostPerClaim', 'cs');
                 document.getElementById('revenueShare').value = urlParams.get('share') || '25';
                 document.getElementById('attachRate').value = urlParams.get('attach') || '68';
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
@@ -2429,18 +2433,59 @@
                 document.getElementById('pricingTemplate').value = urlParams.get('template') || 'percentage';
                 if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
                 if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
-                document.getElementById('returnsRate').value = urlParams.get('rr') || '';
-                document.getElementById('returnsPlatformCost').value = urlParams.get('rpc') || '';
-                if (urlParams.get('rtype')) setReturnsType(urlParams.get('rtype'));
-                if (urlParams.get('rr') || urlParams.get('rpc')) {
-                    toggleReturns();
+                if (urlParams.get('cr')) setClaimResolution(urlParams.get('cr'));
+
+                // View inputs checkbox
+                const viEl = document.getElementById('viewInputsCheck');
+                if (urlParams.get('vi') === '1' && viEl) {
+                    viEl.checked = true;
+                    document.getElementById('siInputsBody').classList.remove('hidden');
+                    updateWidgetPreviewVisibility();
                 }
-                if (urlParams.get('cb')) document.getElementById('cashbackRate').value = urlParams.get('cb');
-                if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
-                if (urlParams.get('cbrr')) document.getElementById('cashbackRedemptionRate').value = urlParams.get('cbrr');
-                if (urlParams.get('cb') || urlParams.get('cbpc')) {
-                    toggleCashback();
+
+                // Feature toggles — order matters: offset before returns
+                if (urlParams.get('rom') === '1') toggleReturnsOffsetMode();
+                if (urlParams.get('re') === '1' || urlParams.get('rr') || urlParams.get('rpc')) {
+                    up('returnsRate', 'rr');
+                    up('returnsPlatformCost', 'rpc');
+                    if (urlParams.get('rtype')) setReturnsType(urlParams.get('rtype'));
+                    if (!returnsEnabled) toggleReturns();
                 }
+                if (urlParams.get('cbe') === '1' || urlParams.get('cb') || urlParams.get('cbpc')) {
+                    if (urlParams.get('cb'))   document.getElementById('cashbackRate').value = urlParams.get('cb');
+                    if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
+                    if (urlParams.get('cbrr')) document.getElementById('cashbackRedemptionRate').value = urlParams.get('cbrr');
+                    if (!cashbackEnabled) toggleCashback();
+                }
+                if (urlParams.get('guar') === '1') {
+                    if (!guaranteeEnabled) toggleGuarantee();
+                    if (urlParams.get('gcr')) document.getElementById('guaranteeClaimRateInput').value = urlParams.get('gcr');
+                }
+
+                // Widget preview state
+                if (urlParams.get('wt')) setWidgetType(urlParams.get('wt'));
+                const wiEl = document.getElementById('showWidgetInline');
+                if (urlParams.get('wi') === '1' && wiEl) {
+                    wiEl.checked = true;
+                    const sec = document.getElementById('widgetPreviewSection');
+                    if (sec) sec.style.display = '';
+                }
+                // Widget config text fields
+                ['wc-dual-header','wc-dual-btna','wc-dual-btnb',
+                 'wc-dualp-header','wc-dualp-body','wc-dualp-btna','wc-dualp-btnb',
+                 'wc-tog-header','wc-tog-body','wc-tog-disclaimer',
+                 'wc-cartcb-header','wc-cartcb-body','wc-cartcb-disclaimer',
+                 'wc-ext-header','wc-ext-body','wc-ext-disclaimer','wc-ext-cashback'
+                ].forEach(id => {
+                    const val = urlParams.get('w_' + id);
+                    const el = document.getElementById(id);
+                    if (val && el) el.value = val;
+                });
+                // Hide-lock checkboxes
+                const setChk = (id, key) => { const el = document.getElementById(id); if (el && urlParams.get(key) === '1') el.checked = true; };
+                setChk('wc-tog-hide-lock',    'w_toghide');
+                setChk('wc-cartcb-hide-lock', 'w_cbhide');
+                setChk('wc-ext-hide-lock',    'w_exthide');
             } else {
                 const s = k => localStorage.getItem('shipinsure_' + k);
                 if (s('annualOrders')) document.getElementById('annualOrders').value = s('annualOrders');
@@ -2486,6 +2531,9 @@
                 avgPremiumValue = getTieredPremium(avgOrderValue, pricingTemplate);
             }
 
+            const gv = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const gc = id => { const el = document.getElementById(id); return (el && el.checked) ? '1' : ''; };
+
             const params = new URLSearchParams({
                 orders: removeCommas(document.getElementById('annualOrders').value) || '',
                 aov: removeCommas(document.getElementById('avgOrderValue').value) || '',
@@ -2500,21 +2548,49 @@
                 view: document.getElementById('timeframe').value || 'monthly',
                 template: document.getElementById('pricingTemplate').value || 'percentage',
                 cogstype: _cogsType,
-                claimstype: _claimsType
+                claimstype: _claimsType,
+                cr: _claimResolution,
+                vi: gc('viewInputsCheck'),
             });
 
+            // Feature toggles
+            if (returnsOffsetMode) params.set('rom', '1');
             if (returnsEnabled) {
+                params.set('re', '1');
                 params.set('rr', removeCommas(document.getElementById('returnsRate').value) || '');
                 params.set('rpc', removeCommas(document.getElementById('returnsPlatformCost').value) || '');
-                // rlc = avgShipping for proposal generator backward compat
                 params.set('rlc', removeCommas(document.getElementById('avgShipping').value) || '');
                 params.set('rtype', _returnsType);
             }
             if (cashbackEnabled) {
+                params.set('cbe', '1');
                 params.set('cb',   removeCommas(document.getElementById('cashbackRate').value) || '5');
                 params.set('mincb', removeCommas(document.getElementById('minCashback').value) || '5');
                 params.set('cbrr', document.getElementById('cashbackRedemptionRate').value);
             }
+            if (guaranteeEnabled) {
+                params.set('guar', '1');
+                const gcr = gv('guaranteeClaimRateInput');
+                if (gcr) params.set('gcr', gcr);
+            }
+
+            // Widget preview state
+            const wInline = gc('showWidgetInline');
+            if (wInline) params.set('wi', '1');
+            params.set('wt', _widgetType);
+            // Widget config text fields — only include non-empty values
+            const wcFields = [
+                'wc-dual-header','wc-dual-btna','wc-dual-btnb',
+                'wc-dualp-header','wc-dualp-body','wc-dualp-btna','wc-dualp-btnb',
+                'wc-tog-header','wc-tog-body','wc-tog-disclaimer',
+                'wc-cartcb-header','wc-cartcb-body','wc-cartcb-disclaimer',
+                'wc-ext-header','wc-ext-body','wc-ext-disclaimer','wc-ext-cashback'
+            ];
+            wcFields.forEach(id => { const val = gv(id); if (val) params.set('w_' + id, val); });
+            // Hide-lock checkboxes
+            if (gc('wc-tog-hide-lock'))    params.set('w_toghide', '1');
+            if (gc('wc-cartcb-hide-lock')) params.set('w_cbhide', '1');
+            if (gc('wc-ext-hide-lock'))    params.set('w_exthide', '1');
 
             const shareableUrl = `${baseUrl}?${params.toString()}`;
             document.getElementById('shareableLink').value = shareableUrl;
