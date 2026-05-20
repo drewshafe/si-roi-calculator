@@ -714,6 +714,27 @@
             cursor: pointer;
         }
 
+        /* ── Additional Inputs collapsible ── */
+        .additional-inputs-toggle {
+            display: flex; align-items: center; gap: 6px;
+            width: 100%; padding: 7px 10px;
+            background: rgba(74,95,193,0.07); border: 1px dashed #c5caeb;
+            border-radius: 6px; color: #4a5fc1; font-family: inherit;
+            font-size: 0.76em; font-weight: 700; cursor: pointer; text-align: left;
+            transition: background 0.15s;
+        }
+        .additional-inputs-toggle:hover { background: rgba(74,95,193,0.13); }
+        .add-inputs-arrow { font-size: 0.7em; transition: transform 0.2s; display: inline-block; }
+        .add-inputs-arrow.open { transform: rotate(90deg); }
+        .additional-inputs-body { display: none; }
+        .additional-inputs-body.open { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+        .inputs-section-label {
+            font-size: 0.68em; font-weight: 800; color: #4a5fc1;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            padding-bottom: 4px; width: 100%;
+        }
+
         /* ── Widget Preview ── */
         .widget-preview-section {
             width: 100%;
@@ -861,10 +882,6 @@
                     </div>
                 </div>
 
-                <div class="output-metric" id="totalClaimsMetric">
-                    <div class="om-label" id="totalClaimsLabel">Total Claims</div>
-                    <div class="om-value" id="totalClaims">0</div>
-                </div>
                 <div class="output-metric" id="protectedOrdersMetric">
                     <div class="om-label" id="protectedOrdersLabel">Protected Orders</div>
                     <div class="om-value" id="protectedOrders">0</div>
@@ -872,10 +889,6 @@
                 <div class="output-metric" id="avgPremiumMetric">
                     <div class="om-label" id="avgPremiumLabel">Avg Premium</div>
                     <div class="om-value" id="avgPremium">$0</div>
-                </div>
-                <div class="output-metric" id="protectedClaimsMetric">
-                    <div class="om-label">Protected Claims</div>
-                    <div class="om-value" id="protectedClaims">0</div>
                 </div>
                 <div class="output-metric" id="premiumsMetric">
                     <div class="om-label">Premiums</div>
@@ -931,13 +944,14 @@
                             <div class="value" id="costPerReship">$0</div>
                         </div>
                         <div class="metric-item">
-                            <h4>CS & Shipping</h4>
-                            <div class="value" id="csCost">$0</div>
+                            <h4 id="totalClaimsLabel">Total Claims</h4>
+                            <div class="value" id="totalClaims">0</div>
                         </div>
-                        <div class="metric-item">
-                            <h4>COGS</h4>
-                            <div class="value" id="cogs">$0</div>
-                        </div>
+                    </div>
+                    <!-- Hidden stash — values still computed, used in breakdown -->
+                    <div style="display:none;">
+                        <span id="csCost"></span>
+                        <span id="cogs"></span>
                     </div>
                     <div id="returnsCostResults" class="returns-results">
                         <div class="sub-section-label">Returns Costs</div>
@@ -967,17 +981,19 @@
                     <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
                             <h4 id="siClaimLabel">SI Funded Claim (Reship = 2nd Sale)</h4>
-                            <div class="value" id="secondSale">$0</div>
+                            <div class="value" id="siFundedReships">$0</div>
                         </div>
                         <div class="metric-item">
-                            <h4>SI Funded Reships/Refunds</h4>
-                            <div class="value" id="siFundedReships">$0</div>
+                            <h4>Protected Claims</h4>
+                            <div class="value" id="protectedClaims">0</div>
                         </div>
                         <div class="metric-item">
                             <h4>Revenue Share</h4>
                             <div class="value" id="revenueShareAmount">$0</div>
                         </div>
                     </div>
+                    <!-- Hidden stash -->
+                    <div style="display:none;"><span id="secondSale"></span></div>
                     <div id="returnsOffsetResults" class="returns-results">
                         <div class="sub-section-label">Returns Offset</div>
                         <div class="metrics-grid">
@@ -1050,7 +1066,8 @@
                 <div class="inputs-strip-actions"></div>
             </div>
 
-            <div class="inputs-row">
+            <!-- Core Merchant Inputs -->
+            <div class="inputs-row" id="coreInputsRow">
                 <div class="input-group">
                     <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
                     <input type="text" id="annualOrders" placeholder="0">
@@ -1058,14 +1075,6 @@
                 <div class="input-group">
                     <label for="avgOrderValue">AOV</label>
                     <input type="text" id="avgOrderValue" placeholder="$">
-                </div>
-                <div class="input-group" id="cogsGroup">
-                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
-                    <div class="input-with-type">
-                        <input type="text" id="cogsPercent" placeholder="0">
-                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
-                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
-                    </div>
                 </div>
                 <div class="input-group" id="claimsRateGroup">
                     <label id="claimsRateLabel" for="claimsRate">Claims Rate %</label>
@@ -1075,21 +1084,36 @@
                         <button class="itype-btn" id="claimsCountBtn" onclick="setClaimsType('count')">#</button>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label for="avgShipping">Avg Shipping</label>
-                    <input type="text" id="avgShipping" placeholder="$">
-                </div>
-                <div class="input-group" id="csCostGroup">
-                    <label for="csCostPerClaim">Avg Ticket Cost</label>
-                    <input type="text" id="csCostPerClaim" placeholder="$">
-                </div>
                 <div class="input-group" id="protectionPremiumGroup">
                     <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
                     <input type="text" id="protectionPremium" placeholder="0">
                 </div>
-                <div class="input-group">
+            </div>
+
+            <!-- Additional Merchant Inputs (collapsible) -->
+            <button class="additional-inputs-toggle" id="additionalInputsToggle" onclick="toggleAdditionalInputs()">
+                <span class="add-inputs-arrow" id="addInputsArrow">▶</span> Additional Inputs
+            </button>
+            <div class="additional-inputs-body" id="additionalInputsBody">
+                <div class="input-group" id="attachRateGroup">
                     <label for="attachRate">Attach Rate %</label>
-                    <input type="text" id="attachRate" placeholder="0">
+                    <input type="text" id="attachRate" placeholder="0" value="68">
+                </div>
+                <div class="input-group" id="cogsGroup">
+                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
+                    <div class="input-with-type">
+                        <input type="text" id="cogsPercent" placeholder="0" value="38">
+                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
+                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
+                    </div>
+                </div>
+                <div class="input-group" id="avgShippingGroup">
+                    <label for="avgShipping">Avg Shipping</label>
+                    <input type="text" id="avgShipping" placeholder="$" value="8">
+                </div>
+                <div class="input-group" id="csCostGroup">
+                    <label for="csCostPerClaim">Avg Ticket Cost</label>
+                    <input type="text" id="csCostPerClaim" placeholder="$" value="5">
                 </div>
                 <div class="input-group">
                     <label for="revenueShare">Rev Share %</label>
@@ -1611,6 +1635,13 @@
             calculate();
         }
 
+        function toggleAdditionalInputs() {
+            const body  = document.getElementById('additionalInputsBody');
+            const arrow = document.getElementById('addInputsArrow');
+            const isOpen = body.classList.toggle('open');
+            arrow.classList.toggle('open', isOpen);
+        }
+
         function updateWidgetPreviewVisibility() {
             const anyEnabled = returnsEnabled || cashbackEnabled || guaranteeEnabled || returnsOffsetMode;
             const viewInputs = document.getElementById('viewInputsCheck').checked;
@@ -1740,7 +1771,7 @@
             const btn = document.getElementById('returnsOffsetModeToggle');
 
             const roHideOutputs   = ['totalClaimsMetric', 'protectedClaimsMetric'];
-            const roHideInputs    = ['cogsGroup', 'claimsRateGroup', 'csCostGroup', 'claimResSelectorWrapper'];
+            const roHideInputs    = ['claimsRateGroup', 'additionalInputsToggle', 'additionalInputsBody', 'claimResSelectorWrapper'];
             const roHideCardGrids = ['mainCostGrid', 'mainRevenueGrid'];
             const roHideToggleBtns = ['returnsToggle', 'cashbackToggle', 'guaranteeToggle'];
 
@@ -2003,14 +2034,15 @@
                 document.getElementById('totalReturnsLabel').textContent = 'Total Returns';
                 document.getElementById('totalReturns').textContent = formatNumber(totalReturns);
             }
-            document.getElementById('costPerReship').textContent = formatCurrency(costPerReship);
+            document.getElementById('costPerReship').textContent = formatCurrencyWithCents(costPerReship);
             document.getElementById('csCost').textContent = formatCurrency(csShippingCost);
             document.getElementById('cogs').textContent = formatCurrency(cogs);
             document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalLost);
             document.getElementById('returnLabelsCost').textContent = formatCurrency(returnLabelsCostTotal);
             document.getElementById('returnsPlatformCostDisplay').textContent = formatCurrency(periodPlatformCost);
             document.getElementById('totalReturnsCost').textContent = formatCurrency(totalReturnsCost);
-            document.getElementById('secondSale').textContent = formatCurrencyWithCents(siClaimValue);
+            const secondSaleEl = document.getElementById('secondSale');
+            if (secondSaleEl) secondSaleEl.textContent = formatCurrencyWithCents(siClaimValue);
             document.getElementById('siFundedReships').textContent = formatCurrency(siFundedReships);
             document.getElementById('revenueShareAmount').textContent = formatCurrency(revenueShareAmount);
             document.getElementById('extraRevenue').textContent = formatCurrency(extraRevenue);
@@ -2133,6 +2165,9 @@
                 document.getElementById('revenueShare').value = s('revenueShare') || '35';
                 document.getElementById('attachRate').value = s('attachRate') || '68';
                 document.getElementById('protectionPremium').value = s('protectionPremium') || '3.00';
+                if (!s('cogsPercent')) document.getElementById('cogsPercent').value = '38';
+                if (!s('avgShipping')) document.getElementById('avgShipping').value = '8';
+                if (!s('csCostPerClaim')) document.getElementById('csCostPerClaim').value = '5';
                 document.getElementById('timeframe').value = s('timeframe') || 'monthly';
                 document.getElementById('pricingTemplate').value = s('pricingTemplate') || 'percentage';
                 if (s('cogsType')) setCogsType(s('cogsType'));
@@ -2309,6 +2344,9 @@
             document.getElementById('protectionPremium').value = '3.00';
             document.getElementById('attachRate').value = '68';
             document.getElementById('revenueShare').value = '35';
+            document.getElementById('cogsPercent').value = '38';
+            document.getElementById('avgShipping').value = '8';
+            document.getElementById('csCostPerClaim').value = '5';
             document.getElementById('returnsRate').value = '';
             document.getElementById('returnsPlatformCost').value = '';
             document.getElementById('cashbackRate').value = '5';
@@ -2316,6 +2354,9 @@
             document.getElementById('cashbackRedemptionRate').value = '5';
             document.getElementById('timeframe').value = 'monthly';
             document.getElementById('pricingTemplate').value = 'percentage';
+            // Close additional inputs drawer
+            document.getElementById('additionalInputsBody').classList.remove('open');
+            document.getElementById('addInputsArrow').classList.remove('open');
             setCogsType('pct');
             setClaimsType('pct');
             setReturnsType('pct');
