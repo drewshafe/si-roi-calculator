@@ -839,6 +839,60 @@
         .wp-ext-row { display: flex; align-items: flex-start; gap: 10px; }
         .wp-ext-icon { font-size: 1.5em; flex-shrink: 0; margin-top: 1px; }
         .wp-ext-text { flex: 1; }
+
+        /* ── Widget Inline layout ── */
+        #widgetMiddleWrapper {
+            /* default: transparent wrapper, children flow normally */
+        }
+        #widgetMiddleWrapper.widget-active {
+            display: grid;
+            grid-template-columns: 57fr 43fr;
+            align-items: stretch;
+            border-bottom: 2px solid #e0e3f5;
+        }
+        #widgetMiddleWrapper.widget-active #inlineWidgetContainer {
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 22px 20px;
+            background: white;
+            border-right: 2px solid #e0e3f5;
+        }
+        .widget-type-label {
+            font-size: 1.15em;
+            font-weight: 800;
+            color: #4a5fc1;
+            align-self: flex-start;
+        }
+        /* In widget-active mode: stack middle-section content vertically,
+           reordering so: red card → blue box → green card */
+        #widgetMiddleWrapper.widget-active .middle-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px;
+        }
+        #widgetMiddleWrapper.widget-active .revenue-impact-row {
+            order: 2;
+        }
+        #widgetMiddleWrapper.widget-active .cards-row {
+            display: contents;  /* lift cards into flex flow so order works */
+        }
+        #widgetMiddleWrapper.widget-active .result-card.negative {
+            order: 1;
+        }
+        #widgetMiddleWrapper.widget-active .result-card.positive {
+            order: 3;
+        }
+        #widgetMiddleWrapper.widget-active .revenue-impact-box {
+            min-width: unset;
+            padding: 10px 16px;
+        }
+        #widgetMiddleWrapper.widget-active .impact-value {
+            font-size: 2.2em;
+        }
     </style>
 </head>
 <body>
@@ -868,9 +922,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Inline Widget Preview (renders here when "Show Widget Preview" checkbox is checked) -->
-        <div id="inlineWidgetContainer" style="display:none; background:#f4f5fb; padding:12px 16px; border-bottom:2px solid #e0e3f5;"></div>
 
         <!-- Outputs strip: gray metric boxes across the top -->
         <div class="outputs-strip">
@@ -911,6 +962,15 @@
                 </div>
 
             </div>
+        </div>
+
+        <!-- Widget + Middle section wrapper (becomes 2-col grid when inline widget active) -->
+        <div id="widgetMiddleWrapper">
+
+        <!-- Inline Widget Preview -->
+        <div id="inlineWidgetContainer" style="display:none;">
+            <div class="widget-type-label" id="widgetTypeLabel">Dual Checkout Example</div>
+            <!-- wp-card renders here -->
         </div>
 
         <!-- Middle section: % box centered above, red | green cards below -->
@@ -1054,6 +1114,8 @@
             </div><!-- /cards-row -->
         </div><!-- /middle-section -->
 
+        </div><!-- /widgetMiddleWrapper -->
+
         <!-- Bottom: Merchant Inputs strip -->
         <div class="inputs-strip">
             <div class="inputs-strip-header">
@@ -1142,7 +1204,7 @@
                 </div>
                 <div class="input-group cashback">
                     <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
-                    <input type="text" id="cashbackRedemptionRate" placeholder="5" value="5">
+                    <input type="text" id="cashbackRedemptionRate" placeholder="10" value="10">
                 </div>
             </div>
 
@@ -1204,10 +1266,10 @@
                     <span>＋</span> Protection + Returns
                 </button>
                 <button id="cashbackToggle" class="cashback-toggle-btn">
-                    <span>＋</span> Protection + Customer Cashback
+                    <span>＋</span> Customer Cashback
                 </button>
                 <button id="guaranteeToggle" class="guarantee-toggle-btn">
-                    <span>＋</span> Protection + Guarantee
+                    <span>＋</span> Guarantee
                 </button>
             <div class="si-selectors-row" style="width:100%; padding: 8px 0 0; border-top: 1px solid #e0e3f5; margin-top: 4px;">
                 <div class="si-selector">
@@ -1632,13 +1694,13 @@
             const btn = document.getElementById('cashbackToggle');
             if (cashbackEnabled) {
                 btn.classList.add('active');
-                btn.innerHTML = '<span>✓</span> Protection + Customer Cashback';
+                btn.innerHTML = '<span>✓</span> Customer Cashback';
                 document.getElementById('cashbackInputs').classList.add('visible');
                 document.getElementById('cashbackOffsetResults').classList.add('visible');
                 document.getElementById('cashbackMetric').style.display = 'block';
             } else {
                 btn.classList.remove('active');
-                btn.innerHTML = '<span>＋</span> Protection + Customer Cashback';
+                btn.innerHTML = '<span>＋</span> Customer Cashback';
                 document.getElementById('cashbackInputs').classList.remove('visible');
                 document.getElementById('cashbackOffsetResults').classList.remove('visible');
                 document.getElementById('cashbackMetric').style.display = 'none';
@@ -1664,7 +1726,7 @@
             const gClaimInput = document.getElementById('guaranteeClaimRateInput');
             if (guaranteeEnabled) {
                 btn.classList.add('active');
-                btn.innerHTML = '<span>✓</span> Protection + Guarantee';
+                btn.innerHTML = '<span>✓</span> Guarantee';
                 document.getElementById('guaranteeResults').classList.add('visible');
                 if (gInputs) gInputs.style.display = '';
                 // Pre-fill with 1.5× current claims rate if empty
@@ -1674,7 +1736,7 @@
                 }
             } else {
                 btn.classList.remove('active');
-                btn.innerHTML = '<span>＋</span> Protection + Guarantee';
+                btn.innerHTML = '<span>＋</span> Guarantee';
                 document.getElementById('guaranteeResults').classList.remove('visible');
                 if (gInputs) gInputs.style.display = 'none';
                 if (gClaimInput) gClaimInput.value = '';
@@ -1709,20 +1771,41 @@
             updateWidgetPreview();
         }
 
+        const _widgetTypeNames = {
+            'dual':       'Dual Checkout',
+            'dual-plus':  'Dual Checkout+',
+            'toggle':     'Cart Toggle',
+            'cart-cb':    'Cart Checkbox',
+            'extension':  'Checkout Extension'
+        };
+
         function updateWidgetPreview() {
             // Determine render target: inline container or SI inputs area
             const showInlineEl = document.getElementById('showWidgetInline');
             const showInline   = showInlineEl && showInlineEl.checked;
             const inlineContainer = document.getElementById('inlineWidgetContainer');
+            const wrapper = document.getElementById('widgetMiddleWrapper');
             const siArea = document.getElementById('widgetPreviewArea');
 
             let area;
             if (showInline && inlineContainer) {
                 inlineContainer.style.display = '';
-                area = inlineContainer;
+                if (wrapper) wrapper.classList.add('widget-active');
+                // Set the type label
+                const lbl = document.getElementById('widgetTypeLabel');
+                if (lbl) lbl.textContent = (_widgetTypeNames[_widgetType] || _widgetType) + ' Example';
+                // Render into a child div (not into the whole container which also has the label)
+                let previewTarget = document.getElementById('inlineWidgetPreviewArea');
+                if (!previewTarget) {
+                    previewTarget = document.createElement('div');
+                    previewTarget.id = 'inlineWidgetPreviewArea';
+                    inlineContainer.appendChild(previewTarget);
+                }
+                area = previewTarget;
                 if (siArea) siArea.innerHTML = '';
             } else {
                 if (inlineContainer) inlineContainer.style.display = 'none';
+                if (wrapper) wrapper.classList.remove('widget-active');
                 area = siArea;
             }
             if (!area) return;
@@ -1958,7 +2041,7 @@
             const cashbackRate        = (parseFloat(removeCommas(document.getElementById('cashbackRate').value)) || 5) / 100;
             const minCashback         = parseFloat(removeCommas(document.getElementById('minCashback').value)) || 5;
             const _cbrRaw = document.getElementById('cashbackRedemptionRate').value.trim();
-            const cashbackRedemptionRate  = (_cbrRaw === '' ? 5 : (parseFloat(removeCommas(_cbrRaw)) || 0)) / 100;
+            const cashbackRedemptionRate  = (_cbrRaw === '' ? 10 : (parseFloat(removeCommas(_cbrRaw)) || 0)) / 100;
 
             // COGS: % or flat $
             const cogsRaw = parseFloat(removeCommas(document.getElementById('cogsPercent').value)) || 0;
@@ -2097,11 +2180,12 @@
 
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
             const extraRevenue = claimsExtra
-                + (guaranteeEnabled ? gSiFundedClaims   : 0)
-                + (returnsEnabled  ? totalReturnsOffset : 0)
-                + (cashbackEnabled ? cashbackRedeemed   : 0);  // redeemed cashback flows back to merchant as repeat revenue
+                + (guaranteeEnabled ? gSiFundedClaims         : 0)
+                + (returnsEnabled  ? totalReturnsOffset       : 0)
+                + (cashbackEnabled ? totalCashbackValueTotal  : 0);  // repeat revenue driven by cashback redemptions
             const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
-            const siFundedPct = premiumPool > 0 ? (siFundedReships / premiumPool) * 100 : 0;
+            // Claims impact includes base SI funded claims + guarantee funded claims
+            const siFundedPct = premiumPool > 0 ? ((siFundedReships + (guaranteeEnabled ? gSiFundedClaims : 0)) / premiumPool) * 100 : 0;
             const revenueSharePct = premiumPool > 0 ? (revenueShareAmount / premiumPool) * 100 : 0;
             const returnsOffsetPct = (returnsEnabled && premiumPool > 0) ? (totalReturnsOffset / premiumPool) * 100 : 0;
 
@@ -2167,7 +2251,7 @@
             document.getElementById('revShareImpactPct').style.display = rsZero ? 'none' : '';
             document.getElementById('returnsOffsetImpactPct').textContent = returnsOffsetPct.toFixed(1) + '% from returns';
             document.getElementById('returnsOffsetImpactPct').style.display = returnsEnabled ? '' : 'none';
-            const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (cashbackRedeemed / premiumPool) * 100 : 0;
+            const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (totalCashbackValueTotal / premiumPool) * 100 : 0;
             document.getElementById('cashbackImpactPct').textContent = cashbackPct.toFixed(1) + '% from cashback';
             document.getElementById('cashbackImpactPct').style.display = cashbackEnabled ? '' : 'none';
 
@@ -2430,7 +2514,7 @@
                 'funded + rev share',
                 d.guaranteeEnabled ? '+ guarantee claims' : '',
                 d.returnsEnabled ? '+ returns offset' : '',
-                d.cashbackEnabled ? '+ cashback' : ''
+                d.cashbackEnabled ? '+ repeat revenue' : ''
             ].filter(Boolean).join(' ');
             revHTML +=
                 row('Extra Revenue With SI', extraLabel, fc(d.extraRevenue), 'sep positive') +
@@ -2456,7 +2540,7 @@
             document.getElementById('returnsPlatformCost').value = '';
             document.getElementById('cashbackRate').value = '5';
             document.getElementById('minCashback').value = '5';
-            document.getElementById('cashbackRedemptionRate').value = '5';
+            document.getElementById('cashbackRedemptionRate').value = '10';
             document.getElementById('timeframe').value = 'monthly';
             document.getElementById('pricingTemplate').value = 'percentage';
             // Close additional inputs drawer
