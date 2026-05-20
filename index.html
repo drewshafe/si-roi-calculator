@@ -623,6 +623,85 @@
         .bd-row.sep .bd-lbl { color: #212529; font-weight: 700; }
         .bd-row.sep.negative .bd-val { color: #dc3545; font-weight: 700; }
         .bd-row.sep.positive .bd-val { color: #28a745; font-weight: 700; }
+
+        /* ── Badge area in top strip ── */
+        .badge-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+        }
+        .badge-area img {
+            height: 36px;
+            object-fit: contain;
+        }
+
+        /* ── ShipInsure Inputs section ── */
+        .si-inputs-section {
+            border-top: 2px solid #e0e3f5;
+            background: #f4f5fb;
+        }
+        .si-inputs-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 16px;
+            gap: 12px;
+        }
+        .si-inputs-title {
+            font-size: 0.72em;
+            font-weight: 800;
+            color: #4a5fc1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .view-inputs-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            user-select: none;
+        }
+        .view-inputs-label input[type="checkbox"] {
+            accent-color: #4a5fc1;
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+        .si-inputs-body {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 16px 12px;
+        }
+        .si-inputs-body.hidden { display: none; }
+
+        /* ── Claim resolution toggle ── */
+        .claim-res-group {
+            display: flex;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        .claim-res-btn {
+            padding: 6px 10px;
+            font-size: 0.76em;
+            font-weight: 700;
+            border: none;
+            background: #f0f0f0;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+            border-right: 1px solid #ddd;
+        }
+        .claim-res-btn:last-child { border-right: none; }
+        .claim-res-btn.active { background: #4a5fc1; color: white; }
     </style>
 </head>
 <body>
@@ -634,6 +713,12 @@
                 <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/2026si.png"
                      alt="ShipInsure" class="logo-img"
                      onerror="this.style.display='none'">
+            </div>
+            <div class="badge-area" id="badgeArea">
+                <img id="ppBadge" src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/ppbadge.png" alt="Protection" onerror="this.style.display='none'">
+                <img id="rBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/rbadge.png"  alt="Returns Offset" style="display:none;" onerror="this.style.display='none'">
+                <img id="cbBadge" src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cbbadge.png" alt="Cashback" style="display:none;" onerror="this.style.display='none'">
+                <img id="gBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/sgbadge.png" alt="Guarantee" style="display:none;" onerror="this.style.display='none'">
             </div>
             <div class="controls-area">
                 <div class="view-selector">
@@ -742,7 +827,7 @@
                 <!-- Left: Total Cost Without ShipInsure -->
                 <div class="result-card negative">
                     <div class="card-header">
-                        <h3 id="lostRevenueLabel">Total Cost Without ShipInsure</h3>
+                        <h3 id="lostRevenueLabel">Current Cost (Without ShipInsure)</h3>
                         <div class="card-total negative" id="lostRevenue">$0</div>
                     </div>
                     <div class="metrics-grid" id="mainCostGrid">
@@ -786,18 +871,16 @@
                     </div>
                     <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
-                            <h4>SI Second Sale Per Reship</h4>
+                            <h4 id="siClaimLabel">SI Funded Claim (Reship = 2nd Sale)</h4>
                             <div class="value" id="secondSale">$0</div>
                         </div>
                         <div class="metric-item">
                             <h4>SI Funded Reships/Refunds</h4>
                             <div class="value" id="siFundedReships">$0</div>
-                            <div class="pct-bubble" id="siFundedPct"></div>
                         </div>
                         <div class="metric-item">
                             <h4>Revenue Share</h4>
                             <div class="value" id="revenueShareAmount">$0</div>
-                            <div class="pct-bubble" id="revenueSharePct"></div>
                         </div>
                     </div>
                     <div id="returnsOffsetResults" class="returns-results">
@@ -870,18 +953,6 @@
             <div class="inputs-strip-header">
                 <span class="inputs-strip-title">Merchant Inputs</span>
                 <div class="inputs-strip-actions">
-                    <button id="returnsOffsetModeToggle" class="returns-offset-toggle-btn">
-                        <span>＋</span> Returns Offset
-                    </button>
-                    <button id="returnsToggle" class="returns-toggle-btn">
-                        <span>＋</span> Protection + Returns
-                    </button>
-                    <button id="cashbackToggle" class="cashback-toggle-btn">
-                        <span>＋</span> Protection + Customer Cashback
-                    </button>
-                    <button id="guaranteeToggle" class="guarantee-toggle-btn">
-                        <span>＋</span> Protection + Guarantee
-                    </button>
                     <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
                 </div>
             </div>
@@ -918,6 +989,13 @@
                 <div class="input-group" id="csCostGroup">
                     <label for="csCostPerClaim">Avg Ticket Cost</label>
                     <input type="text" id="csCostPerClaim" placeholder="$">
+                </div>
+                <div class="input-group" id="claimResGroup">
+                    <label>Claim Resolution</label>
+                    <div class="claim-res-group">
+                        <button class="claim-res-btn active" id="claimRes2ndSaleBtn" onclick="setClaimResolution('2ndsale')">Reship = 2nd Sale</button>
+                        <button class="claim-res-btn" id="claimResCOGSBtn" onclick="setClaimResolution('cogs')">Reship @ COGS</button>
+                    </div>
                 </div>
                 <div class="input-group" id="protectionPremiumGroup">
                     <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
@@ -996,6 +1074,31 @@
             </div>
         </div>
 
+        <!-- ShipInsure Inputs section -->
+        <div class="si-inputs-section">
+            <div class="si-inputs-header">
+                <span class="si-inputs-title">ShipInsure Inputs</span>
+                <label class="view-inputs-label">
+                    <input type="checkbox" id="viewInputsCheck" checked>
+                    View Inputs
+                </label>
+            </div>
+            <div class="si-inputs-body" id="siInputsBody">
+                <button id="returnsOffsetModeToggle" class="returns-offset-toggle-btn">
+                    <span>＋</span> Returns Offset
+                </button>
+                <button id="returnsToggle" class="returns-toggle-btn">
+                    <span>＋</span> Protection + Returns
+                </button>
+                <button id="cashbackToggle" class="cashback-toggle-btn">
+                    <span>＋</span> Protection + Customer Cashback
+                </button>
+                <button id="guaranteeToggle" class="guarantee-toggle-btn">
+                    <span>＋</span> Protection + Guarantee
+                </button>
+            </div>
+        </div>
+
     </div><!-- /container -->
 
     <script>
@@ -1003,9 +1106,10 @@
         let cashbackEnabled     = false;
         let guaranteeEnabled    = false;
         let returnsOffsetMode   = false;
-        let _cogsType    = 'pct';   // 'pct' | 'flat'
-        let _claimsType  = 'pct';   // 'pct' | 'count'
-        let _returnsType = 'pct';   // 'pct' | 'count'
+        let _cogsType        = 'pct';     // 'pct' | 'flat'
+        let _claimsType      = 'pct';     // 'pct' | 'count'
+        let _returnsType     = 'pct';     // 'pct' | 'count'
+        let _claimResolution = '2ndsale'; // '2ndsale' | 'cogs'
 
         function setCogsType(t) {
             _cogsType = t;
@@ -1030,6 +1134,25 @@
             document.getElementById('retCountBtn').classList.toggle('active', t === 'count');
             updateDynamicLabels();
             calculate();
+        }
+
+        function setClaimResolution(t) {
+            _claimResolution = t;
+            document.getElementById('claimRes2ndSaleBtn').classList.toggle('active', t === '2ndsale');
+            document.getElementById('claimResCOGSBtn').classList.toggle('active', t === 'cogs');
+            const lbl = document.getElementById('siClaimLabel');
+            if (lbl) lbl.textContent = t === 'cogs'
+                ? 'SI Funded Claim (Reship @ COGS)'
+                : 'SI Funded Claim (Reship = 2nd Sale)';
+            calculate();
+        }
+
+        function updateBadges() {
+            // ppBadge: always on unless guaranteeEnabled (guarantee has its own badge)
+            document.getElementById('ppBadge').style.display  = guaranteeEnabled ? 'none' : '';
+            document.getElementById('rBadge').style.display   = (returnsEnabled || returnsOffsetMode) ? '' : 'none';
+            document.getElementById('cbBadge').style.display  = cashbackEnabled ? '' : 'none';
+            document.getElementById('gBadge').style.display   = guaranteeEnabled ? '' : 'none';
         }
 
         function updateDynamicLabels() {
@@ -1228,6 +1351,7 @@
                 document.getElementById('totalReturnsMetric').style.display = 'none';
                 document.getElementById('premiumsBadgeSub').style.display = 'none';
             }
+            updateBadges();
             calculate();
         }
 
@@ -1247,6 +1371,7 @@
                 document.getElementById('cashbackOffsetResults').classList.remove('visible');
                 document.getElementById('cashbackMetric').style.display = 'none';
             }
+            updateBadges();
             calculate();
         }
 
@@ -1262,6 +1387,7 @@
                 btn.innerHTML = '<span>＋</span> Protection + Guarantee';
                 document.getElementById('guaranteeResults').classList.remove('visible');
             }
+            updateBadges();
             calculate();
         }
 
@@ -1269,8 +1395,8 @@
             returnsOffsetMode = !returnsOffsetMode;
             const btn = document.getElementById('returnsOffsetModeToggle');
 
-            const roHideOutputs = ['totalClaimsMetric', 'protectedClaimsMetric'];
-            const roHideInputs  = ['cogsGroup', 'claimsRateGroup', 'csCostGroup'];
+            const roHideOutputs   = ['totalClaimsMetric', 'protectedClaimsMetric'];
+            const roHideInputs    = ['cogsGroup', 'claimsRateGroup', 'csCostGroup', 'claimResGroup'];
             const roHideCardGrids = ['mainCostGrid', 'mainRevenueGrid'];
             const roHideToggleBtns = ['returnsToggle', 'cashbackToggle', 'guaranteeToggle'];
 
@@ -1313,8 +1439,8 @@
                     if (el) el.style.display = 'none';
                 });
 
-                // Hide revenue-impact % box (not meaningful in pure returns offset context)
-                document.querySelector('.revenue-impact-row').style.display = 'none';
+                // In RO mode, hide claims impact from the Premiums You Keep box
+                document.getElementById('claimsImpactPct').style.display = 'none';
 
             } else {
                 btn.classList.remove('active');
@@ -1347,11 +1473,9 @@
                     const el = document.getElementById(id);
                     if (el) el.style.display = '';
                 });
-
-                // Restore revenue-impact % box
-                document.querySelector('.revenue-impact-row').style.display = '';
             }
 
+            updateBadges();
             calculate();
         }
 
@@ -1411,6 +1535,7 @@
                 localStorage.setItem('shipinsure_cashbackRate', document.getElementById('cashbackRate').value);
                 localStorage.setItem('shipinsure_minCashback', document.getElementById('minCashback').value);
                 localStorage.setItem('shipinsure_cashbackRedemptionRate', document.getElementById('cashbackRedemptionRate').value);
+                localStorage.setItem('shipinsure_claimResolution', _claimResolution);
             }
 
             if (document.getElementById('linkDisplay').style.display === 'flex') {
@@ -1458,7 +1583,9 @@
             const cogs = totalClaims * (avgOrderValue * cogsPercent);
             const lostRevenue = csShippingCost + cogs;
             const premiumPool = protectedOrders * avgPremium;
-            const siFundedReships = claimsOffset * avgOrderValue;
+            // Claim resolution: 2nd Sale (@ AOV) or @ COGS (actual fulfillment cost)
+            const siClaimValue = _claimResolution === 'cogs' ? costPerReship : avgOrderValue;
+            const siFundedReships = claimsOffset * siClaimValue;
 
             // Compute returns first so label costs can be deducted before rev share is calculated
             let totalReturns = 0, returnLabelsCostTotal = 0, totalReturnsCost = 0;
@@ -1538,7 +1665,7 @@
             document.getElementById('returnLabelsCost').textContent = formatCurrency(returnLabelsCostTotal);
             document.getElementById('returnsPlatformCostDisplay').textContent = formatCurrency(periodPlatformCost);
             document.getElementById('totalReturnsCost').textContent = formatCurrency(totalReturnsCost);
-            document.getElementById('secondSale').textContent = formatCurrency(avgOrderValue);
+            document.getElementById('secondSale').textContent = formatCurrencyWithCents(siClaimValue);
             document.getElementById('siFundedReships').textContent = formatCurrency(siFundedReships);
             document.getElementById('revenueShareAmount').textContent = formatCurrency(revenueShareAmount);
             document.getElementById('extraRevenue').textContent = formatCurrency(extraRevenue);
@@ -1560,30 +1687,30 @@
             document.getElementById('cashbackImpactPct').textContent = cashbackPct.toFixed(1) + '% from cashback';
             document.getElementById('cashbackImpactPct').style.display = cashbackEnabled ? '' : 'none';
 
-            // % bubbles
-            const showBubbles = premiumPool > 0;
-            const siFundedPctEl = document.getElementById('siFundedPct');
-            const revenueSharePctEl = document.getElementById('revenueSharePct');
-            if (showBubbles) {
-                siFundedPctEl.style.display = 'inline-block';
-                siFundedPctEl.textContent = siFundedPct.toFixed(0) + '% of premiums';
-                revenueSharePctEl.style.display = 'inline-block';
-                revenueSharePctEl.textContent = revenueSharePct.toFixed(0) + '% of premiums';
-            } else {
-                siFundedPctEl.style.display = 'none';
-                revenueSharePctEl.style.display = 'none';
-            }
+            // (pct bubbles removed)
 
             // Returns Offset Mode — override relevant display values
             if (returnsOffsetMode) {
                 // Post-Returns Balance = Premiums − Return Labels − Platform Cost (no claims deduction)
                 const roBalance = premiumPool - siCoveredLabels - siCoveredPlatform;
                 const roRevShare = Math.max(0, roBalance) * revenueShare;
+                const roTotal = totalReturnsOffset + roRevShare;
+                const roPct = premiumPool > 0 ? (roTotal / premiumPool) * 100 : 0;
+                const roRevSharePct = premiumPool > 0 ? (roRevShare / premiumPool) * 100 : 0;
+                const roReturnsPct = premiumPool > 0 ? ((siCoveredLabels + siCoveredPlatform) / premiumPool) * 100 : 0;
+
                 document.getElementById('postClaimBalance').textContent = formatCurrency(roBalance);
-                // Left card total = total returns cost only
                 document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalReturnsCost);
-                // Right card total = returns offset only
-                document.getElementById('extraRevenue').textContent = formatCurrency(totalReturnsOffset + roRevShare);
+                document.getElementById('extraRevenue').textContent = formatCurrency(roTotal);
+
+                // Override Premiums You Keep box for RO mode
+                document.getElementById('percentOfPremiums').textContent = roPct.toFixed(1) + '%';
+                document.getElementById('revShareImpactPct').textContent = roRevSharePct.toFixed(1) + '% from rev share';
+                document.getElementById('revShareImpactPct').style.display = '';
+                document.getElementById('returnsOffsetImpactPct').textContent = roReturnsPct.toFixed(1) + '% from returns';
+                document.getElementById('returnsOffsetImpactPct').style.display = '';
+                document.getElementById('claimsImpactPct').style.display = 'none';
+                document.getElementById('cashbackImpactPct').style.display = 'none';
             }
 
             // Guarantee section — 1.5× claim rate
@@ -1606,6 +1733,7 @@
                 csPerClaim: csCostPerClaim, attachP: attachRate, avgPremium, revShareP: revenueShare,
                 protectedOrders, totalClaims, protectedClaims: claimsOffset,
                 costPerReship, csCostTotal: csShippingCost, cogsAmount: cogs, totalLost,
+                siClaimValue,
                 premiumPool, siFundedReships, postClaimBalance, revenueShareAmount, extraRevenue,
                 percentOfPremiums, siFundedPct, revenueSharePct,
                 avgShipping,
@@ -1672,6 +1800,7 @@
                 if (s('cashbackRedemptionRate')) document.getElementById('cashbackRedemptionRate').value = s('cashbackRedemptionRate');
                 if (s('cashbackEnabled') === '1') toggleCashback();
                 if (s('guaranteeEnabled') === '1') toggleGuarantee();
+                if (s('claimResolution')) setClaimResolution(s('claimResolution'));
             }
         }
 
@@ -1793,7 +1922,7 @@
                 row('Protected Orders',   `${fn(d.orders)} × ${pct(d.attachP)}`,             fn(d.protectedOrders)) +
                 row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
                 row('Protected Claims',   `${fn(d.protectedOrders)} × ${pct(d.claimsP)}`,    fn(d.protectedClaims)) +
-                row('SI Funded (@ AOV)',  `${fn(d.protectedClaims)} claims × ${fcc(d.aov)}`, fc(d.siFundedReships)) +
+                row('SI Funded Claim',    `${fn(d.protectedClaims)} claims × ${fcc(d.siClaimValue)}`, fc(d.siFundedReships)) +
                 row('Post-Claim Balance', [
                     'Premiums − SI Funded',
                     d.returnsEnabled  ? '− Return Labels' : '',
@@ -1896,6 +2025,9 @@
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
         document.getElementById('cashbackToggle').addEventListener('click', toggleCashback);
         document.getElementById('guaranteeToggle').addEventListener('click', toggleGuarantee);
+        document.getElementById('viewInputsCheck').addEventListener('change', function() {
+            document.getElementById('siInputsBody').classList.toggle('hidden', !this.checked);
+        });
         ['cashbackRate','minCashback','cashbackRedemptionRate'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculate);
         });
@@ -1904,6 +2036,7 @@
 
         loadSavedValues();
         toggleProtectionPremiumVisibility();
+        updateBadges();
         calculate();
     </script>
 </body>
