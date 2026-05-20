@@ -680,28 +680,39 @@
         }
         .si-inputs-body.hidden { display: none; }
 
-        /* ── Claim resolution toggle ── */
-        .claim-res-group {
+        /* ── SI inputs section selectors row ── */
+        .si-selectors-row {
             display: flex;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #ddd;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 6px 16px 12px;
+            border-top: 1px solid #e0e3f5;
+        }
+        .si-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             background: white;
+            border: 1px solid #d0d4e8;
+            padding: 5px 10px;
+            border-radius: 6px;
         }
-        .claim-res-btn {
-            padding: 6px 10px;
-            font-size: 0.76em;
+        .si-selector label {
+            font-size: 0.79em;
             font-weight: 700;
-            border: none;
-            background: #f0f0f0;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.15s;
+            color: #4a5fc1;
             white-space: nowrap;
-            border-right: 1px solid #ddd;
         }
-        .claim-res-btn:last-child { border-right: none; }
-        .claim-res-btn.active { background: #4a5fc1; color: white; }
+        .si-selector select {
+            padding: 4px 8px;
+            font-size: 0.79em;
+            border-radius: 5px;
+            border: 1px solid #d0d4e8;
+            background: white;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -726,28 +737,6 @@
                     <select id="timeframe">
                         <option value="monthly">Monthly</option>
                         <option value="annual">Annual</option>
-                    </select>
-                </div>
-                <div class="view-selector">
-                    <label for="pricingTemplate">Pricing:</label>
-                    <select id="pricingTemplate">
-                        <option value="percentage">%-Based</option>
-                        <option value="flat_dollar">$-Based</option>
-                        <option value="1.5_accurate">1.5% Acc</option>
-                        <option value="2_accurate">2% Acc</option>
-                        <option value="2_round_50">2% Round</option>
-                        <option value="2.5_accurate">2.5% Acc</option>
-                        <option value="3_accurate">3% Acc</option>
-                        <option value="3.5_accurate">3.5% Acc</option>
-                        <option value="static_1.50_300_2.00">Static $1.50/$2</option>
-                        <option value="flat_1.50">Flat $1.50</option>
-                        <option value="flat_5.95">Flat $5.95</option>
-                        <option value="2_flat_0.98">2% Min $0.98</option>
-                        <option value="3_accurate_100_1.95">3% Min $1.95</option>
-                        <option value="3.25_1.55">3.25% Min $1.55</option>
-                        <option value="2.5_1.95">2.5% Min $1.95</option>
-                        <option value="born_primitive">Born Prim</option>
-                        <option value="og_6.5_19.99_3">OG 6.5%/$19.99/3%</option>
                     </select>
                 </div>
             </div>
@@ -990,13 +979,6 @@
                     <label for="csCostPerClaim">Avg Ticket Cost</label>
                     <input type="text" id="csCostPerClaim" placeholder="$">
                 </div>
-                <div class="input-group" id="claimResGroup">
-                    <label>Claim Resolution</label>
-                    <div class="claim-res-group">
-                        <button class="claim-res-btn active" id="claimRes2ndSaleBtn" onclick="setClaimResolution('2ndsale')">Reship = 2nd Sale</button>
-                        <button class="claim-res-btn" id="claimResCOGSBtn" onclick="setClaimResolution('cogs')">Reship @ COGS</button>
-                    </div>
-                </div>
                 <div class="input-group" id="protectionPremiumGroup">
                     <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
                     <input type="text" id="protectionPremium" placeholder="0">
@@ -1097,6 +1079,37 @@
                     <span>＋</span> Protection + Guarantee
                 </button>
             </div>
+            <div class="si-selectors-row">
+                <div class="si-selector">
+                    <label for="pricingTemplate">Pricing:</label>
+                    <select id="pricingTemplate">
+                        <option value="percentage">%-Based</option>
+                        <option value="flat_dollar">$-Based</option>
+                        <option value="1.5_accurate">1.5% Acc</option>
+                        <option value="2_accurate">2% Acc</option>
+                        <option value="2_round_50">2% Round</option>
+                        <option value="2.5_accurate">2.5% Acc</option>
+                        <option value="3_accurate">3% Acc</option>
+                        <option value="3.5_accurate">3.5% Acc</option>
+                        <option value="static_1.50_300_2.00">Static $1.50/$2</option>
+                        <option value="flat_1.50">Flat $1.50</option>
+                        <option value="flat_5.95">Flat $5.95</option>
+                        <option value="2_flat_0.98">2% Min $0.98</option>
+                        <option value="3_accurate_100_1.95">3% Min $1.95</option>
+                        <option value="3.25_1.55">3.25% Min $1.55</option>
+                        <option value="2.5_1.95">2.5% Min $1.95</option>
+                        <option value="born_primitive">Born Prim</option>
+                        <option value="og_6.5_19.99_3">OG 6.5%/$19.99/3%</option>
+                    </select>
+                </div>
+                <div class="si-selector" id="claimResSelectorWrapper">
+                    <label for="claimResolution">Claim Resolution:</label>
+                    <select id="claimResolution">
+                        <option value="2ndsale">Reship = 2nd Sale</option>
+                        <option value="cogs">Reship @ COGS</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
     </div><!-- /container -->
@@ -1138,8 +1151,8 @@
 
         function setClaimResolution(t) {
             _claimResolution = t;
-            document.getElementById('claimRes2ndSaleBtn').classList.toggle('active', t === '2ndsale');
-            document.getElementById('claimResCOGSBtn').classList.toggle('active', t === 'cogs');
+            const sel = document.getElementById('claimResolution');
+            if (sel && sel.value !== t) sel.value = t;
             const lbl = document.getElementById('siClaimLabel');
             if (lbl) lbl.textContent = t === 'cogs'
                 ? 'SI Funded Claim (Reship @ COGS)'
@@ -1396,7 +1409,7 @@
             const btn = document.getElementById('returnsOffsetModeToggle');
 
             const roHideOutputs   = ['totalClaimsMetric', 'protectedClaimsMetric'];
-            const roHideInputs    = ['cogsGroup', 'claimsRateGroup', 'csCostGroup', 'claimResGroup'];
+            const roHideInputs    = ['cogsGroup', 'claimsRateGroup', 'csCostGroup', 'claimResSelectorWrapper'];
             const roHideCardGrids = ['mainCostGrid', 'mainRevenueGrid'];
             const roHideToggleBtns = ['returnsToggle', 'cashbackToggle', 'guaranteeToggle'];
 
@@ -2027,6 +2040,9 @@
         document.getElementById('guaranteeToggle').addEventListener('click', toggleGuarantee);
         document.getElementById('viewInputsCheck').addEventListener('change', function() {
             document.getElementById('siInputsBody').classList.toggle('hidden', !this.checked);
+        });
+        document.getElementById('claimResolution').addEventListener('change', function() {
+            setClaimResolution(this.value);
         });
         ['cashbackRate','minCashback','cashbackRedemptionRate'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculate);
