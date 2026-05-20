@@ -1754,10 +1754,13 @@
         }
 
         function updateWidgetPreviewVisibility() {
-            const anyEnabled = returnsEnabled || cashbackEnabled || guaranteeEnabled || returnsOffsetMode;
+            // Show widget preview section when viewInputs is checked and no blocking feature active
+            // Returns enabled is ALLOWED (widget adapts its copy). Cashback/Guarantee/RO block it.
+            const blockingFeature = cashbackEnabled || guaranteeEnabled || returnsOffsetMode;
             const viewInputs = document.getElementById('viewInputsCheck').checked;
             const sec = document.getElementById('widgetPreviewSection');
-            if (sec) sec.style.display = (!anyEnabled && viewInputs) ? '' : 'none';
+            if (sec) sec.style.display = (!blockingFeature && viewInputs) ? '' : 'none';
+            updateWidgetPreview();
         }
 
         function setWidgetType(type) {
@@ -1827,18 +1830,29 @@
             const fmtA  = formatCurrencyWithCents(aov);
             const fmtT  = formatCurrencyWithCents(total);
 
+            // Returns-aware default strings
+            const _defDualHeader    = returnsEnabled ? 'Loss, Damage, Theft Protection + Free Returns' : 'Loss, Damage, Theft Protection';
+            const _defDualPlusBody  = returnsEnabled ? 'Loss, Damage, Theft Protection + Free Returns' : 'Loss, Damage, Theft Protection';
+            const _defToggleHeader  = returnsEnabled ? 'Shipping Protection + Free Returns'            : 'Shipping Protection';
+            const _defExtHeader     = returnsEnabled ? 'Shipping Protection + Free Returns'            : 'Shipping Protection';
+
             // Helper: use input value if set, else fallback string
             const v = (id, fb) => { const el = document.getElementById(id); return (el && el.value.trim()) ? el.value.trim() : fb; };
 
-            // Update dynamic placeholders for button A
+            // Update dynamic placeholders (always update so toggling returns refreshes defaults)
             const updatePH = (id, ph) => { const el = document.getElementById(id); if (el && !el.value.trim()) el.placeholder = ph; };
-            updatePH('wc-dual-btna',  `Checkout | ${fmtT}`);
-            updatePH('wc-dualp-btna', `Checkout+ | ${fmtT}`);
+            updatePH('wc-dual-btna',      `Checkout | ${fmtT}`);
+            updatePH('wc-dualp-btna',    `Checkout+ | ${fmtT}`);
+            updatePH('wc-dual-header',   _defDualHeader);
+            updatePH('wc-dualp-body',    _defDualPlusBody);
+            updatePH('wc-tog-header',    _defToggleHeader);
+            updatePH('wc-cartcb-header', _defToggleHeader);
+            updatePH('wc-ext-header',    _defExtHeader);
 
             const infoBtn = `<span class="wp-info-btn">i</span>`;
 
             if (_widgetType === 'dual') {
-                const header = v('wc-dual-header', 'Loss, Damage, Theft Protection');
+                const header = v('wc-dual-header', _defDualHeader);
                 const btna   = v('wc-dual-btna',   `Checkout | ${fmtT}`);
                 const btnb   = v('wc-dual-btnb',   'or checkout without protection');
                 area.innerHTML = `
@@ -1857,7 +1871,7 @@
 
             } else if (_widgetType === 'dual-plus') {
                 const header = v('wc-dualp-header', 'Checkout+');
-                const body   = v('wc-dualp-body',   'Loss, Damage, Theft Protection');
+                const body   = v('wc-dualp-body',   _defDualPlusBody);
                 const btna   = v('wc-dualp-btna',   `Checkout+ | ${fmtT}`);
                 const btnb   = v('wc-dualp-btnb',   'or checkout without protection');
                 area.innerHTML = `
@@ -1876,7 +1890,7 @@
                 </div>`;
 
             } else if (_widgetType === 'toggle') {
-                const header     = v('wc-tog-header',     'Shipping Protection');
+                const header     = v('wc-tog-header',     _defToggleHeader);
                 const body       = v('wc-tog-body',       '');
                 const disclaimer = v('wc-tog-disclaimer', '');
                 area.innerHTML = `
@@ -1895,7 +1909,7 @@
                 </div>`;
 
             } else if (_widgetType === 'cart-cb') {
-                const header     = v('wc-cartcb-header',     'Shipping Protection');
+                const header     = v('wc-cartcb-header',     _defToggleHeader);
                 const body       = v('wc-cartcb-body',       '');
                 const disclaimer = v('wc-cartcb-disclaimer', '');
                 area.innerHTML = `
@@ -1916,7 +1930,7 @@
                 </div>`;
 
             } else if (_widgetType === 'extension') {
-                const header     = v('wc-ext-header',     'Shipping Protection');
+                const header     = v('wc-ext-header',     _defExtHeader);
                 const body       = v('wc-ext-body',       'Effortless Protection | Loss, damage, or theft');
                 const disclaimer = v('wc-ext-disclaimer', '');
                 const siLockImg  = `<img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:1.5em;\\'>🛡️</span>');">`;
@@ -2180,9 +2194,9 @@
 
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
             const extraRevenue = claimsExtra
-                + (guaranteeEnabled ? gSiFundedClaims         : 0)
-                + (returnsEnabled  ? totalReturnsOffset       : 0)
-                + (cashbackEnabled ? totalCashbackValueTotal  : 0);  // repeat revenue driven by cashback redemptions
+                + (guaranteeEnabled ? gSiFundedClaims   : 0)
+                + (returnsEnabled  ? totalReturnsOffset : 0)
+                + (cashbackEnabled ? cashbackRedeemed   : 0);  // est. cashback redeemed (flows back from premium pool)
             const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
             // Claims impact includes base SI funded claims + guarantee funded claims
             const siFundedPct = premiumPool > 0 ? ((siFundedReships + (guaranteeEnabled ? gSiFundedClaims : 0)) / premiumPool) * 100 : 0;
@@ -2251,7 +2265,7 @@
             document.getElementById('revShareImpactPct').style.display = rsZero ? 'none' : '';
             document.getElementById('returnsOffsetImpactPct').textContent = returnsOffsetPct.toFixed(1) + '% from returns';
             document.getElementById('returnsOffsetImpactPct').style.display = returnsEnabled ? '' : 'none';
-            const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (totalCashbackValueTotal / premiumPool) * 100 : 0;
+            const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (cashbackRedeemed / premiumPool) * 100 : 0;
             document.getElementById('cashbackImpactPct').textContent = cashbackPct.toFixed(1) + '% from cashback';
             document.getElementById('cashbackImpactPct').style.display = cashbackEnabled ? '' : 'none';
 
@@ -2514,7 +2528,7 @@
                 'funded + rev share',
                 d.guaranteeEnabled ? '+ guarantee claims' : '',
                 d.returnsEnabled ? '+ returns offset' : '',
-                d.cashbackEnabled ? '+ repeat revenue' : ''
+                d.cashbackEnabled ? '+ cashback' : ''
             ].filter(Boolean).join(' ');
             revHTML +=
                 row('Extra Revenue With SI', extraLabel, fc(d.extraRevenue), 'sep positive') +
