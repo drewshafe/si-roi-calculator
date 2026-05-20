@@ -846,10 +846,15 @@
 
         /* Lock icon for toggle/checkbox widgets */
         .wp-lock-icon { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
-        /* Leaf SVG icon */
-        .wp-leaf-icon { width: 13px; height: 13px; vertical-align: middle; margin-left: 3px; flex-shrink: 0; }
+        /* Leaf image icon */
+        .wp-leaf-icon { width: 16px; height: 16px; vertical-align: middle; margin-left: 3px; flex-shrink: 0; object-fit: contain; }
+        /* Cash icon in cashback row */
+        .wp-cash-icon { width: 22px; height: 16px; object-fit: contain; flex-shrink: 0; }
         /* Right side of toggle/checkbox with control + price stacked */
         .wp-toggle-right { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+        /* Hide-lock checkbox in widget config */
+        .wconfig-check { display: flex; align-items: center; gap: 5px; font-size: 0.78em; color: #666; cursor: pointer; white-space: nowrap; padding-top: 16px; }
+        .wconfig-check input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; accent-color: #6675ff; }
 
         /* ── Widget Inline layout ── */
         #widgetMiddleWrapper {
@@ -1396,6 +1401,7 @@
                             <label>Disclaimer</label>
                             <input type="text" id="wc-tog-disclaimer" placeholder="">
                         </div>
+                        <label class="wconfig-check"><input type="checkbox" id="wc-tog-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
                     </div>
                 </div>
 
@@ -1414,6 +1420,7 @@
                             <label>Disclaimer</label>
                             <input type="text" id="wc-cartcb-disclaimer" placeholder="">
                         </div>
+                        <label class="wconfig-check"><input type="checkbox" id="wc-cartcb-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
                     </div>
                 </div>
 
@@ -1436,6 +1443,7 @@
                             <label>Cashback Row</label>
                             <input type="text" id="wc-ext-cashback" placeholder="Plus Earn $5 Off Your Next Order">
                         </div>
+                        <label class="wconfig-check"><input type="checkbox" id="wc-ext-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
                     </div>
                 </div>
 
@@ -1906,9 +1914,12 @@
             if (extCbField) extCbField.style.display = (mode === 'cashback' && _widgetType === 'extension') ? '' : 'none';
 
             // ── Shared elements ─────────────────────────────────────────
-            const lockSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png';
-            const lockImg  = `<img src="${lockSrc}" class="wp-lock-icon" onerror="this.style.opacity='0';">`;
-            const leafSvg  = `<svg class="wp-leaf-icon" viewBox="0 0 24 24" fill="#22c55e" xmlns="http://www.w3.org/2000/svg"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-11 5z"/></svg>`;
+            const lockSrc   = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png';
+            const leafSrc   = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/leaf-icon.png';
+            const cashSrc   = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cash-icon.png';
+            const lockImg   = `<img src="${lockSrc}" class="wp-lock-icon" onerror="this.style.opacity='0';">`;
+            const leafImg   = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
+            const cashImg   = `<img src="${cashSrc}" class="wp-cash-icon" onerror="this.style.display='none';">`;
             const infoBtn  = `<span class="wp-info-btn">i</span>`;
             const learnMore = `<a class="wp-learn-more">Learn More</a>`;
 
@@ -1955,13 +1966,14 @@
                 const header     = v('wc-tog-header',     D.togH);
                 const body       = v('wc-tog-body',       '');
                 const disclaimer = v('wc-tog-disclaimer', '');
+                const hideLock   = document.getElementById('wc-tog-hide-lock')?.checked;
                 area.innerHTML = `
                 <div class="wp-card">
                     <div class="wp-toggle-row">
-                        <div class="wp-toggle-left" style="gap:10px;">
-                            ${lockImg}
+                        <div class="wp-toggle-left" style="gap:7px;">
+                            ${hideLock ? '' : lockImg}
                             <div class="wp-toggle-text">
-                                <span class="wp-header-text">${header} ${leafSvg}</span>
+                                <span class="wp-header-text">${header} ${leafImg}</span>
                                 ${body ? `<div class="wp-body-text" style="margin:2px 0 0;">${body}</div>` : ''}
                             </div>
                         </div>
@@ -1977,13 +1989,14 @@
                 const header     = v('wc-cartcb-header',     D.togH);
                 const body       = v('wc-cartcb-body',       '');
                 const disclaimer = v('wc-cartcb-disclaimer', '');
+                const hideLock   = document.getElementById('wc-cartcb-hide-lock')?.checked;
                 area.innerHTML = `
                 <div class="wp-card">
                     <div class="wp-toggle-row">
-                        <div class="wp-toggle-left" style="gap:10px;">
-                            ${lockImg}
+                        <div class="wp-toggle-left" style="gap:7px;">
+                            ${hideLock ? '' : lockImg}
                             <div class="wp-toggle-text">
-                                <span class="wp-header-text">${header} ${leafSvg}</span>
+                                <span class="wp-header-text">${header} ${leafImg}</span>
                                 ${body ? `<div class="wp-body-text" style="margin:2px 0 0;">${body}</div>` : ''}
                             </div>
                         </div>
@@ -2002,10 +2015,11 @@
                 const body       = v('wc-ext-body',       D.extBody);
                 const disclaimer = v('wc-ext-disclaimer', '');
                 const cbRow      = mode === 'cashback' ? v('wc-ext-cashback', D.extCb) : null;
+                const hideLock   = document.getElementById('wc-ext-hide-lock')?.checked;
                 area.innerHTML = `
                 <div class="wp-card">
                     <div class="wp-ext-row">
-                        <img src="${lockSrc}" class="wp-ext-lock" onerror="this.style.opacity='0';">
+                        ${hideLock ? '' : `<img src="${lockSrc}" class="wp-ext-lock" onerror="this.style.opacity='0';">`}
                         <div class="wp-ext-text">
                             <div class="wp-spread" style="margin-bottom:4px; align-items:flex-start; gap:8px;">
                                 <span class="wp-header-text" style="font-weight:700; flex:1;">${header}</span>
@@ -2018,7 +2032,7 @@
                             ${disclaimer ? `<div class="wp-disclaimer" style="margin-top:5px; display:flex; align-items:flex-start; gap:4px;">${infoBtn}<span>${disclaimer}</span></div>` : ''}
                         </div>
                     </div>
-                    ${cbRow ? `<div class="wp-cashback-row"><span style="font-size:1.1em; flex-shrink:0;">💵</span><span>${cbRow}</span></div>` : ''}
+                    ${cbRow ? `<div class="wp-cashback-row">${cashImg}<span>${cbRow}</span></div>` : ''}
                 </div>`;
             }
         }
