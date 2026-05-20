@@ -1149,7 +1149,7 @@
 
         function updateBadges() {
             // ppBadge: always on unless guaranteeEnabled (guarantee has its own badge)
-            document.getElementById('ppBadge').style.display  = guaranteeEnabled ? 'none' : '';
+            document.getElementById('ppBadge').style.display  = (guaranteeEnabled || returnsOffsetMode) ? 'none' : '';
             document.getElementById('rBadge').style.display   = (returnsEnabled || returnsOffsetMode) ? '' : 'none';
             document.getElementById('cbBadge').style.display  = cashbackEnabled ? '' : 'none';
             document.getElementById('gBadge').style.display   = guaranteeEnabled ? '' : 'none';
