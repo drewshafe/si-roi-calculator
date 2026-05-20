@@ -780,9 +780,10 @@
         /* Preview card */
         .wp-card {
             background: white; border: 1.5px solid #e9ecef; border-radius: 12px;
-            padding: 14px 16px; max-width: 360px; margin: 0 auto;
+            padding: 16px 18px; max-width: 480px; width: 100%; margin: 0 auto;
             box-shadow: 0 2px 10px rgba(0,0,0,0.07);
         }
+        #inlineWidgetContainer .wp-card { max-width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
         .wp-spread { display: flex; align-items: center; justify-content: space-between; }
         .wp-header-text {
             font-size: 0.88em; color: #333;
@@ -838,7 +839,17 @@
         /* Extension widget */
         .wp-ext-row { display: flex; align-items: flex-start; gap: 10px; }
         .wp-ext-icon { font-size: 1.5em; flex-shrink: 0; margin-top: 1px; }
-        .wp-ext-text { flex: 1; }
+        .wp-ext-text { flex: 1; min-width: 0; }
+        .wp-ext-lock { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+        .wp-learn-more { font-size: 0.78em; color: #1a73e8; text-decoration: underline; cursor: default; white-space: nowrap; flex-shrink: 0; }
+        .wp-cashback-row { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 0.82em; color: #333; }
+
+        /* Lock icon for toggle/checkbox widgets */
+        .wp-lock-icon { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+        /* Leaf SVG icon */
+        .wp-leaf-icon { width: 13px; height: 13px; vertical-align: middle; margin-left: 3px; flex-shrink: 0; }
+        /* Right side of toggle/checkbox with control + price stacked */
+        .wp-toggle-right { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
 
         /* ── Widget Inline layout ── */
         #widgetMiddleWrapper {
@@ -1421,6 +1432,10 @@
                             <label>Disclaimer</label>
                             <input type="text" id="wc-ext-disclaimer" placeholder="">
                         </div>
+                        <div class="wconfig-field" id="wc-ext-cashback-field" style="display:none;">
+                            <label>Cashback Row</label>
+                            <input type="text" id="wc-ext-cashback" placeholder="Plus Earn $5 Off Your Next Order">
+                        </div>
                     </div>
                 </div>
 
@@ -1442,7 +1457,8 @@
         let _claimsType      = 'pct';     // 'pct' | 'count'
         let _returnsType     = 'pct';     // 'pct' | 'count'
         let _claimResolution = '2ndsale'; // '2ndsale' | 'cogs'
-        let _widgetType      = 'dual';    // 'dual' | 'dual-plus' | 'toggle' | 'extension'
+        let _widgetType      = 'dual';    // 'dual' | 'dual-plus' | 'toggle' | 'cart-cb' | 'extension'
+        let _cashbackPerOrderCached = 0;  // updated by calculate(), read by updateWidgetPreview()
 
         function setCogsType(t) {
             _cogsType = t;
@@ -1754,12 +1770,10 @@
         }
 
         function updateWidgetPreviewVisibility() {
-            // Show widget preview section when viewInputs is checked and no blocking feature active
-            // Returns enabled is ALLOWED (widget adapts its copy). Cashback/Guarantee/RO block it.
-            const blockingFeature = cashbackEnabled || guaranteeEnabled || returnsOffsetMode;
+            // Widget preview available for ALL feature states — defaults adapt per mode
             const viewInputs = document.getElementById('viewInputsCheck').checked;
             const sec = document.getElementById('widgetPreviewSection');
-            if (sec) sec.style.display = (!blockingFeature && viewInputs) ? '' : 'none';
+            if (sec) sec.style.display = viewInputs ? '' : 'none';
             updateWidgetPreview();
         }
 
@@ -1783,28 +1797,27 @@
         };
 
         function updateWidgetPreview() {
-            // Determine render target: inline container or SI inputs area
-            const showInlineEl = document.getElementById('showWidgetInline');
-            const showInline   = showInlineEl && showInlineEl.checked;
+            // ── Determine render target ─────────────────────────────────
+            const showInlineEl    = document.getElementById('showWidgetInline');
+            const showInline      = showInlineEl && showInlineEl.checked;
             const inlineContainer = document.getElementById('inlineWidgetContainer');
-            const wrapper = document.getElementById('widgetMiddleWrapper');
-            const siArea = document.getElementById('widgetPreviewArea');
+            const wrapper         = document.getElementById('widgetMiddleWrapper');
+            const siArea          = document.getElementById('widgetPreviewArea');
 
             let area;
             if (showInline && inlineContainer) {
                 inlineContainer.style.display = '';
                 if (wrapper) wrapper.classList.add('widget-active');
-                // Set the type label
                 const lbl = document.getElementById('widgetTypeLabel');
                 if (lbl) lbl.textContent = (_widgetTypeNames[_widgetType] || _widgetType) + ' Example';
-                // Render into a child div (not into the whole container which also has the label)
-                let previewTarget = document.getElementById('inlineWidgetPreviewArea');
-                if (!previewTarget) {
-                    previewTarget = document.createElement('div');
-                    previewTarget.id = 'inlineWidgetPreviewArea';
-                    inlineContainer.appendChild(previewTarget);
+                let pt = document.getElementById('inlineWidgetPreviewArea');
+                if (!pt) {
+                    pt = document.createElement('div');
+                    pt.id = 'inlineWidgetPreviewArea';
+                    pt.style.width = '100%';
+                    inlineContainer.appendChild(pt);
                 }
-                area = previewTarget;
+                area = pt;
                 if (siArea) siArea.innerHTML = '';
             } else {
                 if (inlineContainer) inlineContainer.style.display = 'none';
@@ -1813,53 +1826,102 @@
             }
             if (!area) return;
 
-            // Recompute premium from current inputs
+            // ── Mode ────────────────────────────────────────────────────
+            let mode = 'default';
+            if (returnsOffsetMode)  mode = 'returns-offset';
+            else if (cashbackEnabled)  mode = 'cashback';
+            else if (guaranteeEnabled) mode = 'guarantee';
+            else if (returnsEnabled)   mode = 'returns';
+
+            // ── Premium calc ────────────────────────────────────────────
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const aov    = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             const premRaw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
             let avgPremium = 0;
-            if (pricingTemplate === 'percentage') {
-                avgPremium = aov * (premRaw / 100);
-            } else if (pricingTemplate === 'flat_dollar') {
-                avgPremium = premRaw;
-            } else {
-                avgPremium = getTieredPremium(aov, pricingTemplate);
-            }
+            if (pricingTemplate === 'percentage') avgPremium = aov * (premRaw / 100);
+            else if (pricingTemplate === 'flat_dollar') avgPremium = premRaw;
+            else avgPremium = getTieredPremium(aov, pricingTemplate);
             const total = aov + avgPremium;
             const fmtP  = formatCurrencyWithCents(avgPremium);
             const fmtA  = formatCurrencyWithCents(aov);
             const fmtT  = formatCurrencyWithCents(total);
+            const cbAmt = Math.round(_cashbackPerOrderCached) || 5;
+            const cbStr = `$${cbAmt}`;
 
-            // Returns-aware default strings
-            const _defDualHeader    = returnsEnabled ? 'Loss, Damage, Theft Protection + Free Returns' : 'Loss, Damage, Theft Protection';
-            const _defDualPlusBody  = returnsEnabled ? 'Loss, Damage, Theft Protection + Free Returns' : 'Loss, Damage, Theft Protection';
-            const _defToggleHeader  = returnsEnabled ? 'Shipping Protection + Free Returns'            : 'Shipping Protection';
-            const _defExtHeader     = returnsEnabled ? 'Shipping Protection + Free Returns'            : 'Shipping Protection';
+            // ── Mode-specific defaults ──────────────────────────────────
+            const defMap = {
+                'default': {
+                    dualH: 'Loss, Damage, Theft Protection', dpBody: 'Loss, Damage, Theft Protection',
+                    togH: 'Shipping Protection', extH: 'Shipping Protection',
+                    extBody: 'Effortless Protection | Loss, damage, or theft', extCb: null,
+                    btnB: 'or checkout without protection', btnBp: 'or checkout without protection',
+                },
+                'returns': {
+                    dualH: 'Shipping Protection + Free Returns', dpBody: 'Shipping Protection + Free Returns',
+                    togH: 'Shipping Protection + Free Returns', extH: 'Shipping Protection + Free Returns',
+                    extBody: 'Effortless Protection | Loss, damage, or theft', extCb: null,
+                    btnB: 'or checkout without protection', btnBp: 'or checkout without free returns',
+                },
+                'returns-offset': {
+                    dualH: 'Unlock Free Returns', dpBody: 'Unlock Free Returns',
+                    togH: 'Unlock Free Returns', extH: 'Checkout+',
+                    extBody: 'Unlock Free Returns', extCb: null,
+                    btnB: 'or checkout without free returns', btnBp: 'or checkout without free returns',
+                },
+                'cashback': {
+                    dualH: `Shipping Protection + ${cbStr} Cashback`, dpBody: `Shipping Protection + ${cbStr} Cashback`,
+                    togH: `${cbStr} Cashback`, extH: 'Checkout+',
+                    extBody: 'Shipping Protection', extCb: `Plus Earn ${cbStr} Off Your Next Order`,
+                    btnB: 'or checkout without protection', btnBp: 'or checkout without protection',
+                },
+                'guarantee': {
+                    dualH: 'Protection + Satisfaction Guarantee', dpBody: 'Protection + Satisfaction Guarantee',
+                    togH: 'Protection + Satisfaction Guarantee', extH: 'Checkout+',
+                    extBody: 'Protection + Satisfaction Guarantee', extCb: null,
+                    btnB: 'or checkout without protection', btnBp: 'or checkout without protection',
+                },
+            };
+            const D = defMap[mode] || defMap['default'];
 
-            // Helper: use input value if set, else fallback string
-            const v = (id, fb) => { const el = document.getElementById(id); return (el && el.value.trim()) ? el.value.trim() : fb; };
+            // ── Helpers ─────────────────────────────────────────────────
+            const v  = (id, fb) => { const el = document.getElementById(id); return (el && el.value.trim()) ? el.value.trim() : fb; };
+            const ph = (id, p)  => { const el = document.getElementById(id); if (el && !el.value.trim()) el.placeholder = p; };
 
-            // Update dynamic placeholders (always update so toggling returns refreshes defaults)
-            const updatePH = (id, ph) => { const el = document.getElementById(id); if (el && !el.value.trim()) el.placeholder = ph; };
-            updatePH('wc-dual-btna',      `Checkout | ${fmtT}`);
-            updatePH('wc-dualp-btna',    `Checkout+ | ${fmtT}`);
-            updatePH('wc-dual-header',   _defDualHeader);
-            updatePH('wc-dualp-body',    _defDualPlusBody);
-            updatePH('wc-tog-header',    _defToggleHeader);
-            updatePH('wc-cartcb-header', _defToggleHeader);
-            updatePH('wc-ext-header',    _defExtHeader);
+            // Update all placeholders
+            ph('wc-dual-header',   D.dualH);
+            ph('wc-dual-btna',     `Checkout | ${fmtT}`);
+            ph('wc-dual-btnb',     D.btnB);
+            ph('wc-dualp-header',  'Checkout+');
+            ph('wc-dualp-body',    D.dpBody);
+            ph('wc-dualp-btna',    `Checkout+ | ${fmtT}`);
+            ph('wc-dualp-btnb',    D.btnBp);
+            ph('wc-tog-header',    D.togH);
+            ph('wc-cartcb-header', D.togH);
+            ph('wc-ext-header',    D.extH);
+            ph('wc-ext-body',      D.extBody);
+            ph('wc-ext-cashback',  D.extCb || `Plus Earn ${cbStr} Off Your Next Order`);
 
-            const infoBtn = `<span class="wp-info-btn">i</span>`;
+            // Show/hide cashback config row in extension
+            const extCbField = document.getElementById('wc-ext-cashback-field');
+            if (extCbField) extCbField.style.display = (mode === 'cashback' && _widgetType === 'extension') ? '' : 'none';
 
+            // ── Shared elements ─────────────────────────────────────────
+            const lockSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png';
+            const lockImg  = `<img src="${lockSrc}" class="wp-lock-icon" onerror="this.style.opacity='0';">`;
+            const leafSvg  = `<svg class="wp-leaf-icon" viewBox="0 0 24 24" fill="#22c55e" xmlns="http://www.w3.org/2000/svg"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-11 5z"/></svg>`;
+            const infoBtn  = `<span class="wp-info-btn">i</span>`;
+            const learnMore = `<a class="wp-learn-more">Learn More</a>`;
+
+            // ── Render per type ─────────────────────────────────────────
             if (_widgetType === 'dual') {
-                const header = v('wc-dual-header', _defDualHeader);
+                const header = v('wc-dual-header', D.dualH);
                 const btna   = v('wc-dual-btna',   `Checkout | ${fmtT}`);
-                const btnb   = v('wc-dual-btnb',   'or checkout without protection');
+                const btnb   = v('wc-dual-btnb',   D.btnB);
                 area.innerHTML = `
                 <div class="wp-card">
-                    <div class="wp-spread" style="margin-bottom:8px;">
-                        <span class="wp-header-text">${header} ${infoBtn}</span>
-                        <span class="wp-price">${fmtP}</span>
+                    <div class="wp-spread" style="margin-bottom:10px; align-items:flex-start; gap:10px;">
+                        <span class="wp-header-text" style="flex:1;">${header} ${infoBtn}</span>
+                        <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
                     </div>
                     <div class="wp-subtotal-row">
                         <span class="wp-subtotal-lbl">Subtotal</span>
@@ -1871,16 +1933,16 @@
 
             } else if (_widgetType === 'dual-plus') {
                 const header = v('wc-dualp-header', 'Checkout+');
-                const body   = v('wc-dualp-body',   _defDualPlusBody);
+                const body   = v('wc-dualp-body',   D.dpBody);
                 const btna   = v('wc-dualp-btna',   `Checkout+ | ${fmtT}`);
-                const btnb   = v('wc-dualp-btnb',   'or checkout without protection');
+                const btnb   = v('wc-dualp-btnb',   D.btnBp);
                 area.innerHTML = `
                 <div class="wp-card">
-                    <div class="wp-spread" style="margin-bottom:4px;">
-                        <span class="wp-header-text">${header} ${infoBtn}</span>
-                        <span class="wp-price">${fmtP}</span>
+                    <div class="wp-spread" style="margin-bottom:4px; align-items:flex-start; gap:10px;">
+                        <span class="wp-header-text" style="flex:1;">${header} ${infoBtn}</span>
+                        <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
                     </div>
-                    <div class="wp-body-text">${body}</div>
+                    <div class="wp-body-text" style="margin-bottom:6px;">${body}</div>
                     <div class="wp-subtotal-row">
                         <span class="wp-subtotal-lbl">Subtotal</span>
                         <span class="wp-subtotal-val">${fmtA}</span>
@@ -1890,63 +1952,73 @@
                 </div>`;
 
             } else if (_widgetType === 'toggle') {
-                const header     = v('wc-tog-header',     _defToggleHeader);
+                const header     = v('wc-tog-header',     D.togH);
                 const body       = v('wc-tog-body',       '');
                 const disclaimer = v('wc-tog-disclaimer', '');
                 area.innerHTML = `
                 <div class="wp-card">
                     <div class="wp-toggle-row">
-                        <div class="wp-toggle-left">
-                            <div class="wp-toggle-switch"><div class="wp-toggle-knob"></div></div>
+                        <div class="wp-toggle-left" style="gap:10px;">
+                            ${lockImg}
                             <div class="wp-toggle-text">
-                                <span class="wp-header-text">${header} ${infoBtn}</span>
+                                <span class="wp-header-text">${header} ${leafSvg}</span>
                                 ${body ? `<div class="wp-body-text" style="margin:2px 0 0;">${body}</div>` : ''}
                             </div>
                         </div>
-                        <span class="wp-price">${fmtP}</span>
+                        <div class="wp-toggle-right">
+                            <div class="wp-toggle-switch"><div class="wp-toggle-knob"></div></div>
+                            <div class="wp-price" style="font-size:0.85em; margin-top:3px;">${fmtP}</div>
+                        </div>
                     </div>
                     ${disclaimer ? `<div class="wp-disclaimer">${disclaimer}</div>` : ''}
                 </div>`;
 
             } else if (_widgetType === 'cart-cb') {
-                const header     = v('wc-cartcb-header',     _defToggleHeader);
+                const header     = v('wc-cartcb-header',     D.togH);
                 const body       = v('wc-cartcb-body',       '');
                 const disclaimer = v('wc-cartcb-disclaimer', '');
                 area.innerHTML = `
                 <div class="wp-card">
                     <div class="wp-toggle-row">
-                        <div class="wp-toggle-left">
-                            <div style="width:18px;height:18px;border-radius:4px;border:2px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <span style="color:white;font-size:11px;font-weight:900;line-height:1;">✓</span>
-                            </div>
+                        <div class="wp-toggle-left" style="gap:10px;">
+                            ${lockImg}
                             <div class="wp-toggle-text">
-                                <span class="wp-header-text">${header} ${infoBtn}</span>
+                                <span class="wp-header-text">${header} ${leafSvg}</span>
                                 ${body ? `<div class="wp-body-text" style="margin:2px 0 0;">${body}</div>` : ''}
                             </div>
                         </div>
-                        <span class="wp-price">${fmtP}</span>
+                        <div class="wp-toggle-right">
+                            <div style="width:20px;height:20px;border-radius:4px;border:2px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:white;font-size:12px;font-weight:900;line-height:1;">✓</span>
+                            </div>
+                            <div class="wp-price" style="font-size:0.85em; margin-top:3px;">${fmtP}</div>
+                        </div>
                     </div>
                     ${disclaimer ? `<div class="wp-disclaimer">${disclaimer}</div>` : ''}
                 </div>`;
 
             } else if (_widgetType === 'extension') {
-                const header     = v('wc-ext-header',     _defExtHeader);
-                const body       = v('wc-ext-body',       'Effortless Protection | Loss, damage, or theft');
+                const header     = v('wc-ext-header',     D.extH);
+                const body       = v('wc-ext-body',       D.extBody);
                 const disclaimer = v('wc-ext-disclaimer', '');
-                const siLockImg  = `<img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:1.5em;\\'>🛡️</span>');">`;
+                const cbRow      = mode === 'cashback' ? v('wc-ext-cashback', D.extCb) : null;
                 area.innerHTML = `
                 <div class="wp-card">
                     <div class="wp-ext-row">
-                        <div class="wp-ext-icon">${siLockImg}</div>
+                        <img src="${lockSrc}" class="wp-ext-lock" onerror="this.style.opacity='0';">
                         <div class="wp-ext-text">
-                            <div class="wp-spread" style="margin-bottom:3px;">
-                                <span class="wp-header-text">${header} ${infoBtn}</span>
-                                <span class="wp-price">${fmtP}</span>
+                            <div class="wp-spread" style="margin-bottom:4px; align-items:flex-start; gap:8px;">
+                                <span class="wp-header-text" style="font-weight:700; flex:1;">${header}</span>
+                                <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
                             </div>
-                            <div class="wp-body-text" style="margin:0;">${body}</div>
-                            ${disclaimer ? `<div class="wp-disclaimer">${disclaimer}</div>` : ''}
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <div class="wp-body-text" style="margin:0;">${body}</div>
+                                ${learnMore}
+                            </div>
+                            ${disclaimer ? `<div class="wp-disclaimer" style="margin-top:5px; display:flex; align-items:flex-start; gap:4px;">${infoBtn}<span>${disclaimer}</span></div>` : ''}
                         </div>
                     </div>
+                    ${cbRow ? `<div class="wp-cashback-row"><span style="font-size:1.1em; flex-shrink:0;">💵</span><span>${cbRow}</span></div>` : ''}
                 </div>`;
             }
         }
@@ -2166,6 +2238,7 @@
             let cashbackRedeemed = 0;
             if (cashbackEnabled) {
                 cashbackPerOrder = Math.max(avgOrderValue * cashbackRate, minCashback);
+                _cashbackPerOrderCached = cashbackPerOrder;
                 siSponsoredCashbackTotal = protectedOrders * cashbackPerOrder;       // total funded/issued by SI
                 cashbackRedeemed = siSponsoredCashbackTotal * cashbackRedemptionRate; // deducted from premium pool
                 // Repeat revenue driven: redemption-driven orders × AOV (comes back to merchant)
@@ -2638,7 +2711,7 @@
          'wc-dualp-header','wc-dualp-body','wc-dualp-btna','wc-dualp-btnb',
          'wc-tog-header','wc-tog-body','wc-tog-disclaimer',
          'wc-cartcb-header','wc-cartcb-body','wc-cartcb-disclaimer',
-         'wc-ext-header','wc-ext-body','wc-ext-disclaimer'
+         'wc-ext-header','wc-ext-body','wc-ext-disclaimer','wc-ext-cashback'
         ].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', updateWidgetPreview);
