@@ -869,6 +869,9 @@
             </div>
         </div>
 
+        <!-- Inline Widget Preview (renders here when "Show Widget Preview" checkbox is checked) -->
+        <div id="inlineWidgetContainer" style="display:none; background:#f4f5fb; padding:12px 16px; border-bottom:2px solid #e0e3f5;"></div>
+
         <!-- Outputs strip: gray metric boxes across the top -->
         <div class="outputs-strip">
             <div class="outputs-inner">
@@ -987,13 +990,13 @@
                             <h4>Protected Claims</h4>
                             <div class="value" id="protectedClaims">0</div>
                         </div>
-                        <div class="metric-item">
+                        <div class="metric-item" id="revenueShareMetricItem">
                             <h4>Revenue Share</h4>
                             <div class="value" id="revenueShareAmount">$0</div>
                         </div>
                     </div>
                     <!-- Hidden stash -->
-                    <div style="display:none;"><span id="secondSale"></span></div>
+                    <div style="display:none;"><span id="secondSale"></span><span id="siFundedTotal"></span></div>
                     <div id="returnsOffsetResults" class="returns-results">
                         <div class="sub-section-label">Returns Offset</div>
                         <div class="metrics-grid">
@@ -1015,24 +1018,16 @@
                         <div class="sub-section-label">Quality / Satisfaction Guarantee</div>
                         <div class="metrics-grid">
                             <div class="metric-item guarantee-highlight">
-                                <h4>Guarantee Claim Rate</h4>
-                                <div class="value" id="guaranteeClaimRate">0%</div>
+                                <h4>Increased Claim Rate</h4>
+                                <div class="value" id="guaranteeIncClaimRate">0%</div>
                             </div>
                             <div class="metric-item guarantee-highlight">
-                                <h4>Guarantee Payout</h4>
-                                <div class="value" id="guaranteePayout">$0</div>
+                                <h4>Additional Claims Covered</h4>
+                                <div class="value" id="guaranteeAddlClaims">0</div>
                             </div>
                             <div class="metric-item guarantee-highlight">
-                                <h4>Covered Orders</h4>
-                                <div class="value" id="guaranteeCoveredOrders">0</div>
-                            </div>
-                            <div class="metric-item guarantee-highlight">
-                                <h4>AOV</h4>
-                                <div class="value" id="guaranteeAOV">$0</div>
-                            </div>
-                            <div class="metric-item guarantee-highlight">
-                                <h4>Net MRR</h4>
-                                <div class="value" id="guaranteeNetMRR">$0</div>
+                                <h4>SI Funded Guarantee Claims</h4>
+                                <div class="value" id="guaranteeSiFundedClaims">$0</div>
                             </div>
                         </div>
                     </div>
@@ -1151,6 +1146,14 @@
                 </div>
             </div>
 
+            <!-- Guarantee inputs (visible when guarantee enabled) -->
+            <div id="guaranteeInputs" style="display:none; width:100%;">
+                <div class="input-group" style="background: linear-gradient(135deg, #764ba2 0%, #9b59b6 100%); max-width: 320px;">
+                    <label for="guaranteeClaimRateInput">Increased Claim Rate with Guarantee %</label>
+                    <input type="text" id="guaranteeClaimRateInput" placeholder="auto (1.5× claims rate)">
+                </div>
+            </div>
+
             <div id="linkDisplay" class="link-display">
                 <p>Share this link:</p>
                 <div class="link-row">
@@ -1238,18 +1241,27 @@
                 </div>
             </div><!-- /si-selectors-row -->
 
-            <!-- Widget Preview (visible only when no features enabled) -->
+            <!-- Widget Preview (visible only when no features enabled, or always if showWidgetInline checked) -->
             <div id="widgetPreviewSection" class="widget-preview-section" style="display:none;">
-                <div class="wtype-label">Widget Type</div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <div class="wtype-label" style="margin-bottom:0;">Widget Type</div>
+                    <label class="view-inputs-label">
+                        <input type="checkbox" id="showWidgetInline">
+                        Show Widget Preview
+                    </label>
+                </div>
                 <div class="wtype-row">
                     <label class="wtype-opt active" id="wtype-dual" onclick="setWidgetType('dual')">
                         <span class="wtype-cb"></span> Dual Checkout
                     </label>
                     <label class="wtype-opt" id="wtype-dual-plus" onclick="setWidgetType('dual-plus')">
-                        <span class="wtype-cb"></span> Dual Checkout — "Checkout+"
+                        <span class="wtype-cb"></span> Dual Checkout+
                     </label>
                     <label class="wtype-opt" id="wtype-toggle" onclick="setWidgetType('toggle')">
-                        <span class="wtype-cb"></span> Toggle / Checkbox
+                        <span class="wtype-cb"></span> Cart Toggle
+                    </label>
+                    <label class="wtype-opt" id="wtype-cart-cb" onclick="setWidgetType('cart-cb')">
+                        <span class="wtype-cb"></span> Cart Checkbox
                     </label>
                     <label class="wtype-opt" id="wtype-extension" onclick="setWidgetType('extension')">
                         <span class="wtype-cb"></span> Checkout Extension
@@ -1310,6 +1322,24 @@
                         <div class="wconfig-field">
                             <label>Disclaimer</label>
                             <input type="text" id="wc-tog-disclaimer" placeholder="">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Checkbox config (same inputs as toggle) -->
+                <div id="wc-cart-cb" class="wconfig-section">
+                    <div class="wconfig-row">
+                        <div class="wconfig-field">
+                            <label>Header</label>
+                            <input type="text" id="wc-cartcb-header" placeholder="Shipping Protection">
+                        </div>
+                        <div class="wconfig-field">
+                            <label>Body</label>
+                            <input type="text" id="wc-cartcb-body" placeholder="">
+                        </div>
+                        <div class="wconfig-field">
+                            <label>Disclaimer</label>
+                            <input type="text" id="wc-cartcb-disclaimer" placeholder="">
                         </div>
                     </div>
                 </div>
@@ -1618,17 +1648,36 @@
             calculate();
         }
 
+        function getDefaultGuaranteeRate() {
+            const ordersInput = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
+            const claimsRaw   = parseFloat(removeCommas(document.getElementById('claimsRate').value)) || 0;
+            const claimsRate  = _claimsType === 'count'
+                ? (ordersInput > 0 ? claimsRaw / ordersInput : 0)
+                : claimsRaw / 100;
+            return claimsRate * 1.5 * 100;
+        }
+
         function toggleGuarantee() {
             guaranteeEnabled = !guaranteeEnabled;
             const btn = document.getElementById('guaranteeToggle');
+            const gInputs = document.getElementById('guaranteeInputs');
+            const gClaimInput = document.getElementById('guaranteeClaimRateInput');
             if (guaranteeEnabled) {
                 btn.classList.add('active');
                 btn.innerHTML = '<span>✓</span> Protection + Guarantee';
                 document.getElementById('guaranteeResults').classList.add('visible');
+                if (gInputs) gInputs.style.display = '';
+                // Pre-fill with 1.5× current claims rate if empty
+                if (gClaimInput && !gClaimInput.value.trim()) {
+                    const def = getDefaultGuaranteeRate();
+                    if (def > 0) gClaimInput.value = def.toFixed(2).replace(/\.?0+$/, '');
+                }
             } else {
                 btn.classList.remove('active');
                 btn.innerHTML = '<span>＋</span> Protection + Guarantee';
                 document.getElementById('guaranteeResults').classList.remove('visible');
+                if (gInputs) gInputs.style.display = 'none';
+                if (gClaimInput) gClaimInput.value = '';
             }
             updateBadges();
             updateWidgetPreviewVisibility();
@@ -1651,20 +1700,36 @@
 
         function setWidgetType(type) {
             _widgetType = type;
-            ['dual', 'dual-plus', 'toggle', 'extension'].forEach(t => {
-                document.getElementById('wtype-' + t).classList.toggle('active', t === type);
-                document.getElementById('wc-' + t).classList.toggle('active', t === type);
+            ['dual', 'dual-plus', 'toggle', 'cart-cb', 'extension'].forEach(t => {
+                const wt = document.getElementById('wtype-' + t);
+                if (wt) wt.classList.toggle('active', t === type);
+                const wc = document.getElementById('wc-' + t);
+                if (wc) wc.classList.toggle('active', t === type);
             });
             updateWidgetPreview();
         }
 
         function updateWidgetPreview() {
-            const area = document.getElementById('widgetPreviewArea');
+            // Determine render target: inline container or SI inputs area
+            const showInlineEl = document.getElementById('showWidgetInline');
+            const showInline   = showInlineEl && showInlineEl.checked;
+            const inlineContainer = document.getElementById('inlineWidgetContainer');
+            const siArea = document.getElementById('widgetPreviewArea');
+
+            let area;
+            if (showInline && inlineContainer) {
+                inlineContainer.style.display = '';
+                area = inlineContainer;
+                if (siArea) siArea.innerHTML = '';
+            } else {
+                if (inlineContainer) inlineContainer.style.display = 'none';
+                area = siArea;
+            }
             if (!area) return;
 
             // Recompute premium from current inputs
             const pricingTemplate = document.getElementById('pricingTemplate').value;
-            const aov = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
+            const aov    = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             const premRaw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
             let avgPremium = 0;
             if (pricingTemplate === 'percentage') {
@@ -1716,6 +1781,7 @@
                 <div class="wp-card">
                     <div class="wp-spread" style="margin-bottom:4px;">
                         <span class="wp-header-text">${header} ${infoBtn}</span>
+                        <span class="wp-price">${fmtP}</span>
                     </div>
                     <div class="wp-body-text">${body}</div>
                     <div class="wp-subtotal-row">
@@ -1745,14 +1811,36 @@
                     ${disclaimer ? `<div class="wp-disclaimer">${disclaimer}</div>` : ''}
                 </div>`;
 
+            } else if (_widgetType === 'cart-cb') {
+                const header     = v('wc-cartcb-header',     'Shipping Protection');
+                const body       = v('wc-cartcb-body',       '');
+                const disclaimer = v('wc-cartcb-disclaimer', '');
+                area.innerHTML = `
+                <div class="wp-card">
+                    <div class="wp-toggle-row">
+                        <div class="wp-toggle-left">
+                            <div style="width:18px;height:18px;border-radius:4px;border:2px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:white;font-size:11px;font-weight:900;line-height:1;">✓</span>
+                            </div>
+                            <div class="wp-toggle-text">
+                                <span class="wp-header-text">${header} ${infoBtn}</span>
+                                ${body ? `<div class="wp-body-text" style="margin:2px 0 0;">${body}</div>` : ''}
+                            </div>
+                        </div>
+                        <span class="wp-price">${fmtP}</span>
+                    </div>
+                    ${disclaimer ? `<div class="wp-disclaimer">${disclaimer}</div>` : ''}
+                </div>`;
+
             } else if (_widgetType === 'extension') {
                 const header     = v('wc-ext-header',     'Shipping Protection');
                 const body       = v('wc-ext-body',       'Effortless Protection | Loss, damage, or theft');
                 const disclaimer = v('wc-ext-disclaimer', '');
+                const siLockImg  = `<img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:1.5em;\\'>🛡️</span>');">`;
                 area.innerHTML = `
                 <div class="wp-card">
                     <div class="wp-ext-row">
-                        <div class="wp-ext-icon">🛡️</div>
+                        <div class="wp-ext-icon">${siLockImg}</div>
                         <div class="wp-ext-text">
                             <div class="wp-spread" style="margin-bottom:3px;">
                                 <span class="wp-header-text">${header} ${infoBtn}</span>
@@ -1989,9 +2077,19 @@
                 cashbackSoftwareSavingsTotal = cashbackRedeemed; // display alias
             }
 
+            // Guarantee: user-editable increased claim rate (default = claimsRate × 1.5)
+            let gClaimsRate = 0, gAdditionalClaims = 0, gSiFundedClaims = 0;
+            if (guaranteeEnabled) {
+                const gRateRaw = parseFloat(document.getElementById('guaranteeClaimRateInput')?.value) || 0;
+                gClaimsRate = gRateRaw > 0 ? gRateRaw / 100 : claimsRate * 1.5;
+                gAdditionalClaims = protectedOrders * Math.max(0, gClaimsRate - claimsRate);
+                gSiFundedClaims = gAdditionalClaims * siClaimValue;
+            }
+
             // All SI costs deducted from premium pool before rev share is applied
             const postClaimBalance = premiumPool
                 - siFundedReships
+                - (guaranteeEnabled ? gSiFundedClaims : 0)
                 - (returnsEnabled  ? siCoveredLabels + siCoveredPlatform : 0)
                 - (cashbackEnabled ? cashbackRedeemed : 0);
             const revenueShareAmount = Math.max(0, postClaimBalance) * revenueShare;
@@ -1999,6 +2097,7 @@
 
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
             const extraRevenue = claimsExtra
+                + (guaranteeEnabled ? gSiFundedClaims   : 0)
                 + (returnsEnabled  ? totalReturnsOffset : 0)
                 + (cashbackEnabled ? cashbackRedeemed   : 0);  // redeemed cashback flows back to merchant as repeat revenue
             const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
@@ -2043,8 +2142,15 @@
             document.getElementById('totalReturnsCost').textContent = formatCurrency(totalReturnsCost);
             const secondSaleEl = document.getElementById('secondSale');
             if (secondSaleEl) secondSaleEl.textContent = formatCurrencyWithCents(siClaimValue);
-            document.getElementById('siFundedReships').textContent = formatCurrency(siFundedReships);
+            const siFundedTotalEl = document.getElementById('siFundedTotal');
+            if (siFundedTotalEl) siFundedTotalEl.textContent = formatCurrency(siFundedReships);
+            // Item 1: SI Funded Claim metric shows per-claim value (AOV or costPerReship)
+            document.getElementById('siFundedReships').textContent = formatCurrencyWithCents(siClaimValue);
             document.getElementById('revenueShareAmount').textContent = formatCurrency(revenueShareAmount);
+            // Item 2/3: Hide Revenue Share metric + bubble when rev share = 0
+            const rsZero = revenueShare === 0;
+            const rsMetricItem = document.getElementById('revenueShareMetricItem');
+            if (rsMetricItem) rsMetricItem.style.display = rsZero ? 'none' : '';
             document.getElementById('extraRevenue').textContent = formatCurrency(extraRevenue);
             document.getElementById('siCoveredReturnLabels').textContent = formatCurrency(siCoveredLabels);
             document.getElementById('siCoveredPlatformCost').textContent = formatCurrency(siCoveredPlatform);
@@ -2058,6 +2164,7 @@
             document.getElementById('percentOfPremiums').textContent = percentOfPremiums.toFixed(1) + '%';
             document.getElementById('claimsImpactPct').textContent = siFundedPct.toFixed(1) + '% from claims';
             document.getElementById('revShareImpactPct').textContent = revenueSharePct.toFixed(1) + '% from rev share';
+            document.getElementById('revShareImpactPct').style.display = rsZero ? 'none' : '';
             document.getElementById('returnsOffsetImpactPct').textContent = returnsOffsetPct.toFixed(1) + '% from returns';
             document.getElementById('returnsOffsetImpactPct').style.display = returnsEnabled ? '' : 'none';
             const cashbackPct = (cashbackEnabled && premiumPool > 0) ? (cashbackRedeemed / premiumPool) * 100 : 0;
@@ -2083,24 +2190,18 @@
                 // Override Premiums You Keep box for RO mode
                 document.getElementById('percentOfPremiums').textContent = roPct.toFixed(1) + '%';
                 document.getElementById('revShareImpactPct').textContent = roRevSharePct.toFixed(1) + '% from rev share';
-                document.getElementById('revShareImpactPct').style.display = '';
+                document.getElementById('revShareImpactPct').style.display = rsZero ? 'none' : '';
                 document.getElementById('returnsOffsetImpactPct').textContent = roReturnsPct.toFixed(1) + '% from returns';
                 document.getElementById('returnsOffsetImpactPct').style.display = '';
                 document.getElementById('claimsImpactPct').style.display = 'none';
                 document.getElementById('cashbackImpactPct').style.display = 'none';
             }
 
-            // Guarantee section — 1.5× claim rate
+            // Guarantee section — new 3-metric display
             if (guaranteeEnabled) {
-                const gClaimsRate = claimsRate * 1.5;
-                const gPayout = protectedOrders * gClaimsRate * avgOrderValue;
-                const gPostClaim = Math.max(0, premiumPool - gPayout - (returnsEnabled ? siCoveredLabels + siCoveredPlatform : 0) - (cashbackEnabled ? cashbackRedeemed : 0));
-                const gNetMRR = gPostClaim * revenueShare;
-                document.getElementById('guaranteeClaimRate').textContent = (gClaimsRate * 100).toFixed(2) + '%';
-                document.getElementById('guaranteePayout').textContent = formatCurrency(gPayout);
-                document.getElementById('guaranteeCoveredOrders').textContent = formatNumber(protectedOrders);
-                document.getElementById('guaranteeAOV').textContent = formatCurrencyWithCents(avgOrderValue);
-                document.getElementById('guaranteeNetMRR').textContent = formatCurrency(gNetMRR);
+                document.getElementById('guaranteeIncClaimRate').textContent = (gClaimsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
+                document.getElementById('guaranteeAddlClaims').textContent = formatNumber(gAdditionalClaims);
+                document.getElementById('guaranteeSiFundedClaims').textContent = formatCurrency(gSiFundedClaims);
             }
 
             // Store breakdown data
@@ -2120,7 +2221,8 @@
                 cogsRaw, claimsRaw, returnsRaw,
                 cashbackEnabled, cashbackPerOrder, siSponsoredCashbackTotal,
                 cashbackRedeemed, totalCashbackValueTotal, cashbackPct,
-                cashbackRate, minCashback, cashbackRedemptionRate
+                cashbackRate, minCashback, cashbackRedemptionRate,
+                guaranteeEnabled, gClaimsRate, gAdditionalClaims, gSiFundedClaims
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
             updateWidgetPreview();
@@ -2135,7 +2237,7 @@
                 document.getElementById('cogsPercent').value = urlParams.get('cogs') || '';
                 document.getElementById('avgShipping').value = urlParams.get('aship') || '';
                 document.getElementById('csCostPerClaim').value = urlParams.get('cs') || '';
-                document.getElementById('revenueShare').value = urlParams.get('share') || '35';
+                document.getElementById('revenueShare').value = urlParams.get('share') || '25';
                 document.getElementById('attachRate').value = urlParams.get('attach') || '68';
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
@@ -2162,7 +2264,7 @@
                 if (s('cogsPercent')) document.getElementById('cogsPercent').value = s('cogsPercent');
                 if (s('avgShipping')) document.getElementById('avgShipping').value = s('avgShipping');
                 if (s('csCostPerClaim')) document.getElementById('csCostPerClaim').value = s('csCostPerClaim');
-                document.getElementById('revenueShare').value = s('revenueShare') || '35';
+                document.getElementById('revenueShare').value = s('revenueShare') || '25';
                 document.getElementById('attachRate').value = s('attachRate') || '68';
                 document.getElementById('protectionPremium').value = s('protectionPremium') || '3.00';
                 if (!s('cogsPercent')) document.getElementById('cogsPercent').value = '38';
@@ -2206,7 +2308,7 @@
                 cogs: removeCommas(document.getElementById('cogsPercent').value) || '',
                 aship: removeCommas(document.getElementById('avgShipping').value) || '',
                 cs: removeCommas(document.getElementById('csCostPerClaim').value) || '',
-                share: removeCommas(document.getElementById('revenueShare').value) || '35',
+                share: removeCommas(document.getElementById('revenueShare').value) || '25',
                 attach: removeCommas(document.getElementById('attachRate').value) || '68',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
                 avg_premium: avgPremiumValue.toFixed(2),
@@ -2304,8 +2406,10 @@
                 row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
                 row('Protected Claims',   `${fn(d.protectedOrders)} × ${pct(d.claimsP)}`,    fn(d.protectedClaims)) +
                 row('SI Funded Claim',    `${fn(d.protectedClaims)} claims × ${fcc(d.siClaimValue)}`, fc(d.siFundedReships)) +
+                (d.guaranteeEnabled ? row('SI Funded Guarantee Claims', `${fn(d.gAdditionalClaims)} addl claims × ${fcc(d.siClaimValue)}`, fc(d.gSiFundedClaims)) : '') +
                 row('Post-Claim Balance', [
                     'Premiums − SI Funded',
+                    d.guaranteeEnabled ? '− Guarantee Claims' : '',
                     d.returnsEnabled  ? '− Return Labels' : '',
                     d.cashbackEnabled ? '− Cashback Redeemed' : ''
                 ].filter(Boolean).join(' '), fc(d.postClaimBalance)) +
@@ -2324,6 +2428,7 @@
             }
             const extraLabel = [
                 'funded + rev share',
+                d.guaranteeEnabled ? '+ guarantee claims' : '',
                 d.returnsEnabled ? '+ returns offset' : '',
                 d.cashbackEnabled ? '+ cashback' : ''
             ].filter(Boolean).join(' ');
@@ -2343,7 +2448,7 @@
             document.getElementById('csCostPerClaim').value = '';
             document.getElementById('protectionPremium').value = '3.00';
             document.getElementById('attachRate').value = '68';
-            document.getElementById('revenueShare').value = '35';
+            document.getElementById('revenueShare').value = '25';
             document.getElementById('cogsPercent').value = '38';
             document.getElementById('avgShipping').value = '8';
             document.getElementById('csCostPerClaim').value = '5';
@@ -2369,6 +2474,7 @@
             });
             if (returnsEnabled) toggleReturns();
             if (cashbackEnabled) toggleCashback();
+            if (guaranteeEnabled) toggleGuarantee();
             // Reset ShipInsure Inputs to hidden
             document.getElementById('viewInputsCheck').checked = false;
             document.getElementById('siInputsBody').classList.add('hidden');
@@ -2433,11 +2539,19 @@
         ['wc-dual-header','wc-dual-btna','wc-dual-btnb',
          'wc-dualp-header','wc-dualp-body','wc-dualp-btna','wc-dualp-btnb',
          'wc-tog-header','wc-tog-body','wc-tog-disclaimer',
+         'wc-cartcb-header','wc-cartcb-body','wc-cartcb-disclaimer',
          'wc-ext-header','wc-ext-body','wc-ext-disclaimer'
         ].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', updateWidgetPreview);
         });
+
+        // Show Widget Preview inline checkbox
+        document.getElementById('showWidgetInline')?.addEventListener('change', updateWidgetPreview);
+
+        // Guarantee claim rate input
+        const gClaimInputEl = document.getElementById('guaranteeClaimRateInput');
+        if (gClaimInputEl) gClaimInputEl.addEventListener('input', calculate);
 
         loadSavedValues();
         toggleProtectionPremiumVisibility();
