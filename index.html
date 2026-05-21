@@ -910,6 +910,71 @@
         #widgetMiddleWrapper.widget-active .impact-value {
             font-size: 2.2em;
         }
+        /* ── Widget config style controls ── */
+        .wconfig-section summary { list-style:none; }
+        .wconfig-section summary::-webkit-details-marker { display:none; }
+        .wconfig-style-grp {
+            border: 1px solid #e8eaf0; border-radius: 7px; margin-bottom: 6px; overflow: hidden;
+        }
+        .wconfig-style-grp > summary {
+            padding: 6px 10px; background: #f4f5fb; cursor: pointer;
+            font-size: 0.67em; font-weight: 700; color: #4a5fc1;
+            text-transform: uppercase; letter-spacing: 0.3px;
+            display: flex; align-items: center; justify-content: space-between;
+            user-select: none;
+        }
+        .wconfig-style-grp > summary::after { content: '▸'; font-size: 0.8em; color: #9ca3af; }
+        .wconfig-style-grp[open] > summary::after { content: '▾'; }
+        .wconfig-style-grp > div { padding: 8px 10px 6px; }
+        .wconfig-style-row { display: flex; flex-wrap: wrap; gap: 6px; }
+        .wcs { display: flex; flex-direction: column; gap: 3px; }
+        .wcs label { font-size: 0.62em; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+        .wcs input[type="color"] { width: 38px; height: 26px; padding: 1px 2px; border: 1px solid #d0d4e8; border-radius: 4px; cursor: pointer; background: white; }
+        .wcs input[type="number"] { width: 54px; padding: 4px 6px; border: 1px solid #d0d4e8; border-radius: 5px; font-size: 0.8em; text-align: center; }
+        .wcs input[type="text"]  { padding: 4px 6px; border: 1px solid #d0d4e8; border-radius: 5px; font-size: 0.8em; min-width: 80px; }
+        .wcs select { padding: 4px 6px; border: 1px solid #d0d4e8; border-radius: 5px; font-size: 0.78em; background: white; }
+        .wcs input:focus, .wcs select:focus { outline: none; border-color: #4a5fc1; }
+        /* Slider toggle */
+        .wconfig-slider-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+        .wconfig-sl {
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
+            font-size: 0.7em; font-weight: 600; color: #555;
+        }
+        .wconfig-sl input[type="checkbox"] { display: none; }
+        .sl-track {
+            width: 30px; height: 17px; border-radius: 9px; background: #d0d4e8;
+            position: relative; flex-shrink: 0; transition: background 0.2s;
+        }
+        .sl-track::after {
+            content: ''; position: absolute; left: 2px; top: 2px;
+            width: 13px; height: 13px; border-radius: 50%; background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.18s;
+        }
+        .wconfig-sl input:checked + .sl-track { background: #6675ff; }
+        .wconfig-sl input:checked + .sl-track::after { transform: translateX(13px); }
+        /* Logo upload row */
+        .wconfig-upload {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+            padding: 6px 8px; background: #f8f9ff; border: 1px dashed #c5caee;
+            border-radius: 6px;
+        }
+        .wconfig-upload label { font-size: 0.67em; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; min-width: 80px; }
+        .wconfig-upload input[type="file"] { font-size: 0.72em; flex: 1; min-width: 0; }
+        .wconfig-upload button { padding: 3px 8px; font-size: 0.7em; border: 1px solid #d0d4e8; border-radius: 4px; background: white; cursor: pointer; color: #666; }
+        .wconfig-upload button:hover { background: #fee; border-color: #dc3545; color: #dc3545; }
+        /* Snap mode row */
+        .wconfig-snap { display: flex; gap: 4px; }
+        .snap-btn {
+            padding: 3px 9px; font-size: 0.7em; font-weight: 600; border: 1px solid #d0d4e8;
+            border-radius: 5px; background: white; cursor: pointer; color: #6c757d; transition: all 0.15s;
+        }
+        .snap-btn.active { background: #6675ff; color: white; border-color: #6675ff; }
+        /* Section divider label */
+        .wconfig-divider {
+            font-size: 0.64em; font-weight: 700; color: #9ca3af; text-transform: uppercase;
+            letter-spacing: 0.4px; margin: 8px 0 4px; padding-bottom: 3px;
+            border-bottom: 1px solid #e8eaf0;
+        }
     </style>
 </head>
 <body>
@@ -1333,14 +1398,8 @@
                     <label class="wtype-opt active" id="wtype-dual" onclick="setWidgetType('dual')">
                         <span class="wtype-cb"></span> Dual Checkout
                     </label>
-                    <label class="wtype-opt" id="wtype-dual-plus" onclick="setWidgetType('dual-plus')">
-                        <span class="wtype-cb"></span> Dual Checkout+
-                    </label>
                     <label class="wtype-opt" id="wtype-toggle" onclick="setWidgetType('toggle')">
-                        <span class="wtype-cb"></span> Cart Toggle
-                    </label>
-                    <label class="wtype-opt" id="wtype-cart-cb" onclick="setWidgetType('cart-cb')">
-                        <span class="wtype-cb"></span> Cart Checkbox
+                        <span class="wtype-cb"></span> Cart Toggle / Checkbox
                     </label>
                     <label class="wtype-opt" id="wtype-extension" onclick="setWidgetType('extension')">
                         <span class="wtype-cb"></span> Checkout Extension
@@ -1349,10 +1408,15 @@
 
                 <!-- Dual Checkout config -->
                 <div id="wc-dual" class="wconfig-section active">
-                    <div class="wconfig-row">
+                    <div class="wconfig-divider">Content</div>
+                    <div class="wconfig-row" style="margin-bottom:6px;">
                         <div class="wconfig-field">
                             <label>Header</label>
                             <input type="text" id="wc-dual-header" placeholder="Loss, Damage, Theft Protection">
+                        </div>
+                        <div class="wconfig-field">
+                            <label>Body (optional)</label>
+                            <input type="text" id="wc-dualp-body" placeholder="">
                         </div>
                         <div class="wconfig-field">
                             <label>Button A</label>
@@ -1362,34 +1426,124 @@
                             <label>Button B</label>
                             <input type="text" id="wc-dual-btnb" placeholder="or checkout without protection">
                         </div>
-                    </div>
-                </div>
-
-                <!-- Dual Checkout+ config -->
-                <div id="wc-dual-plus" class="wconfig-section">
-                    <div class="wconfig-row">
                         <div class="wconfig-field">
-                            <label>Header</label>
-                            <input type="text" id="wc-dualp-header" placeholder="Checkout+">
-                        </div>
-                        <div class="wconfig-field">
-                            <label>Body</label>
-                            <input type="text" id="wc-dualp-body" placeholder="Loss, Damage, Theft Protection">
-                        </div>
-                        <div class="wconfig-field">
-                            <label>Button A</label>
-                            <input type="text" id="wc-dualp-btna" placeholder="Checkout+ | $0.00">
-                        </div>
-                        <div class="wconfig-field">
-                            <label>Button B</label>
-                            <input type="text" id="wc-dualp-btnb" placeholder="or checkout without protection">
+                            <label>Disclaimer</label>
+                            <input type="text" id="wc-dual-disclaimer" placeholder="">
                         </div>
                     </div>
+                    <div class="wconfig-slider-row">
+                        <label class="wconfig-sl">
+                            <input type="checkbox" id="wc-dual-between" onchange="updateWidgetPreview()">
+                            <span class="sl-track"></span> Header Between Buttons
+                        </label>
+                        <label class="wconfig-sl">
+                            <input type="checkbox" id="wc-dual-show-price-a" checked onchange="updateWidgetPreview()">
+                            <span class="sl-track"></span> Price on Primary Button
+                        </label>
+                        <label class="wconfig-sl">
+                            <input type="checkbox" id="wc-dual-show-price-b" onchange="updateWidgetPreview()">
+                            <span class="sl-track"></span> Price on Secondary Button
+                        </label>
+                    </div>
+                    <div class="wconfig-upload">
+                        <label>Custom Logo</label>
+                        <input type="file" id="wc-dual-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('dual',this)">
+                        <button onclick="clearLogo('dual')">✕ Clear</button>
+                    </div>
+                    <details class="wconfig-style-grp">
+                        <summary>Info Container Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-bg" value="#ffffff" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-dual-bd-color" value="#e9ecef" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Width</label><input type="number" id="wc-dual-bd-width" value="2" min="1" max="5" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Radius</label><input type="number" id="wc-dual-bd-radius" value="12" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Padding</label><input type="number" id="wc-dual-padding" value="16" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Price Position</label>
+                                    <select id="wc-dual-price-pos" onchange="updateWidgetPreview()">
+                                        <option value="right">Right</option>
+                                        <option value="left">Left</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>Header Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-dual-h-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-dual-h-size" placeholder="14" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-dual-h-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-h-color" value="#333333" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>Body Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-dual-b-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-dual-b-size" placeholder="13" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-dual-b-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-b-color" value="#666666" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>Secondary Button Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-s-bg" value="#ffffff" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-dual-s-bd-color" value="#dee2e6" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Width</label><input type="number" id="wc-dual-s-bd-width" value="2" min="1" max="5" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Radius</label><input type="number" id="wc-dual-s-bd-radius" value="9" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Padding</label><input type="number" id="wc-dual-s-padding" value="11" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-dual-s-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-dual-s-size" placeholder="13" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-dual-s-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-s-color" value="#495057" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Margin Top</label><input type="number" id="wc-dual-s-mt" value="8" min="0" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
                 </div>
 
-                <!-- Toggle / Checkbox config -->
+                <!-- Cart Toggle / Checkbox config -->
                 <div id="wc-toggle" class="wconfig-section">
-                    <div class="wconfig-row">
+                    <div class="wconfig-divider">Content</div>
+                    <div class="wconfig-row" style="margin-bottom:6px;">
                         <div class="wconfig-field">
                             <label>Header</label>
                             <input type="text" id="wc-tog-header" placeholder="Shipping Protection">
@@ -1402,32 +1556,114 @@
                             <label>Disclaimer</label>
                             <input type="text" id="wc-tog-disclaimer" placeholder="">
                         </div>
-                        <label class="wconfig-check"><input type="checkbox" id="wc-tog-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
                     </div>
-                </div>
-
-                <!-- Cart Checkbox config (same inputs as toggle) -->
-                <div id="wc-cart-cb" class="wconfig-section">
-                    <div class="wconfig-row">
-                        <div class="wconfig-field">
-                            <label>Header</label>
-                            <input type="text" id="wc-cartcb-header" placeholder="Shipping Protection">
-                        </div>
-                        <div class="wconfig-field">
-                            <label>Body</label>
-                            <input type="text" id="wc-cartcb-body" placeholder="">
-                        </div>
-                        <div class="wconfig-field">
-                            <label>Disclaimer</label>
-                            <input type="text" id="wc-cartcb-disclaimer" placeholder="">
-                        </div>
-                        <label class="wconfig-check"><input type="checkbox" id="wc-cartcb-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
+                    <div class="wconfig-slider-row">
+                        <label class="wconfig-sl">
+                            <input type="checkbox" id="wc-tog-is-checkbox" onchange="updateWidgetPreview()">
+                            <span class="sl-track"></span> Switch to Checkbox
+                        </label>
+                        <label class="wconfig-check" style="padding-top:0;"><input type="checkbox" id="wc-tog-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
                     </div>
+                    <div class="wconfig-upload">
+                        <label>Custom Logo</label>
+                        <input type="file" id="wc-toggle-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('toggle',this)">
+                        <button onclick="clearLogo('toggle')">✕ Clear</button>
+                    </div>
+                    <div class="wconfig-divider">Snap Mode</div>
+                    <div class="wconfig-snap" style="margin-bottom:8px;">
+                        <button class="snap-btn active" id="snap-split" onclick="setSnap('split')">Split</button>
+                        <button class="snap-btn" id="snap-left" onclick="setSnap('left')">Snap Left</button>
+                        <button class="snap-btn" id="snap-right" onclick="setSnap('right')">Snap Right</button>
+                    </div>
+                    <details class="wconfig-style-grp">
+                        <summary>Container Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-tog-bg" value="#ffffff" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-tog-bd-color" value="#e9ecef" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Width</label><input type="number" id="wc-tog-bd-width" value="2" min="1" max="5" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Radius</label><input type="number" id="wc-tog-bd-radius" value="12" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Padding</label><input type="number" id="wc-tog-padding" value="16" min="0" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>Header Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-tog-h-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-tog-h-size" placeholder="14" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-tog-h-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-h-color" value="#333333" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>Body Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-tog-b-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-tog-b-size" placeholder="13" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-tog-b-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-b-color" value="#666666" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>Disclaimer Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-tog-d-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-tog-d-size" placeholder="11" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-tog-d-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-d-color" value="#aaaaaa" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>Switch / Checkbox Color</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>Switch Color</label><input type="color" id="wc-tog-switch-color" value="#6675ff" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
                 </div>
 
                 <!-- Checkout Extension config -->
                 <div id="wc-extension" class="wconfig-section">
-                    <div class="wconfig-row">
+                    <div class="wconfig-divider">Content</div>
+                    <div class="wconfig-row" style="margin-bottom:6px;">
                         <div class="wconfig-field">
                             <label>Header</label>
                             <input type="text" id="wc-ext-header" placeholder="Shipping Protection">
@@ -1441,10 +1677,16 @@
                             <input type="text" id="wc-ext-disclaimer" placeholder="">
                         </div>
                         <div class="wconfig-field" id="wc-ext-cashback-field" style="display:none;">
-                            <label>Cashback Row</label>
-                            <input type="text" id="wc-ext-cashback" placeholder="Plus Earn $5 Off Your Next Order">
+                            <label>Cashback Row (use {amount})</label>
+                            <input type="text" id="wc-ext-cashback" placeholder="Plus Earn {amount} Off Your Next Order">
                         </div>
-                        <label class="wconfig-check"><input type="checkbox" id="wc-ext-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
+                    </div>
+                    <div class="wconfig-slider-row">
+                        <label class="wconfig-sl">
+                            <input type="checkbox" id="wc-ext-show-learn-more" checked onchange="updateWidgetPreview()">
+                            <span class="sl-track"></span> Show Learn More Link
+                        </label>
+                        <label class="wconfig-check" style="padding-top:0;"><input type="checkbox" id="wc-ext-hide-lock" onchange="updateWidgetPreview()"> Hide lock</label>
                     </div>
                 </div>
 
@@ -1468,6 +1710,9 @@
         let _claimResolution = '2ndsale'; // '2ndsale' | 'cogs'
         let _widgetType      = 'dual';    // 'dual' | 'dual-plus' | 'toggle' | 'cart-cb' | 'extension'
         let _cashbackPerOrderCached = 0;  // updated by calculate(), read by updateWidgetPreview()
+        let _dualLogoSrc   = null;   // custom uploaded logo for dual checkout
+        let _toggleLogoSrc = null;   // custom uploaded logo for toggle/checkbox
+        let _snapMode      = 'split'; // 'split' | 'left' | 'right'
 
         function setCogsType(t) {
             _cogsType = t;
@@ -1788,7 +2033,7 @@
 
         function setWidgetType(type) {
             _widgetType = type;
-            ['dual', 'dual-plus', 'toggle', 'cart-cb', 'extension'].forEach(t => {
+            ['dual', 'toggle', 'extension'].forEach(t => {
                 const wt = document.getElementById('wtype-' + t);
                 if (wt) wt.classList.toggle('active', t === type);
                 const wc = document.getElementById('wc-' + t);
@@ -1797,16 +2042,42 @@
             updateWidgetPreview();
         }
 
+        function handleLogoUpload(widget, input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { alert('File must be under 2MB'); input.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                if (widget === 'dual')   _dualLogoSrc   = e.target.result;
+                if (widget === 'toggle') _toggleLogoSrc = e.target.result;
+                updateWidgetPreview();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearLogo(widget) {
+            if (widget === 'dual')   { _dualLogoSrc = null;   const e = document.getElementById('wc-dual-logo');   if(e) e.value=''; }
+            if (widget === 'toggle') { _toggleLogoSrc = null; const e = document.getElementById('wc-toggle-logo'); if(e) e.value=''; }
+            updateWidgetPreview();
+        }
+
+        function setSnap(mode) {
+            _snapMode = mode;
+            ['split','left','right'].forEach(m => {
+                const b = document.getElementById('snap-' + m);
+                if (b) b.classList.toggle('active', m === mode);
+            });
+            updateWidgetPreview();
+        }
+
         const _widgetTypeNames = {
-            'dual':       'Dual Checkout',
-            'dual-plus':  'Dual Checkout+',
-            'toggle':     'Cart Toggle',
-            'cart-cb':    'Cart Checkbox',
-            'extension':  'Checkout Extension'
+            'dual':      'Dual Checkout',
+            'toggle':    'Cart Toggle / Checkbox',
+            'extension': 'Checkout Extension'
         };
 
         function updateWidgetPreview() {
-            // ── Determine render target ─────────────────────────────────
+            // ── Target ─────────────────────────────────────────────────────
             const showInlineEl    = document.getElementById('showWidgetInline');
             const showInline      = showInlineEl && showInlineEl.checked;
             const inlineContainer = document.getElementById('inlineWidgetContainer');
@@ -1835,14 +2106,14 @@
             }
             if (!area) return;
 
-            // ── Mode ────────────────────────────────────────────────────
+            // ── Mode ────────────────────────────────────────────────────────
             let mode = 'default';
-            if (returnsOffsetMode)  mode = 'returns-offset';
+            if (returnsOffsetMode)     mode = 'returns-offset';
             else if (cashbackEnabled)  mode = 'cashback';
             else if (guaranteeEnabled) mode = 'guarantee';
             else if (returnsEnabled)   mode = 'returns';
 
-            // ── Premium calc ────────────────────────────────────────────
+            // ── Premium ──────────────────────────────────────────────────────
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const aov    = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             const premRaw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
@@ -1857,183 +2128,192 @@
             const cbAmt = Math.round(_cashbackPerOrderCached) || 5;
             const cbStr = `$${cbAmt}`;
 
-            // ── Mode-specific defaults ──────────────────────────────────
+            // ── Mode defaults ─────────────────────────────────────────────────
             const defMap = {
-                'default': {
-                    dualH: 'Loss, Damage, Theft Protection', dpBody: 'Loss, Damage, Theft Protection',
-                    togH: 'Shipping Protection', extH: 'Shipping Protection',
-                    extBody: 'Effortless Protection | Loss, damage, or theft', extCb: null,
-                    btnB: 'or checkout without protection', btnBp: 'or checkout without protection',
-                },
-                'returns': {
-                    dualH: 'Shipping Protection + Free Returns', dpBody: 'Shipping Protection + Free Returns',
-                    togH: 'Shipping Protection + Free Returns', extH: 'Shipping Protection + Free Returns',
-                    extBody: 'Effortless Protection | Loss, damage, or theft', extCb: null,
-                    btnB: 'or checkout without protection', btnBp: 'or checkout without free returns',
-                },
-                'returns-offset': {
-                    dualH: 'Unlock Free Returns', dpBody: 'Unlock Free Returns',
-                    togH: 'Unlock Free Returns', extH: 'Checkout+',
-                    extBody: 'Unlock Free Returns', extCb: null,
-                    btnB: 'or checkout without free returns', btnBp: 'or checkout without free returns',
-                },
-                'cashback': {
-                    dualH: `Shipping Protection + ${cbStr} Cashback`, dpBody: `Shipping Protection + ${cbStr} Cashback`,
-                    togH: `${cbStr} Cashback`, extH: 'Checkout+',
-                    extBody: 'Shipping Protection', extCb: `Plus Earn ${cbStr} Off Your Next Order`,
-                    btnB: 'or checkout without protection', btnBp: 'or checkout without protection',
-                },
-                'guarantee': {
-                    dualH: 'Protection + Satisfaction Guarantee', dpBody: 'Protection + Satisfaction Guarantee',
-                    togH: 'Protection + Satisfaction Guarantee', extH: 'Checkout+',
-                    extBody: 'Protection + Satisfaction Guarantee', extCb: null,
-                    btnB: 'or checkout without protection', btnBp: 'or checkout without protection',
-                },
+                'default':        { dualH:'Loss, Damage, Theft Protection', togH:'Shipping Protection',            extH:'Shipping Protection',  extBody:'Effortless Protection | Loss, damage, or theft', extCb:null, btnB:'or checkout without protection' },
+                'returns':        { dualH:'Shipping Protection + Free Returns', togH:'Shipping Protection + Free Returns', extH:'Shipping Protection + Free Returns', extBody:'Effortless Protection | Loss, damage, or theft', extCb:null, btnB:'or checkout without free returns' },
+                'returns-offset': { dualH:'Unlock Free Returns',             togH:'Unlock Free Returns',           extH:'Checkout+',            extBody:'Unlock Free Returns', extCb:null, btnB:'or checkout without free returns' },
+                'cashback':       { dualH:`Shipping Protection + ${cbStr} Cashback`, togH:`${cbStr} Cashback`,    extH:'Checkout+',            extBody:'Shipping Protection', extCb:`Plus Earn {amount} Off Your Next Order`, btnB:'or checkout without protection' },
+                'guarantee':      { dualH:'Protection + Satisfaction Guarantee', togH:'Protection + Satisfaction Guarantee', extH:'Checkout+', extBody:'Protection + Satisfaction Guarantee', extCb:null, btnB:'or checkout without protection' },
             };
             const D = defMap[mode] || defMap['default'];
 
-            // ── Helpers ─────────────────────────────────────────────────
-            const v  = (id, fb) => { const el = document.getElementById(id); return (el && el.value.trim()) ? el.value.trim() : fb; };
-            const ph = (id, p)  => { const el = document.getElementById(id); if (el && !el.value.trim()) el.placeholder = p; };
+            // ── Helpers ───────────────────────────────────────────────────────
+            const v   = (id, fb) => { const el = document.getElementById(id); return (el && el.value.trim()) ? el.value.trim() : fb; };
+            const ph  = (id, p)  => { const el = document.getElementById(id); if (el && !el.value.trim()) el.placeholder = p; };
+            const gv  = (id, fb) => { const el = document.getElementById(id); return el ? (el.value || fb) : fb; };
+            const gch = (id, def) => { const el = document.getElementById(id); return el ? el.checked : def; };
+            const sty = (ff, fs, fw, fc) => {
+                let s = '';
+                if (ff && ff !== 'inherit') s += `font-family:${ff};`;
+                if (fs) s += `font-size:${fs}px;`;
+                if (fw) s += `font-weight:${fw};`;
+                if (fc) s += `color:${fc};`;
+                return s;
+            };
 
-            // Update all placeholders
-            ph('wc-dual-header',   D.dualH);
-            ph('wc-dual-btna',     `Checkout | ${fmtT}`);
-            ph('wc-dual-btnb',     D.btnB);
-            ph('wc-dualp-header',  'Checkout+');
-            ph('wc-dualp-body',    D.dpBody);
-            ph('wc-dualp-btna',    `Checkout+ | ${fmtT}`);
-            ph('wc-dualp-btnb',    D.btnBp);
-            ph('wc-tog-header',    D.togH);
-            ph('wc-cartcb-header', D.togH);
-            ph('wc-ext-header',    D.extH);
-            ph('wc-ext-body',      D.extBody);
-            ph('wc-ext-cashback',  D.extCb || `Plus Earn ${cbStr} Off Your Next Order`);
+            // Update placeholders
+            ph('wc-dual-header',  D.dualH);
+            ph('wc-dual-btna',    `Checkout | ${fmtT}`);
+            ph('wc-dual-btnb',    D.btnB);
+            ph('wc-dualp-body',   D.dualH);
+            ph('wc-tog-header',   D.togH);
+            ph('wc-ext-header',   D.extH);
+            ph('wc-ext-body',     D.extBody);
+            ph('wc-ext-cashback', D.extCb || `Plus Earn {amount} Off Your Next Order`);
 
-            // Show/hide cashback config row in extension
+            // Cashback extension field visibility
             const extCbField = document.getElementById('wc-ext-cashback-field');
             if (extCbField) extCbField.style.display = (mode === 'cashback' && _widgetType === 'extension') ? '' : 'none';
 
-            // ── Shared elements ─────────────────────────────────────────
+            // ── Shared assets ──────────────────────────────────────────────────
             const lockSrc   = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png';
             const leafSrc   = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/leaf-icon.png';
             const cashSrc   = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cash-icon.png';
-            const lockImg   = `<img src="${lockSrc}" class="wp-lock-icon" onerror="this.style.opacity='0';">`;
-            const leafImg   = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
             const cashImg   = `<img src="${cashSrc}" class="wp-cash-icon" onerror="this.style.display='none';">`;
-            const infoBtn  = `<span class="wp-info-btn">i</span>`;
+            const infoBtn   = `<span class="wp-info-btn">i</span>`;
             const learnMore = `<a class="wp-learn-more">Learn More</a>`;
 
-            // ── Render per type ─────────────────────────────────────────
+            // ── DUAL CHECKOUT ─────────────────────────────────────────────────
             if (_widgetType === 'dual') {
-                const header = v('wc-dual-header', D.dualH);
-                const btna   = v('wc-dual-btna',   `Checkout | ${fmtT}`);
-                const btnb   = v('wc-dual-btnb',   D.btnB);
-                area.innerHTML = `
-                <div class="wp-card">
-                    <div class="wp-spread" style="margin-bottom:10px; align-items:flex-start; gap:10px;">
-                        <span class="wp-header-text" style="flex:1;">${header} ${infoBtn}</span>
-                        <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
+                const header   = v('wc-dual-header', D.dualH);
+                const body     = v('wc-dualp-body', '');
+                const btnARaw  = v('wc-dual-btna', `Checkout | ${fmtT}`);
+                const btnBRaw  = v('wc-dual-btnb', D.btnB);
+                const disc     = v('wc-dual-disclaimer', '');
+                const between  = gch('wc-dual-between', false);
+                const showPriceA = gch('wc-dual-show-price-a', true);
+                const showPriceB = gch('wc-dual-show-price-b', false);
+
+                const bg       = gv('wc-dual-bg', '#ffffff');
+                const bdColor  = gv('wc-dual-bd-color', '#e9ecef');
+                const bdWidth  = gv('wc-dual-bd-width', '2');
+                const bdRadius = gv('wc-dual-bd-radius', '12');
+                const pad      = gv('wc-dual-padding', '16');
+                const pricePos = gv('wc-dual-price-pos', 'right');
+
+                const hStyle = sty(gv('wc-dual-h-font',''), gv('wc-dual-h-size',''), gv('wc-dual-h-weight',''), gv('wc-dual-h-color','#333333'));
+                const bStyle = sty(gv('wc-dual-b-font',''), gv('wc-dual-b-size',''), gv('wc-dual-b-weight',''), gv('wc-dual-b-color','#666666'));
+
+                const ssBg    = gv('wc-dual-s-bg','#ffffff');
+                const ssBd    = gv('wc-dual-s-bd-color','#dee2e6');
+                const ssBdW   = gv('wc-dual-s-bd-width','2');
+                const ssBdR   = gv('wc-dual-s-bd-radius','9');
+                const ssPad   = gv('wc-dual-s-padding','11');
+                const ssMt    = gv('wc-dual-s-mt','8');
+                const ssStyle = sty(gv('wc-dual-s-font',''), gv('wc-dual-s-size',''), gv('wc-dual-s-weight',''), gv('wc-dual-s-color','#495057'));
+
+                const cardStyle = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
+                const secBtnStyle = `display:block;width:100%;padding:${ssPad}px 16px;border:${ssBdW}px solid ${ssBd};border-radius:${ssBdR}px;background:${ssBg};text-decoration:underline;text-align:center;font-family:inherit;cursor:default;margin-top:${ssMt}px;${ssStyle}`;
+
+                const priceHtml = `<span class="wp-price" style="flex-shrink:0;">${fmtP}</span>`;
+                const headerBlock = `
+                    <div class="wp-spread" style="margin-bottom:${body?'4':'10'}px;align-items:flex-start;gap:10px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
+                        <span class="wp-header-text" style="flex:1;${hStyle}">${header} ${infoBtn}</span>
+                        ${pricePos !== 'none' ? priceHtml : ''}
                     </div>
-                    <div class="wp-subtotal-row">
-                        <span class="wp-subtotal-lbl">Subtotal</span>
-                        <span class="wp-subtotal-val">${fmtA}</span>
-                    </div>
-                    <button class="wp-btn-primary">${btna}</button>
-                    <button class="wp-btn-secondary">${btnb}</button>
+                    ${body ? `<div class="wp-body-text" style="${bStyle}margin-bottom:6px;">${body}</div>` : ''}`;
+
+                const btnALabel = showPriceA ? btnARaw : btnARaw.replace(/\s*\|.*$/, '').trim();
+                const btnBLabel = showPriceB ? `${btnBRaw} | ${fmtT}` : btnBRaw;
+
+                const betweenBlock = between ? `<div style="padding:10px 0 8px;text-align:center;">
+                    <div style="${hStyle}font-size:0.88em;">${header}</div>
+                    ${body ? `<div style="${bStyle}font-size:0.82em;margin-top:2px;">${body}</div>` : ''}
+                </div>` : '';
+
+                area.innerHTML = `<div style="${cardStyle}">
+                    ${!between ? headerBlock : ''}
+                    <div class="wp-subtotal-row"><span class="wp-subtotal-lbl">Subtotal</span><span class="wp-subtotal-val">${fmtA}</span></div>
+                    <button class="wp-btn-primary">${btnALabel}</button>
+                    ${between ? betweenBlock : ''}
+                    <button style="${secBtnStyle}">${btnBLabel}</button>
+                    ${disc ? `<div class="wp-disclaimer" style="margin-top:6px;">${disc}</div>` : ''}
                 </div>`;
 
-            } else if (_widgetType === 'dual-plus') {
-                const header = v('wc-dualp-header', 'Checkout+');
-                const body   = v('wc-dualp-body',   D.dpBody);
-                const btna   = v('wc-dualp-btna',   `Checkout+ | ${fmtT}`);
-                const btnb   = v('wc-dualp-btnb',   D.btnBp);
-                area.innerHTML = `
-                <div class="wp-card">
-                    <div class="wp-spread" style="margin-bottom:4px; align-items:flex-start; gap:10px;">
-                        <span class="wp-header-text" style="flex:1;">${header} ${infoBtn}</span>
-                        <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
-                    </div>
-                    <div class="wp-body-text" style="margin-bottom:6px;">${body}</div>
-                    <div class="wp-subtotal-row">
-                        <span class="wp-subtotal-lbl">Subtotal</span>
-                        <span class="wp-subtotal-val">${fmtA}</span>
-                    </div>
-                    <button class="wp-btn-primary">${btna}</button>
-                    <button class="wp-btn-secondary">${btnb}</button>
-                </div>`;
-
+            // ── CART TOGGLE / CHECKBOX ────────────────────────────────────────
             } else if (_widgetType === 'toggle') {
-                const header     = v('wc-tog-header',     D.togH);
-                const body       = v('wc-tog-body',       '');
+                const header     = v('wc-tog-header', D.togH);
+                const body       = v('wc-tog-body', '');
                 const disclaimer = v('wc-tog-disclaimer', '');
-                const hideLock   = document.getElementById('wc-tog-hide-lock')?.checked;
-                area.innerHTML = `
-                <div class="wp-card">
+                const hideLock   = gch('wc-tog-hide-lock', false);
+                const isCheckbox = gch('wc-tog-is-checkbox', false);
+                const switchColor = gv('wc-tog-switch-color', '#6675ff');
+
+                const bg       = gv('wc-tog-bg', '#ffffff');
+                const bdColor  = gv('wc-tog-bd-color', '#e9ecef');
+                const bdWidth  = gv('wc-tog-bd-width', '2');
+                const bdRadius = gv('wc-tog-bd-radius', '12');
+                const pad      = gv('wc-tog-padding', '16');
+                const hStyle   = sty(gv('wc-tog-h-font',''), gv('wc-tog-h-size',''), gv('wc-tog-h-weight',''), gv('wc-tog-h-color','#333333'));
+                const bStyle   = sty(gv('wc-tog-b-font',''), gv('wc-tog-b-size',''), gv('wc-tog-b-weight',''), gv('wc-tog-b-color','#666666'));
+                const dStyle   = sty(gv('wc-tog-d-font',''), gv('wc-tog-d-size',''), gv('wc-tog-d-weight',''), gv('wc-tog-d-color','#aaaaaa'));
+
+                const cardStyle = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
+
+                const logoActualSrc = _toggleLogoSrc || lockSrc;
+                const leafImg = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
+                const lockImgEl = hideLock ? '' : `<img src="${logoActualSrc}" class="wp-lock-icon" onerror="this.style.opacity='0';">`;
+
+                let controlHtml;
+                if (isCheckbox) {
+                    controlHtml = `<div style="width:20px;height:20px;border-radius:4px;border:2px solid ${switchColor};background:${switchColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:white;font-size:12px;font-weight:900;line-height:1;">✓</span></div>`;
+                } else {
+                    controlHtml = `<div style="width:38px;height:22px;border-radius:11px;background:${switchColor};position:relative;flex-shrink:0;"><div style="position:absolute;right:2px;top:2px;width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,0.22);"></div></div>`;
+                }
+
+                const snapStyle = _snapMode === 'left' ? 'margin-right:auto;' : _snapMode === 'right' ? 'margin-left:auto;' : 'margin:0 auto;';
+
+                area.innerHTML = `<div style="${cardStyle}${snapStyle}">
                     <div class="wp-toggle-row">
                         <div class="wp-toggle-left" style="gap:7px;">
-                            ${hideLock ? '' : lockImg}
+                            ${lockImgEl}
                             <div class="wp-toggle-text">
-                                <span class="wp-header-text">${header} ${leafImg}</span>
-                                ${body ? `<div class="wp-body-text" style="margin:2px 0 0;">${body}</div>` : ''}
+                                <span class="wp-header-text" style="${hStyle}">${header} ${leafImg}</span>
+                                ${body ? `<div class="wp-body-text" style="${bStyle}margin:2px 0 0;">${body}</div>` : ''}
                             </div>
                         </div>
                         <div class="wp-toggle-right">
-                            <div class="wp-toggle-switch"><div class="wp-toggle-knob"></div></div>
-                            <div class="wp-price" style="font-size:0.85em; margin-top:3px;">${fmtP}</div>
+                            ${controlHtml}
+                            <div class="wp-price" style="font-size:0.85em;margin-top:3px;">${fmtP}</div>
                         </div>
                     </div>
-                    ${disclaimer ? `<div class="wp-disclaimer">${disclaimer}</div>` : ''}
+                    ${disclaimer ? `<div class="wp-disclaimer" style="${dStyle}margin-top:6px;">${disclaimer}</div>` : ''}
                 </div>`;
 
-            } else if (_widgetType === 'cart-cb') {
-                const header     = v('wc-cartcb-header',     D.togH);
-                const body       = v('wc-cartcb-body',       '');
-                const disclaimer = v('wc-cartcb-disclaimer', '');
-                const hideLock   = document.getElementById('wc-cartcb-hide-lock')?.checked;
-                area.innerHTML = `
-                <div class="wp-card">
-                    <div class="wp-toggle-row">
-                        <div class="wp-toggle-left" style="gap:7px;">
-                            ${hideLock ? '' : lockImg}
-                            <div class="wp-toggle-text">
-                                <span class="wp-header-text">${header} ${leafImg}</span>
-                                ${body ? `<div class="wp-body-text" style="margin:2px 0 0;">${body}</div>` : ''}
-                            </div>
-                        </div>
-                        <div class="wp-toggle-right">
-                            <div style="width:20px;height:20px;border-radius:4px;border:2px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <span style="color:white;font-size:12px;font-weight:900;line-height:1;">✓</span>
-                            </div>
-                            <div class="wp-price" style="font-size:0.85em; margin-top:3px;">${fmtP}</div>
-                        </div>
-                    </div>
-                    ${disclaimer ? `<div class="wp-disclaimer">${disclaimer}</div>` : ''}
-                </div>`;
-
+            // ── CHECKOUT EXTENSION ────────────────────────────────────────────
             } else if (_widgetType === 'extension') {
-                const header     = v('wc-ext-header',     D.extH);
-                const body       = v('wc-ext-body',       D.extBody);
+                const header     = v('wc-ext-header', D.extH);
+                const body       = v('wc-ext-body', D.extBody);
                 const disclaimer = v('wc-ext-disclaimer', '');
-                const cbRow      = mode === 'cashback' ? v('wc-ext-cashback', D.extCb) : null;
-                const hideLock   = document.getElementById('wc-ext-hide-lock')?.checked;
-                area.innerHTML = `
-                <div class="wp-card">
+                const hideLock   = gch('wc-ext-hide-lock', false);
+                const showLearnMore = gch('wc-ext-show-learn-more', true);
+
+                let cbRowText = null;
+                if (mode === 'cashback') {
+                    const rawCb = v('wc-ext-cashback', D.extCb || `Plus Earn {amount} Off Your Next Order`);
+                    cbRowText = rawCb.replace(/\{amount\}/g, cbStr);
+                }
+
+                area.innerHTML = `<div class="wp-card">
                     <div class="wp-ext-row">
-                        ${hideLock ? '' : `<img src="${lockSrc}" class="wp-ext-lock" onerror="this.style.opacity='0';">`}
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+                            ${hideLock ? '' : `<img src="${_toggleLogoSrc || lockSrc}" class="wp-ext-lock" onerror="this.style.opacity='0';">`}
+                            <div style="width:18px;height:18px;border-radius:3px;border:1.5px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;"><span style="color:white;font-size:10px;font-weight:900;">✓</span></div>
+                        </div>
                         <div class="wp-ext-text">
-                            <div class="wp-spread" style="margin-bottom:4px; align-items:flex-start; gap:8px;">
-                                <span class="wp-header-text" style="font-weight:700; flex:1;">${header}</span>
+                            <div class="wp-spread" style="margin-bottom:4px;align-items:flex-start;gap:8px;">
+                                <span class="wp-header-text" style="font-weight:700;flex:1;">${header}</span>
                                 <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
                             </div>
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                                 <div class="wp-body-text" style="margin:0;">${body}</div>
-                                ${learnMore}
+                                ${showLearnMore ? learnMore : ''}
                             </div>
-                            ${disclaimer ? `<div class="wp-disclaimer" style="margin-top:5px; display:flex; align-items:flex-start; gap:4px;">${infoBtn}<span>${disclaimer}</span></div>` : ''}
+                            ${disclaimer ? `<div class="wp-disclaimer" style="margin-top:5px;display:flex;align-items:flex-start;gap:4px;">${infoBtn}<span>${disclaimer}</span></div>` : ''}
                         </div>
                     </div>
-                    ${cbRow ? `<div class="wp-cashback-row">${cashImg}<span>${cbRow}</span></div>` : ''}
+                    ${cbRowText ? `<div class="wp-cashback-row">${cashImg}<span>${cbRowText}</span></div>` : ''}
                 </div>`;
             }
         }
@@ -2473,9 +2753,8 @@
                 }
                 // Widget config text fields
                 ['wc-dual-header','wc-dual-btna','wc-dual-btnb',
-                 'wc-dualp-header','wc-dualp-body','wc-dualp-btna','wc-dualp-btnb',
+                 'wc-dualp-body','wc-dual-disclaimer',
                  'wc-tog-header','wc-tog-body','wc-tog-disclaimer',
-                 'wc-cartcb-header','wc-cartcb-body','wc-cartcb-disclaimer',
                  'wc-ext-header','wc-ext-body','wc-ext-disclaimer','wc-ext-cashback'
                 ].forEach(id => {
                     const val = urlParams.get('w_' + id);
@@ -2485,7 +2764,6 @@
                 // Hide-lock checkboxes
                 const setChk = (id, key) => { const el = document.getElementById(id); if (el && urlParams.get(key) === '1') el.checked = true; };
                 setChk('wc-tog-hide-lock',    'w_toghide');
-                setChk('wc-cartcb-hide-lock', 'w_cbhide');
                 setChk('wc-ext-hide-lock',    'w_exthide');
             } else {
                 const s = k => localStorage.getItem('shipinsure_' + k);
@@ -2582,15 +2860,13 @@
             // Widget config text fields — only include non-empty values
             const wcFields = [
                 'wc-dual-header','wc-dual-btna','wc-dual-btnb',
-                'wc-dualp-header','wc-dualp-body','wc-dualp-btna','wc-dualp-btnb',
+                'wc-dualp-body','wc-dual-disclaimer',
                 'wc-tog-header','wc-tog-body','wc-tog-disclaimer',
-                'wc-cartcb-header','wc-cartcb-body','wc-cartcb-disclaimer',
                 'wc-ext-header','wc-ext-body','wc-ext-disclaimer','wc-ext-cashback'
             ];
             wcFields.forEach(id => { const val = gv(id); if (val) params.set('w_' + id, val); });
             // Hide-lock checkboxes
             if (gc('wc-tog-hide-lock'))    params.set('w_toghide', '1');
-            if (gc('wc-cartcb-hide-lock')) params.set('w_cbhide', '1');
             if (gc('wc-ext-hide-lock'))    params.set('w_exthide', '1');
 
             const shareableUrl = `${baseUrl}?${params.toString()}`;
@@ -2799,10 +3075,11 @@
 
         // Widget config input listeners
         ['wc-dual-header','wc-dual-btna','wc-dual-btnb',
-         'wc-dualp-header','wc-dualp-body','wc-dualp-btna','wc-dualp-btnb',
          'wc-tog-header','wc-tog-body','wc-tog-disclaimer',
-         'wc-cartcb-header','wc-cartcb-body','wc-cartcb-disclaimer',
-         'wc-ext-header','wc-ext-body','wc-ext-disclaimer','wc-ext-cashback'
+         'wc-ext-header','wc-ext-body','wc-ext-disclaimer','wc-ext-cashback',
+         'wc-dualp-body','wc-dual-disclaimer',
+         'wc-dual-h-font','wc-dual-b-font','wc-dual-s-font',
+         'wc-tog-h-font','wc-tog-b-font','wc-tog-d-font'
         ].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', updateWidgetPreview);
