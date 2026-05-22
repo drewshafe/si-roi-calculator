@@ -219,6 +219,13 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
+        .cards-row.cost-hidden {
+            display: flex;
+            justify-content: center;
+        }
+        .cards-row.cost-hidden .result-card.positive {
+            flex: 0 0 calc(50% - 6px);
+        }
 
         .result-card {
             border-radius: 10px;
@@ -1137,7 +1144,7 @@
             </div>
 
             <!-- Red | Green cards -->
-            <div class="cards-row">
+            <div class="cards-row" id="cardsRow">
 
                 <!-- Left: Total Cost Without ShipInsure -->
                 <div class="result-card negative" id="currentCostCard">
@@ -2202,19 +2209,22 @@
 
         function toggleCurrentCost() {
             _hideCurrentCost = !_hideCurrentCost;
-            const btn  = document.getElementById('hideCostToggle');
-            const card = document.getElementById('currentCostCard');
-            const bdCol = document.getElementById('bdCostCol');
+            const btn     = document.getElementById('hideCostToggle');
+            const card    = document.getElementById('currentCostCard');
+            const bdCol   = document.getElementById('bdCostCol');
+            const row     = document.getElementById('cardsRow');
             if (_hideCurrentCost) {
                 btn.classList.add('active');
                 btn.innerHTML = '<span>✓</span> Current Cost Hidden';
                 if (card)  card.style.display  = 'none';
                 if (bdCol) bdCol.style.display  = 'none';
+                if (row)   row.classList.add('cost-hidden');
             } else {
                 btn.classList.remove('active');
                 btn.innerHTML = '<span>◌</span> Hide Current Cost';
                 if (card)  card.style.display  = '';
                 if (bdCol) bdCol.style.display  = '';
+                if (row)   row.classList.remove('cost-hidden');
             }
         }
 
