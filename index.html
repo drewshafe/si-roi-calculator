@@ -794,7 +794,7 @@
             display: inline-flex; align-items: center; justify-content: center;
             width: 16px; height: 16px; border-radius: 50%;
             border: 1.5px solid #adb5bd; color: #adb5bd;
-            font-size: 0.72em; font-style: italic;
+            font-size: 11px; font-style: italic;
             font-family: Georgia, serif; font-weight: 700; cursor: default; flex-shrink: 0;
         }
         .wp-price { font-size: 0.88em; color: #333; font-weight: 500; }
@@ -1453,6 +1453,7 @@
                         <label>Custom Logo</label>
                         <input type="file" id="wc-dual-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('dual',this)">
                         <button onclick="clearLogo('dual')">✕ Clear</button>
+                        <div class="wcs" style="flex-shrink:0;"><label>Size (px)</label><input type="number" id="wc-dual-logo-size" value="28" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
                     </div>
                     <details class="wconfig-style-grp">
                         <summary>Info Container Style</summary>
@@ -1516,6 +1517,32 @@
                         </div>
                     </details>
                     <details class="wconfig-style-grp">
+                        <summary>Primary Button Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-p-bg" value="#6675ff" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>BG Gradient End</label><input type="color" id="wc-dual-p-bg2" value="#764ba2" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Radius</label><input type="number" id="wc-dual-p-bd-radius" value="9" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Padding</label><input type="number" id="wc-dual-p-padding" value="13" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-dual-p-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-dual-p-size" placeholder="15" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-dual-p-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-p-color" value="#ffffff" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Margin Bottom</label><input type="number" id="wc-dual-p-mb" value="8" min="0" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
                         <summary>Secondary Button Style</summary>
                         <div>
                             <div class="wconfig-style-row">
@@ -1575,6 +1602,7 @@
                         <label>Custom Logo</label>
                         <input type="file" id="wc-toggle-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('toggle',this)">
                         <button onclick="clearLogo('toggle')">✕ Clear</button>
+                        <div class="wcs" style="flex-shrink:0;"><label>Size (px)</label><input type="number" id="wc-tog-logo-size" value="28" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
                     </div>
                     <div class="wconfig-divider">Snap Mode</div>
                     <div class="wconfig-snap" style="margin-bottom:8px;">
@@ -1699,6 +1727,7 @@
                         <label>Custom Logo</label>
                         <input type="file" id="wc-ext-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('extension',this)">
                         <button onclick="clearLogo('extension')">✕ Clear</button>
+                        <div class="wcs" style="flex-shrink:0;"><label>Size (px)</label><input type="number" id="wc-ext-logo-size" value="30" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
                     </div>
                 </div>
 
@@ -2224,11 +2253,22 @@
                 const priceHtml = `<span class="wp-price" style="flex-shrink:0;">${fmtP}</span>`;
 
                 // Logo: show si_lock or custom when "Show Logo" toggle is on
-                const showDualLock = gch('wc-dual-show-lock', false);
-                const dualLogoSrc  = _dualLogoSrc || lockSrc;
-                const dualLogoHtml = (showDualLock || _dualLogoSrc)
-                    ? `<img src="${dualLogoSrc}" style="width:28px;height:28px;object-fit:contain;flex-shrink:0;margin-right:2px;" onerror="this.style.display='none';">`
+                const showDualLock  = gch('wc-dual-show-lock', false);
+                const dualLogoSrc   = _dualLogoSrc || lockSrc;
+                const dualLogoSize  = parseInt(gv('wc-dual-logo-size', '28')) || 28;
+                const dualLogoHtml  = (showDualLock || _dualLogoSrc)
+                    ? `<img src="${dualLogoSrc}" style="width:${dualLogoSize}px;height:${dualLogoSize}px;object-fit:contain;flex-shrink:0;margin-right:2px;" onerror="this.style.display='none';">`
                     : '';
+
+                // Primary button style
+                const pBg1    = gv('wc-dual-p-bg',  '#6675ff');
+                const pBg2    = gv('wc-dual-p-bg2',  '#764ba2');
+                const pBdR    = gv('wc-dual-p-bd-radius', '9');
+                const pPad    = gv('wc-dual-p-padding', '13');
+                const pMb     = gv('wc-dual-p-mb', '8');
+                const pColor  = gv('wc-dual-p-color', '#ffffff') || '#ffffff';
+                const pStyle  = sty(gv('wc-dual-p-font',''), gv('wc-dual-p-size',''), gv('wc-dual-p-weight',''), '');
+                const primaryBtnStyle = `display:block;width:100%;padding:${pPad}px 16px;border:none;border-radius:${pBdR}px;background:linear-gradient(135deg,${pBg1} 0%,${pBg2} 100%);color:${pColor};font-family:inherit;cursor:default;text-align:center;margin-bottom:${pMb}px;${pStyle}`;
 
                 const headerBlock = `
                     <div class="wp-spread" style="margin-bottom:${body?'4':'10'}px;align-items:flex-start;gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
@@ -2254,7 +2294,7 @@
                 area.innerHTML = `<div style="${cardStyle}">
                     ${!between ? headerBlock : ''}
                     <div class="wp-subtotal-row"><span class="wp-subtotal-lbl">Subtotal</span><span class="wp-subtotal-val">${fmtA}</span></div>
-                    <button class="wp-btn-primary">${btnALabel}</button>
+                    <button style="${primaryBtnStyle}">${btnALabel}</button>
                     ${between ? betweenBlock : ''}
                     <button style="${secBtnStyle}">${btnBLabel}</button>
                     ${disc ? `<div class="wp-disclaimer" style="margin-top:6px;">${disc}</div>` : ''}
@@ -2281,8 +2321,9 @@
                 const cardStyle = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
 
                 const logoActualSrc = _toggleLogoSrc || lockSrc;
-                const leafImg = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
-                const lockImgEl = hideLock ? '' : `<img src="${logoActualSrc}" class="wp-lock-icon" onerror="this.style.opacity='0';">`;
+                const togLogoSize  = parseInt(gv('wc-tog-logo-size', '28')) || 28;
+                const leafImg  = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
+                const lockImgEl = hideLock ? '' : `<img src="${logoActualSrc}" style="width:${togLogoSize}px;height:${togLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
 
                 let controlHtml;
                 if (isCheckbox) {
@@ -2326,8 +2367,9 @@
 
                 // Extension: checkbox left, then optional logo, then text — all top-aligned
                 const extLogoSrc    = _extLogoSrc || lockSrc;
+                const extLogoSize   = parseInt(gv('wc-ext-logo-size', '30')) || 30;
                 const extCheckbox   = `<div style="width:18px;height:18px;border-radius:3px;border:1.5px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;"><span style="color:white;font-size:10px;font-weight:900;">✓</span></div>`;
-                const extLogoHtml   = hideLock ? '' : `<img src="${extLogoSrc}" class="wp-ext-lock" style="align-self:flex-start;flex-shrink:0;" onerror="this.style.opacity='0';">`;
+                const extLogoHtml   = hideLock ? '' : `<img src="${extLogoSrc}" style="width:${extLogoSize}px;height:${extLogoSize}px;object-fit:contain;align-self:flex-start;flex-shrink:0;" onerror="this.style.opacity='0';">`;
 
                 area.innerHTML = `<div class="wp-card">
                     <div class="wp-ext-row" style="align-items:flex-start;gap:8px;">
