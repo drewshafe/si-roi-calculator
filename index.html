@@ -1044,6 +1044,89 @@
         .saved-config-actions button.del-btn { color: #dc3545; border-color: #dc3545; }
         .saved-config-actions button.del-btn:hover { background: #dc3545; color: white; }
         .saved-configs-empty { padding: 16px 14px; font-size: 0.78em; color: #adb5bd; text-align: center; }
+
+        /* ── Scan Widget button ── */
+        .scan-widget-btn {
+            display: flex; align-items: center; gap: 5px;
+            padding: 6px 12px; font-size: 0.79em; font-weight: 700;
+            border-radius: 7px; border: 1.5px solid #4a5fc1;
+            background: white; color: #4a5fc1; cursor: pointer;
+            transition: background 0.15s; white-space: nowrap; font-family: inherit;
+        }
+        .scan-widget-btn:hover { background: #eef0fa; }
+
+        /* ── Eyedropper button ── */
+        .eye-drop-btn {
+            padding: 2px 5px; font-size: 12px; border: 1px solid #d0d4e8;
+            border-radius: 4px; background: white; cursor: pointer;
+            line-height: 1; flex-shrink: 0; margin-left: 2px;
+            transition: background 0.12s;
+        }
+        .eye-drop-btn:hover { background: #eef0fa; }
+
+        /* ── Scan Widget modal ── */
+        .scan-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            z-index: 9000; display: flex; align-items: center; justify-content: center;
+        }
+        .scan-modal {
+            background: white; border-radius: 14px; padding: 24px 28px;
+            width: 420px; max-width: 94vw; box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+            position: relative;
+        }
+        .scan-modal-title {
+            font-size: 1.05em; font-weight: 800; color: #1a1a1a; margin: 0 0 16px;
+        }
+        .scan-close-btn {
+            position: absolute; top: 14px; right: 16px;
+            background: none; border: none; font-size: 18px; cursor: pointer; color: #6c757d;
+            line-height: 1; padding: 2px 6px;
+        }
+        .scan-close-btn:hover { color: #333; }
+        .scan-key-row {
+            display: flex; gap: 8px; margin-bottom: 14px; align-items: center;
+        }
+        .scan-key-input {
+            flex: 1; padding: 7px 10px; font-size: 0.82em; border: 1.5px solid #d0d4e8;
+            border-radius: 7px; font-family: inherit;
+        }
+        .scan-key-save-btn {
+            padding: 7px 14px; font-size: 0.82em; font-weight: 700; border-radius: 7px;
+            border: none; background: #4a5fc1; color: white; cursor: pointer;
+        }
+        .scan-key-save-btn:hover { background: #3a4fa0; }
+        .scan-key-change {
+            font-size: 0.72em; color: #4a5fc1; text-decoration: underline;
+            cursor: pointer; background: none; border: none; padding: 0 0 10px; display: block;
+        }
+        .scan-drop-zone {
+            border: 2px dashed #c7cde8; border-radius: 10px; padding: 28px 16px;
+            text-align: center; cursor: pointer; background: #f8f9ff;
+            transition: border-color 0.15s, background 0.15s; margin-bottom: 14px;
+        }
+        .scan-drop-zone:hover, .scan-drop-zone.drag-over {
+            border-color: #4a5fc1; background: #eef0fa;
+        }
+        .scan-drop-zone-text { font-size: 0.82em; color: #6c757d; pointer-events: none; }
+        .scan-drop-zone-text strong { display: block; font-size: 1.1em; margin-bottom: 4px; color: #333; }
+        #scanPreview {
+            display: block; max-width: 100%; max-height: 200px; object-fit: contain;
+            border-radius: 8px; margin: 0 auto 14px; border: 1px solid #e0e3f5;
+        }
+        .scan-run-btn {
+            width: 100%; padding: 11px; font-size: 0.9em; font-weight: 700;
+            border-radius: 9px; border: none; background: linear-gradient(135deg,#6675ff,#764ba2);
+            color: white; cursor: pointer; transition: opacity 0.15s;
+        }
+        .scan-run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .scan-run-btn:not(:disabled):hover { opacity: 0.88; }
+        .scan-status {
+            margin-top: 10px; font-size: 0.8em; text-align: center; font-weight: 600;
+            min-height: 18px;
+        }
+        .scan-status.error   { color: #dc3545; }
+        .scan-status.success { color: #28a745; }
+        .scan-status.info    { color: #4a5fc1; }
     </style>
 </head>
 <body>
@@ -1485,6 +1568,9 @@
                         <span class="wtype-cb"></span> Checkout Extension
                     </label>
                 </div>
+                <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+                    <button class="scan-widget-btn" onclick="openScanModal()">🔍 Scan Widget</button>
+                </div>
 
                 <!-- Dual Checkout config -->
                 <div id="wc-dual" class="wconfig-section active">
@@ -1557,8 +1643,8 @@
                         <summary>Info Container Style</summary>
                         <div>
                             <div class="wconfig-style-row">
-                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-bg" value="#ffffff" onchange="updateWidgetPreview()"></div>
-                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-dual-bd-color" value="#e9ecef" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-bg" value="#ffffff" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-bg')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-dual-bd-color" value="#e9ecef" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-bd-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Border Width</label><input type="number" id="wc-dual-bd-width" value="2" min="1" max="5" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Border Radius</label><input type="number" id="wc-dual-bd-radius" value="12" min="0" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Padding</label><input type="number" id="wc-dual-padding" value="16" min="0" onchange="updateWidgetPreview()"></div>
@@ -1569,7 +1655,7 @@
                                         <option value="left">Left</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>SI Fee Color</label><input type="color" id="wc-dual-price-color" value="#1a1a1a" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>SI Fee Color</label><input type="color" id="wc-dual-price-color" value="#1a1a1a" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-price-color')" title="Pick color from screen">💧</button></div>
                             </div>
                         </div>
                     </details>
@@ -1590,12 +1676,12 @@
                                         <option value="700">Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-h-color" value="#333333" onchange="updateWidgetPreview()"></div>
-                                <div class="wcs"><label>Info Icon Color</label><input type="color" id="wc-dual-h-info-color" value="#adb5bd" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-h-color" value="#333333" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-h-color')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Info Icon Color</label><input type="color" id="wc-dual-h-info-color" value="#adb5bd" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-h-info-color')" title="Pick color from screen">💧</button></div>
                             </div>
                             <div class="wconfig-style-row" style="margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;">
                                 <div class="wcs"><label>Divider</label><select id="wc-dual-h-div-pos" onchange="updateWidgetPreview()"><option value="none">None</option><option value="above">Above</option><option value="below">Below</option></select></div>
-                                <div class="wcs"><label>Div Color</label><input type="color" id="wc-dual-h-div-color" value="#e0e0e0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Div Color</label><input type="color" id="wc-dual-h-div-color" value="#e0e0e0" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-h-div-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Div Width</label><input type="number" id="wc-dual-h-div-width" value="1" min="0" max="5" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Div Spacing</label><input type="number" id="wc-dual-h-div-spacing" value="8" min="0" onchange="updateWidgetPreview()"></div>
                             </div>
@@ -1618,11 +1704,11 @@
                                         <option value="700">Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-b-color" value="#666666" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-b-color" value="#666666" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-b-color')" title="Pick color from screen">💧</button></div>
                             </div>
                             <div class="wconfig-style-row" style="margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;">
                                 <div class="wcs"><label>Divider</label><select id="wc-dual-b-div-pos" onchange="updateWidgetPreview()"><option value="none">None</option><option value="above">Above</option><option value="below">Below</option></select></div>
-                                <div class="wcs"><label>Div Color</label><input type="color" id="wc-dual-b-div-color" value="#e0e0e0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Div Color</label><input type="color" id="wc-dual-b-div-color" value="#e0e0e0" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-b-div-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Div Width</label><input type="number" id="wc-dual-b-div-width" value="1" min="0" max="5" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Div Spacing</label><input type="number" id="wc-dual-b-div-spacing" value="8" min="0" onchange="updateWidgetPreview()"></div>
                             </div>
@@ -1645,16 +1731,16 @@
                                         <option value="700" selected>Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Label Color</label><input type="color" id="wc-dual-sub-lc" value="#1a1a1a" onchange="updateWidgetPreview()"></div>
-                                <div class="wcs"><label>Value Color</label><input type="color" id="wc-dual-sub-vc" value="#1a1a1a" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Label Color</label><input type="color" id="wc-dual-sub-lc" value="#1a1a1a" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-sub-lc')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Value Color</label><input type="color" id="wc-dual-sub-vc" value="#1a1a1a" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-sub-vc')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Divider Pos</label><select id="wc-dual-sub-div-pos" onchange="updateWidgetPreview()"><option value="above" selected>Above</option><option value="below">Below</option><option value="none">None</option></select></div>
-                                <div class="wcs"><label>Divider Color</label><input type="color" id="wc-dual-sub-div-color" value="#e0e0e0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Divider Color</label><input type="color" id="wc-dual-sub-div-color" value="#e0e0e0" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-sub-div-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Divider Width</label><input type="number" id="wc-dual-sub-div-width" value="1" min="0" max="5" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Spacing (px)</label><input type="number" id="wc-dual-sub-spacing" value="10" min="0" onchange="updateWidgetPreview()"></div>
                             </div>
                             <div class="wconfig-style-row" style="margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;">
                                 <div class="wcs"><label>Note Size</label><input type="number" id="wc-dual-sub-note-fs" placeholder="11" min="8" max="20" onchange="updateWidgetPreview()"></div>
-                                <div class="wcs"><label>Note Color</label><input type="color" id="wc-dual-sub-note-color" value="#999999" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Note Color</label><input type="color" id="wc-dual-sub-note-color" value="#999999" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-sub-note-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Header Gap (px)</label><input type="number" id="wc-dual-header-gap" value="0" min="0" max="60" style="width:54px;" onchange="updateWidgetPreview()" title="Extra space below header — useful when Subtotal is hidden"></div>
                             </div>
                         </div>
@@ -1663,8 +1749,8 @@
                         <summary>Primary Button Style</summary>
                         <div>
                             <div class="wconfig-style-row">
-                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-p-bg" value="#6675ff" onchange="updateWidgetPreview()"></div>
-                                <div class="wcs"><label>BG Gradient End</label><input type="color" id="wc-dual-p-bg2" value="#764ba2" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-p-bg" value="#6675ff" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-p-bg')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>BG Gradient End</label><input type="color" id="wc-dual-p-bg2" value="#764ba2" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-p-bg2')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Border Radius</label><input type="number" id="wc-dual-p-bd-radius" value="9" min="0" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Padding</label><input type="number" id="wc-dual-p-padding" value="13" min="0" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Font Family</label><input type="text" id="wc-dual-p-font" placeholder="inherit" onchange="updateWidgetPreview()"></div>
@@ -1680,7 +1766,7 @@
                                         <option value="700">Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-p-color" value="#ffffff" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-p-color" value="#ffffff" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-p-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Margin Bottom</label><input type="number" id="wc-dual-p-mb" value="8" min="0" onchange="updateWidgetPreview()"></div>
                             </div>
                         </div>
@@ -1689,8 +1775,8 @@
                         <summary>Secondary Button Style</summary>
                         <div>
                             <div class="wconfig-style-row">
-                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-s-bg" value="#ffffff" onchange="updateWidgetPreview()"></div>
-                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-dual-s-bd-color" value="#dee2e6" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-s-bg" value="#ffffff" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-s-bg')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-dual-s-bd-color" value="#dee2e6" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-s-bd-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Border Width</label><input type="number" id="wc-dual-s-bd-width" value="2" min="0" max="5" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Border Radius</label><input type="number" id="wc-dual-s-bd-radius" value="9" min="0" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Padding</label><input type="number" id="wc-dual-s-padding" value="11" min="0" onchange="updateWidgetPreview()"></div>
@@ -1707,7 +1793,7 @@
                                         <option value="700">Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-s-color" value="#495057" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-s-color" value="#495057" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-s-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Margin Top</label><input type="number" id="wc-dual-s-mt" value="8" min="0" onchange="updateWidgetPreview()"></div>
                             </div>
                             <div style="margin-top:6px;display:flex;align-items:center;gap:10px;">
@@ -1761,8 +1847,8 @@
                         <summary>Container Style</summary>
                         <div>
                             <div class="wconfig-style-row">
-                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-tog-bg" value="#ffffff" onchange="updateWidgetPreview()"></div>
-                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-tog-bd-color" value="#e9ecef" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-tog-bg" value="#ffffff" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-tog-bg')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-tog-bd-color" value="#e9ecef" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-tog-bd-color')" title="Pick color from screen">💧</button></div>
                                 <div class="wcs"><label>Border Width</label><input type="number" id="wc-tog-bd-width" value="2" min="1" max="5" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Border Radius</label><input type="number" id="wc-tog-bd-radius" value="12" min="0" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Padding</label><input type="number" id="wc-tog-padding" value="16" min="0" onchange="updateWidgetPreview()"></div>
@@ -1786,7 +1872,7 @@
                                         <option value="700">Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-h-color" value="#333333" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-h-color" value="#333333" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-tog-h-color')" title="Pick color from screen">💧</button></div>
                             </div>
                         </div>
                     </details>
@@ -1807,7 +1893,7 @@
                                         <option value="700">Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-b-color" value="#666666" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-b-color" value="#666666" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-tog-b-color')" title="Pick color from screen">💧</button></div>
                             </div>
                         </div>
                     </details>
@@ -1828,7 +1914,7 @@
                                         <option value="700">Bold (700)</option>
                                     </select>
                                 </div>
-                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-d-color" value="#aaaaaa" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-tog-d-color" value="#aaaaaa" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-tog-d-color')" title="Pick color from screen">💧</button></div>
                             </div>
                         </div>
                     </details>
@@ -1836,7 +1922,7 @@
                         <summary>Switch / Checkbox Color</summary>
                         <div>
                             <div class="wconfig-style-row">
-                                <div class="wcs"><label>Switch Color</label><input type="color" id="wc-tog-switch-color" value="#6675ff" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Switch Color</label><input type="color" id="wc-tog-switch-color" value="#6675ff" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-tog-switch-color')" title="Pick color from screen">💧</button></div>
                             </div>
                         </div>
                     </details>
@@ -3505,6 +3591,313 @@
                     </div>
                 </div>`).join('');
         }
+
+        // ── Scan Widget ──────────────────────────────────────────────────────────
+        let _scanImageBase64 = null;
+        let _scanImageType   = 'image/png';
+
+        function openScanModal() {
+            _scanImageBase64 = null;
+            const modal = document.getElementById('scanModal');
+            document.getElementById('scanPreview').style.display = 'none';
+            document.getElementById('scanPreview').src = '';
+            document.getElementById('runScanBtn').disabled = true;
+            document.getElementById('scanStatus').textContent = '';
+            document.getElementById('scanStatus').className = 'scan-status';
+
+            const storedKey = localStorage.getItem('si_anthropic_key');
+            document.getElementById('scanKeySection').style.display = storedKey ? 'none' : '';
+            document.getElementById('scanKeyChange').style.display  = storedKey ? 'block' : 'none';
+
+            modal.style.display = 'flex';
+            modal._pasteHandler = e => handleScanPaste(e);
+            document.addEventListener('paste', modal._pasteHandler);
+        }
+
+        function closeScanModal() {
+            const modal = document.getElementById('scanModal');
+            modal.style.display = 'none';
+            if (modal._pasteHandler) {
+                document.removeEventListener('paste', modal._pasteHandler);
+                modal._pasteHandler = null;
+            }
+        }
+
+        function saveScanKey() {
+            const val = document.getElementById('scanKeyInput').value.trim();
+            if (!val) return;
+            localStorage.setItem('si_anthropic_key', val);
+            document.getElementById('scanKeySection').style.display = 'none';
+            document.getElementById('scanKeyChange').style.display  = 'block';
+            document.getElementById('scanKeyInput').value = '';
+        }
+
+        function showScanKeySection() {
+            document.getElementById('scanKeySection').style.display = '';
+            document.getElementById('scanKeyChange').style.display  = 'none';
+        }
+
+        function handleScanPaste(e) {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    readScanFile(file, item.type);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        }
+
+        function loadScanFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            readScanFile(file, file.type || 'image/png');
+        }
+
+        function readScanFile(file, mimeType) {
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const dataUrl = ev.target.result;
+                const base64  = dataUrl.split(',')[1];
+                _scanImageBase64 = base64;
+                _scanImageType   = mimeType;
+                const preview = document.getElementById('scanPreview');
+                preview.src   = dataUrl;
+                preview.style.display = 'block';
+                document.getElementById('runScanBtn').disabled = false;
+                document.getElementById('scanStatus').textContent = '';
+                document.getElementById('scanDropZone').querySelector('.scan-drop-zone-text').innerHTML =
+                    '<strong>Image loaded</strong>Click here to replace';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setRunScanBusy(busy) {
+            const btn = document.getElementById('runScanBtn');
+            btn.disabled = busy;
+            btn.textContent = busy ? '⏳ Scanning…' : 'Scan Widget';
+        }
+
+        function showScanStatus(msg, type) {
+            const el = document.getElementById('scanStatus');
+            el.textContent = msg;
+            el.className   = 'scan-status ' + type;
+        }
+
+        async function runWidgetScan() {
+            const key = localStorage.getItem('si_anthropic_key');
+            if (!key) { showScanStatus('Enter your API key first.', 'error'); return; }
+            if (!_scanImageBase64) { showScanStatus('No image loaded.', 'error'); return; }
+
+            setRunScanBusy(true);
+            showScanStatus('Scanning…', 'info');
+
+            const prompt = `Analyze this widget screenshot. Return ONLY a valid JSON object — no markdown, no explanation, no code fences. Extract all visible text and your best estimate of all styling.
+
+Required JSON keys:
+{
+  "widgetType": "dual or toggle or extension",
+  "header": "exact header text",
+  "body": "exact body text or empty string",
+  "buttonA": "primary/accept button text without price",
+  "buttonB": "secondary/decline button text without price",
+  "disclaimer": "disclaimer text or empty string",
+  "subtotalLabel": "subtotal label text (default Subtotal)",
+  "showPriceOnPrimary": true or false,
+  "showPriceOnSecondary": true or false,
+  "headerBetweenButtons": true or false,
+  "isCheckbox": true or false,
+  "hasLogo": true or false,
+  "containerBg": "#hexcolor",
+  "containerBorderColor": "#hexcolor",
+  "containerBorderWidth": number,
+  "containerBorderRadius": number,
+  "containerPadding": number,
+  "headerTextColor": "#hexcolor",
+  "headerFontSize": number,
+  "headerFontWeight": "400 or 500 or 600 or 700",
+  "bodyTextColor": "#hexcolor",
+  "bodyFontSize": number,
+  "bodyFontWeight": "400 or 500 or 600 or 700",
+  "primaryBtnBg": "#hexcolor",
+  "primaryBtnBg2": "#hexcolor (gradient end, or same as primaryBtnBg if solid)",
+  "primaryBtnColor": "#hexcolor",
+  "primaryBtnRadius": number,
+  "primaryBtnPadding": number,
+  "primaryBtnFontWeight": "400 or 500 or 600 or 700",
+  "secondaryBtnBg": "#hexcolor",
+  "secondaryBtnColor": "#hexcolor",
+  "secondaryBtnBorderColor": "#hexcolor",
+  "secondaryBtnBorderWidth": number,
+  "secondaryBtnRadius": number,
+  "secondaryBtnFontWeight": "400 or 500 or 600 or 700",
+  "underlineSecondary": true or false,
+  "siPriceColor": "#hexcolor",
+  "infoIconColor": "#hexcolor",
+  "switchColor": "#hexcolor"
+}
+
+For uncertain values make your best visual estimate. Always use valid hex colors.`;
+
+            try {
+                const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'x-api-key': key,
+                        'anthropic-version': '2023-06-01',
+                        'content-type': 'application/json',
+                        'anthropic-dangerous-direct-browser-access': 'true'
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-3-5-sonnet-20241022',
+                        max_tokens: 1024,
+                        messages: [{
+                            role: 'user',
+                            content: [
+                                { type: 'image', source: { type: 'base64', media_type: _scanImageType, data: _scanImageBase64 } },
+                                { type: 'text', text: prompt }
+                            ]
+                        }]
+                    })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error?.message || `HTTP ${resp.status}`);
+                }
+                const data = await resp.json();
+                const raw = data.content?.[0]?.text || '';
+                const jsonStr = raw.replace(/^```[a-z]*\n?/i,'').replace(/```$/,'').trim();
+                const parsed = JSON.parse(jsonStr);
+                applyScannedData(parsed);
+                showScanStatus('✓ Widget scanned — fields updated!', 'success');
+                setTimeout(closeScanModal, 1400);
+            } catch(e) {
+                showScanStatus('Error: ' + e.message, 'error');
+            } finally {
+                setRunScanBusy(false);
+            }
+        }
+
+        function applyScannedData(d) {
+            if (d.widgetType) setWidgetType(d.widgetType);
+
+            const set = (id, val) => {
+                const el = document.getElementById(id);
+                if (!el || val === undefined || val === null) return;
+                el.value = val;
+            };
+            const setChk = (id, val) => {
+                const el = document.getElementById(id);
+                if (!el || val === undefined) return;
+                el.checked = !!val;
+            };
+
+            // --- Dual Checkout ---
+            set('wc-dual-header',      d.header);
+            set('wc-dualp-body',       d.body);
+            set('wc-dual-btna',        d.buttonA);
+            set('wc-dual-btnb',        d.buttonB);
+            set('wc-dual-disclaimer',  d.disclaimer);
+            set('wc-dual-sub-label',   d.subtotalLabel);
+            set('wc-dual-bg',          d.containerBg);
+            set('wc-dual-bd-color',    d.containerBorderColor);
+            set('wc-dual-bd-width',    d.containerBorderWidth);
+            set('wc-dual-bd-radius',   d.containerBorderRadius);
+            set('wc-dual-padding',     d.containerPadding);
+            set('wc-dual-h-color',     d.headerTextColor);
+            set('wc-dual-h-size',      d.headerFontSize);
+            set('wc-dual-h-weight',    d.headerFontWeight);
+            set('wc-dual-h-info-color',d.infoIconColor);
+            set('wc-dual-price-color', d.siPriceColor);
+            set('wc-dual-b-color',     d.bodyTextColor);
+            set('wc-dual-b-size',      d.bodyFontSize);
+            set('wc-dual-b-weight',    d.bodyFontWeight);
+            set('wc-dual-p-bg',        d.primaryBtnBg);
+            set('wc-dual-p-bg2',       d.primaryBtnBg2);
+            set('wc-dual-p-color',     d.primaryBtnColor);
+            set('wc-dual-p-bd-radius', d.primaryBtnRadius);
+            set('wc-dual-p-padding',   d.primaryBtnPadding);
+            set('wc-dual-p-weight',    d.primaryBtnFontWeight);
+            set('wc-dual-s-bg',        d.secondaryBtnBg);
+            set('wc-dual-s-color',     d.secondaryBtnColor);
+            set('wc-dual-s-bd-color',  d.secondaryBtnBorderColor);
+            set('wc-dual-s-bd-width',  d.secondaryBtnBorderWidth);
+            set('wc-dual-s-bd-radius', d.secondaryBtnRadius);
+            set('wc-dual-s-weight',    d.secondaryBtnFontWeight);
+            setChk('wc-dual-show-price-a',  d.showPriceOnPrimary);
+            setChk('wc-dual-show-price-b',  d.showPriceOnSecondary);
+            setChk('wc-dual-between',       d.headerBetweenButtons);
+            setChk('wc-dual-show-lock',     d.hasLogo);
+            setChk('wc-dual-s-underline',   d.underlineSecondary);
+
+            // --- Toggle / Checkbox ---
+            set('wc-tog-header',     d.header);
+            set('wc-tog-body',       d.body);
+            set('wc-tog-disclaimer', d.disclaimer);
+            set('wc-tog-bg',         d.containerBg);
+            set('wc-tog-bd-color',   d.containerBorderColor);
+            set('wc-tog-bd-width',   d.containerBorderWidth);
+            set('wc-tog-bd-radius',  d.containerBorderRadius);
+            set('wc-tog-padding',    d.containerPadding);
+            set('wc-tog-h-color',    d.headerTextColor);
+            set('wc-tog-h-size',     d.headerFontSize);
+            set('wc-tog-h-weight',   d.headerFontWeight);
+            set('wc-tog-b-color',    d.bodyTextColor);
+            set('wc-tog-b-size',     d.bodyFontSize);
+            set('wc-tog-b-weight',   d.bodyFontWeight);
+            set('wc-tog-switch-color', d.switchColor);
+            setChk('wc-tog-is-checkbox', d.isCheckbox);
+            setChk('wc-tog-hide-lock',   !d.hasLogo);
+
+            // --- Extension ---
+            set('wc-ext-header',     d.header);
+            set('wc-ext-body',       d.body);
+            set('wc-ext-disclaimer', d.disclaimer);
+            setChk('wc-ext-hide-lock',  !d.hasLogo);
+
+            updateWidgetPreview();
+        }
+
+        // ── EyeDropper ──────────────────────────────────────────────────────────
+        async function eyeDrop(colorInputId) {
+            if (!window.EyeDropper) {
+                alert('EyeDropper is not supported in this browser. Use Chrome or Edge.');
+                return;
+            }
+            try {
+                const dropper = new EyeDropper();
+                const result  = await dropper.open();
+                const el = document.getElementById(colorInputId);
+                if (el) { el.value = result.sRGBHex; updateWidgetPreview(); }
+            } catch(e) { /* user cancelled — no-op */ }
+        }
     </script>
+
+<!-- Scan Widget Modal -->
+<div id="scanModal" class="scan-modal-overlay" style="display:none;" onclick="if(event.target===this)closeScanModal()">
+    <div class="scan-modal">
+        <button class="scan-close-btn" onclick="closeScanModal()">✕</button>
+        <div class="scan-modal-title">🔍 Scan Widget from Screenshot</div>
+        <div id="scanKeySection">
+            <div class="scan-key-row">
+                <input type="password" id="scanKeyInput" class="scan-key-input" placeholder="Anthropic API key (sk-ant-...)">
+                <button class="scan-key-save-btn" onclick="saveScanKey()">Save Key</button>
+            </div>
+        </div>
+        <button id="scanKeyChange" class="scan-key-change" onclick="showScanKeySection()" style="display:none;">🔑 Change API Key</button>
+        <div id="scanDropZone" class="scan-drop-zone" onclick="document.getElementById('scanFileInput').click()">
+            <div class="scan-drop-zone-text">
+                <strong>Paste (⌘V) or click to upload</strong>
+                Screenshot of your current widget
+            </div>
+        </div>
+        <input type="file" id="scanFileInput" accept="image/*" style="display:none;" onchange="loadScanFile(this)">
+        <img id="scanPreview" style="display:none;" alt="Widget preview">
+        <button id="runScanBtn" class="scan-run-btn" onclick="runWidgetScan()" disabled>Scan Widget</button>
+        <div id="scanStatus" class="scan-status"></div>
+    </div>
+</div>
 </body>
 </html>
