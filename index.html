@@ -1535,6 +1535,35 @@
                         </div>
                     </details>
                     <details class="wconfig-style-grp">
+                        <summary>Subtotal Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>Font Family</label><input type="text" id="wc-dual-sub-ff" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-dual-sub-fs" placeholder="16" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-dual-sub-fw" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700" selected>Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Label Color</label><input type="color" id="wc-dual-sub-lc" value="#1a1a1a" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Value Color</label><input type="color" id="wc-dual-sub-vc" value="#1a1a1a" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Divider Color</label><input type="color" id="wc-dual-sub-div-color" value="#e0e0e0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Divider Width</label><input type="number" id="wc-dual-sub-div-width" value="1" min="0" max="5" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Spacing (px)</label><input type="number" id="wc-dual-sub-spacing" value="10" min="0" onchange="updateWidgetPreview()"></div>
+                            </div>
+                            <div class="wconfig-style-row" style="margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;">
+                                <div class="wcs"><label>Note Size</label><input type="number" id="wc-dual-sub-note-fs" placeholder="11" min="8" max="20" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Note Color</label><input type="color" id="wc-dual-sub-note-color" value="#999999" onchange="updateWidgetPreview()"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
                         <summary>Primary Button Style</summary>
                         <div>
                             <div class="wconfig-style-row">
@@ -2325,16 +2354,28 @@
                     ${body ? `<div class="wp-body-text" style="${bStyle}margin-top:4px;">${body}</div>` : ''}
                 </div>` : '';
 
-                // Subtotal row (with optional label override + note + placement)
-                const subLabel  = v('wc-dual-sub-label', 'Subtotal');
-                const subNote   = v('wc-dual-sub-note', '');
-                const hideSub   = gch('wc-dual-hide-sub', false);
+                // Subtotal row (with optional label override + note + placement + style)
+                const subLabel      = v('wc-dual-sub-label', 'Subtotal');
+                const subNote       = v('wc-dual-sub-note', '');
+                const hideSub       = gch('wc-dual-hide-sub', false);
+                const subFF         = gv('wc-dual-sub-ff', '');
+                const subFS         = gv('wc-dual-sub-fs', '');
+                const subFW         = gv('wc-dual-sub-fw', '700');
+                const subLC         = gv('wc-dual-sub-lc', '#1a1a1a');
+                const subVC         = gv('wc-dual-sub-vc', '#1a1a1a');
+                const subDivColor   = gv('wc-dual-sub-div-color', '#e0e0e0');
+                const subDivW       = gv('wc-dual-sub-div-width', '1');
+                const subSpacing    = gv('wc-dual-sub-spacing', '10');
+                const subNoteFS     = gv('wc-dual-sub-note-fs', '');
+                const subNoteColor  = gv('wc-dual-sub-note-color', '#999999');
+                const subTextStyle  = `${subFF && subFF !== 'inherit' ? `font-family:${subFF};` : ''}${subFS ? `font-size:${subFS}px;` : ''}${subFW ? `font-weight:${subFW};` : ''}`;
+                const subRowStyle   = `display:flex;justify-content:space-between;align-items:baseline;border-top:${subDivW}px solid ${subDivColor};margin:${subSpacing}px 0 ${subSpacing}px;padding-top:${subSpacing}px;`;
                 const subRowHtml = hideSub ? '' : `
-                    <div class="wp-subtotal-row">
-                        <span class="wp-subtotal-lbl">${subLabel}</span>
-                        <span class="wp-subtotal-val">${fmtA}</span>
+                    <div style="${subRowStyle}">
+                        <span style="${subTextStyle}color:${subLC};">${subLabel}</span>
+                        <span style="${subTextStyle}color:${subVC};">${fmtA}</span>
                     </div>
-                    ${subNote ? `<div style="font-size:0.72em;color:#999;margin-top:-8px;margin-bottom:10px;line-height:1.3;">${subNote}</div>` : ''}`;
+                    ${subNote ? `<div style="font-size:${subNoteFS ? subNoteFS+'px' : '0.72em'};color:${subNoteColor};margin-top:-${Math.max(4,parseInt(subSpacing||10)-6)}px;margin-bottom:${subSpacing}px;line-height:1.3;">${subNote}</div>` : ''}`;
 
                 area.innerHTML = `<div style="${cardStyle}">
                     ${_dualSubPos === 'above-header' ? subRowHtml : ''}
