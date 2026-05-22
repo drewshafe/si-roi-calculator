@@ -2198,7 +2198,7 @@
 
             // Update placeholders
             ph('wc-dual-header',  D.dualH);
-            ph('wc-dual-btna',    `Checkout | ${fmtP}`);
+            ph('wc-dual-btna',    `Checkout | ${fmtT}`);
             ph('wc-dual-btnb',    D.btnB);
             ph('wc-dualp-body',   D.dualH);
             ph('wc-tog-header',   D.togH);
@@ -2280,9 +2280,9 @@
                     </div>
                     ${body ? `<div class="wp-body-text" style="${bStyle}margin-bottom:6px;">${body}</div>` : ''}`;
 
-                // Button A: always strip any user-typed | suffix and replace with live premium price
+                // Button A: always strip any user-typed | suffix and replace with protected total (AOV + SI fee)
                 const btnABase  = btnARaw.replace(/\s*\|.*$/, '').trim();
-                const btnALabel = showPriceA ? `${btnABase} | ${fmtP}` : btnABase;
+                const btnALabel = showPriceA ? `${btnABase} | ${fmtT}` : btnABase;
                 // Button B: show subtotal WITHOUT ShipInsure fee (i.e. just AOV)
                 const btnBLabel = showPriceB ? `${btnBRaw} | ${fmtA}` : btnBRaw;
 
