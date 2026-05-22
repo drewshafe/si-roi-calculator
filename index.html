@@ -787,7 +787,7 @@
         #inlineWidgetContainer .wp-card { max-width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
         .wp-spread { display: flex; align-items: center; justify-content: space-between; }
         .wp-header-text {
-            font-size: 0.88em; color: #333;
+            font-size: 0.95em; font-weight: 600; color: #1a1a1a;
             display: flex; align-items: center; gap: 5px;
         }
         .wp-info-btn {
@@ -797,13 +797,13 @@
             font-size: 11px; font-style: italic;
             font-family: Georgia, serif; font-weight: 700; cursor: default; flex-shrink: 0;
         }
-        .wp-price { font-size: 0.88em; color: #333; font-weight: 500; }
+        .wp-price { font-size: 0.95em; color: #1a1a1a; font-weight: 700; }
         .wp-subtotal-row {
-            display: flex; justify-content: space-between;
-            border-top: 1px solid #f0f0f0; margin: 8px 0 12px; padding-top: 8px;
+            display: flex; justify-content: space-between; align-items: baseline;
+            border-top: 1.5px solid #e0e0e0; margin: 10px 0 14px; padding-top: 10px;
         }
-        .wp-subtotal-lbl { font-size: 0.93em; font-weight: 700; color: #212529; }
-        .wp-subtotal-val { font-size: 0.93em; font-weight: 700; color: #212529; }
+        .wp-subtotal-lbl { font-size: 1em; font-weight: 700; color: #1a1a1a; }
+        .wp-subtotal-val { font-size: 1em; font-weight: 700; color: #1a1a1a; }
         .wp-btn-primary {
             display: block; width: 100%; padding: 13px 16px;
             border: none; border-radius: 9px;
@@ -2271,14 +2271,14 @@
                 const primaryBtnStyle = `display:block;width:100%;padding:${pPad}px 16px;border:none;border-radius:${pBdR}px;background:linear-gradient(135deg,${pBg1} 0%,${pBg2} 100%);color:${pColor};font-family:inherit;cursor:default;text-align:center;margin-bottom:${pMb}px;${pStyle}`;
 
                 const headerBlock = `
-                    <div class="wp-spread" style="margin-bottom:${body?'4':'10'}px;align-items:flex-start;gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
-                        <div style="display:flex;align-items:flex-start;gap:6px;flex:1;min-width:0;">
+                    <div class="wp-spread" style="margin-bottom:${body?'6':'0'}px;align-items:center;gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
+                        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
                             ${dualLogoHtml}
                             <span class="wp-header-text" style="${hStyle}">${header} ${infoBtn}</span>
                         </div>
                         ${pricePos !== 'none' ? priceHtml : ''}
                     </div>
-                    ${body ? `<div class="wp-body-text" style="${bStyle}margin-bottom:6px;">${body}</div>` : ''}`;
+                    ${body ? `<div class="wp-body-text" style="${bStyle}margin-top:4px;margin-bottom:2px;">${body}</div>` : ''}`;
 
                 // Button A: always strip any user-typed | suffix and replace with protected total (AOV + SI fee)
                 const btnABase  = btnARaw.replace(/\s*\|.*$/, '').trim();
@@ -2287,14 +2287,14 @@
                 const btnBLabel = showPriceB ? `${btnBRaw} | ${fmtA}` : btnBRaw;
 
                 const betweenBlock = between ? `<div style="padding:10px 0 8px;">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-                        <div style="display:flex;align-items:flex-start;gap:6px;flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
                             ${dualLogoHtml}
-                            <span style="${hStyle}font-size:0.88em;">${header} ${infoBtn}</span>
+                            <span class="wp-header-text" style="${hStyle}">${header} ${infoBtn}</span>
                         </div>
                         <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
                     </div>
-                    ${body ? `<div style="${bStyle}font-size:0.82em;margin-top:2px;">${body}</div>` : ''}
+                    ${body ? `<div class="wp-body-text" style="${bStyle}margin-top:4px;">${body}</div>` : ''}
                 </div>` : '';
 
                 area.innerHTML = `<div style="${cardStyle}">
