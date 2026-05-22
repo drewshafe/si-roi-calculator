@@ -1510,6 +1510,7 @@
                                     </select>
                                 </div>
                                 <div class="wcs"><label>Color</label><input type="color" id="wc-dual-h-color" value="#333333" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Info Icon Color</label><input type="color" id="wc-dual-h-info-color" value="#adb5bd" onchange="updateWidgetPreview()"></div>
                             </div>
                         </div>
                     </details>
@@ -2284,6 +2285,8 @@
                 const btnBRaw  = v('wc-dual-btnb', D.btnB);
                 const disc     = v('wc-dual-disclaimer', '');
                 const between  = gch('wc-dual-between', false);
+                const infoIconColor = gv('wc-dual-h-info-color', '#adb5bd');
+                const infoBtn = `<span class="wp-info-btn" style="border-color:${infoIconColor};color:${infoIconColor};">i</span>`;
                 const showPriceA = gch('wc-dual-show-price-a', true);
                 const showPriceB = gch('wc-dual-show-price-b', false);
 
