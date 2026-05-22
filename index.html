@@ -2286,8 +2286,14 @@
                 // Button B: show subtotal WITHOUT ShipInsure fee (i.e. just AOV)
                 const btnBLabel = showPriceB ? `${btnBRaw} | ${fmtA}` : btnBRaw;
 
-                const betweenBlock = between ? `<div style="padding:10px 0 8px;text-align:center;">
-                    <div style="${hStyle}font-size:0.88em;">${header}</div>
+                const betweenBlock = between ? `<div style="padding:10px 0 8px;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                        <div style="display:flex;align-items:flex-start;gap:6px;flex:1;min-width:0;">
+                            ${dualLogoHtml}
+                            <span style="${hStyle}font-size:0.88em;">${header} ${infoBtn}</span>
+                        </div>
+                        <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
+                    </div>
                     ${body ? `<div style="${bStyle}font-size:0.82em;margin-top:2px;">${body}</div>` : ''}
                 </div>` : '';
 
