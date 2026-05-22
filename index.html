@@ -488,6 +488,15 @@
         .returns-offset-toggle-btn:hover { background: #f0f9ff; }
         .returns-offset-toggle-btn.active { background: #0ea5e9; color: white; }
 
+        .hide-cost-btn {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 7px 12px; font-size: 0.82em; border-radius: 7px;
+            border: 2px solid #9ca3af; background: white; color: #6b7280;
+            font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+        }
+        .hide-cost-btn:hover { background: #f9fafb; }
+        .hide-cost-btn.active { border-color: #ef4444; background: #ef4444; color: white; }
+
         .input-group.cashback {
             background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
         }
@@ -1137,7 +1146,7 @@
             <div class="cards-row">
 
                 <!-- Left: Total Cost Without ShipInsure -->
-                <div class="result-card negative">
+                <div class="result-card negative" id="currentCostCard">
                     <div class="card-header">
                         <h3 id="lostRevenueLabel">Current Cost (Without ShipInsure)</h3>
                         <div class="card-total negative" id="lostRevenue">$0</div>
@@ -1378,7 +1387,7 @@
                     <div id="bd-shared"></div>
                 </div>
                 <div class="bd-cols">
-                    <div class="bd-col">
+                    <div class="bd-col" id="bdCostCol">
                         <div class="bd-title negative">Cost Without ShipInsure</div>
                         <div id="bd-cost"></div>
                     </div>
@@ -1411,6 +1420,9 @@
                 </button>
                 <button id="guaranteeToggle" class="guarantee-toggle-btn">
                     <span>＋</span> Guarantee
+                </button>
+                <button id="hideCostToggle" class="hide-cost-btn" onclick="toggleCurrentCost()">
+                    <span>◌</span> Hide Current Cost
                 </button>
             <div class="si-selectors-row" style="width:100%; padding: 8px 0 0; border-top: 1px solid #e0e3f5; margin-top: 4px;">
                 <div class="si-selector">
@@ -1881,6 +1893,7 @@
         let _toggleLogoSrc = null;   // custom uploaded logo for toggle/checkbox
         let _extLogoSrc    = null;   // custom uploaded logo for checkout extension
         let _snapMode      = 'split'; // 'split' | 'left' | 'right'
+        let _hideCurrentCost = false;
         let _dualSubPos    = 'before-btns'; // 'before-btns' | 'above-header' | 'between-btns'
 
         function setCogsType(t) {
@@ -2183,6 +2196,24 @@
             updateBadges();
             updateWidgetPreviewVisibility();
             calculate();
+        }
+
+        function toggleCurrentCost() {
+            _hideCurrentCost = !_hideCurrentCost;
+            const btn  = document.getElementById('hideCostToggle');
+            const card = document.getElementById('currentCostCard');
+            const bdCol = document.getElementById('bdCostCol');
+            if (_hideCurrentCost) {
+                btn.classList.add('active');
+                btn.innerHTML = '<span>✓</span> Current Cost Hidden';
+                if (card)  card.style.display  = 'none';
+                if (bdCol) bdCol.style.display  = 'none';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span>◌</span> Hide Current Cost';
+                if (card)  card.style.display  = '';
+                if (bdCol) bdCol.style.display  = '';
+            }
         }
 
         function toggleAdditionalInputs() {
@@ -3017,6 +3048,9 @@
                     if (urlParams.get('gcr')) document.getElementById('guaranteeClaimRateInput').value = urlParams.get('gcr');
                 }
 
+                // Hide Current Cost
+                if (urlParams.get('hcc') === '1') toggleCurrentCost();
+
                 // Widget preview state
                 if (urlParams.get('wt'))    setWidgetType(urlParams.get('wt'));
                 if (urlParams.get('wspos')) setSubPos(urlParams.get('wspos'));
@@ -3124,6 +3158,9 @@
                 const gcr = gv('guaranteeClaimRateInput');
                 if (gcr) params.set('gcr', gcr);
             }
+
+            // Hide Current Cost toggle
+            if (_hideCurrentCost) params.set('hcc', '1');
 
             // Widget preview state
             const wInline = gc('showWidgetInline');
