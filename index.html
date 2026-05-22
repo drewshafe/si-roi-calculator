@@ -1616,8 +1616,12 @@
                                 <div class="wcs"><label>Color</label><input type="color" id="wc-dual-s-color" value="#495057" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Margin Top</label><input type="number" id="wc-dual-s-mt" value="8" min="0" onchange="updateWidgetPreview()"></div>
                             </div>
-                            <div style="margin-top:6px;">
-                                <button onclick="(function(){var e=document.getElementById('wc-dual-s-bd-width');if(e){e.value=0;updateWidgetPreview();}})()" style="padding:3px 10px;font-size:0.68em;border:1px solid #d0d4e8;border-radius:4px;background:white;cursor:pointer;color:#dc3545;border-color:#dc3545;">✕ Remove Border</button>
+                            <div style="margin-top:6px;display:flex;align-items:center;gap:10px;">
+                                <button onclick="(function(){var e=document.getElementById('wc-dual-s-bd-width');if(e){e.value=0;updateWidgetPreview();}})()" style="padding:3px 10px;font-size:0.68em;border:1px solid #dc3545;border-radius:4px;background:white;cursor:pointer;color:#dc3545;">✕ Remove Border</button>
+                                <label class="wconfig-sl" style="margin:0;">
+                                    <input type="checkbox" id="wc-dual-s-underline" checked onchange="updateWidgetPreview()">
+                                    <span class="sl-track"></span> Underline Text
+                                </label>
                             </div>
                         </div>
                     </details>
@@ -2309,7 +2313,8 @@
                 const ssStyle = sty(gv('wc-dual-s-font',''), gv('wc-dual-s-size',''), gv('wc-dual-s-weight',''), gv('wc-dual-s-color','#495057'));
 
                 const cardStyle = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
-                const secBtnStyle = `display:block;width:100%;padding:${ssPad}px 16px;border:${ssBdW}px solid ${ssBd};border-radius:${ssBdR}px;background:${ssBg};text-decoration:underline;text-align:center;font-family:inherit;cursor:default;margin-top:${ssMt}px;${ssStyle}`;
+                const ssUnderline = gch('wc-dual-s-underline', true);
+                const secBtnStyle = `display:block;width:100%;padding:${ssPad}px 16px;border:${ssBdW}px solid ${ssBd};border-radius:${ssBdR}px;background:${ssBg};text-decoration:${ssUnderline ? 'underline' : 'none'};text-align:center;font-family:inherit;cursor:default;margin-top:${ssMt}px;box-sizing:border-box;${ssStyle}`;
 
                 const priceHtml = `<span class="wp-price" style="flex-shrink:0;">${fmtP}</span>`;
 
@@ -2391,7 +2396,7 @@
                     <button style="${primaryBtnStyle}">${btnALabel}</button>
                     ${between ? betweenBlock : ''}
                     ${_dualSubPos === 'between-btns' ? subRowHtml : ''}
-                    <button style="${secBtnStyle}">${btnBLabel}</button>
+                    <div style="${secBtnStyle}">${btnBLabel}</div>
                     ${disc ? `<div class="wp-disclaimer" style="margin-top:6px;">${disc}</div>` : ''}
                 </div>`;
 
