@@ -1740,6 +1740,7 @@
                             </div>
                             <div class="wconfig-style-row" style="margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;">
                                 <div class="wcs"><label>Note Placement</label><select id="wc-dual-sub-note-pos" onchange="updateWidgetPreview()"><option value="inline" selected>Inline</option><option value="above">Above</option><option value="below">Below</option></select></div>
+                                <div class="wcs"><label>Label → Note Gap</label><input type="number" id="wc-dual-sub-note-lgap" value="8" min="0" max="60" style="width:54px;" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Note Font Family</label><input type="text" id="wc-dual-sub-note-ff" placeholder="inherit" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs"><label>Note Size</label><input type="number" id="wc-dual-sub-note-fs" placeholder="11" min="8" max="20" onchange="updateWidgetPreview()"></div>
                                 <div class="wcs">
@@ -2617,6 +2618,7 @@
                 const subDivW       = gv('wc-dual-sub-div-width', '1');
                 const subSpacing    = gv('wc-dual-sub-spacing', '10');
                 const subNotePos    = gv('wc-dual-sub-note-pos', 'inline');
+                const subNoteLGap   = gv('wc-dual-sub-note-lgap', '8');
                 const subNoteFF     = gv('wc-dual-sub-note-ff', '');
                 const subNoteFS     = gv('wc-dual-sub-note-fs', '');
                 const subNoteFW     = gv('wc-dual-sub-note-fw', '');
@@ -2625,7 +2627,7 @@
                 const subNoteStyle  = `${subNoteFF && subNoteFF !== 'inherit' ? `font-family:${subNoteFF};` : ''}${subNoteFS ? `font-size:${subNoteFS}px;` : 'font-size:0.72em;'}${subNoteFW ? `font-weight:${subNoteFW};` : ''}color:${subNoteColor};line-height:1.3;`;
                 const subDivHtml    = (subDivPos === 'none' || subDivW === '0') ? '' : `<div style="border-top:${subDivW}px solid ${subDivColor};margin:${subSpacing}px 0;"></div>`;
                 const subRowStyle   = `display:flex;justify-content:space-between;align-items:baseline;gap:8px;`;
-                const subNoteInlineHtml = (subNote && subNotePos === 'inline') ? `<span style="${subNoteStyle}flex:1;text-align:center;padding:0 4px;">${subNote}</span>` : '';
+                const subNoteInlineHtml = (subNote && subNotePos === 'inline') ? `<span style="${subNoteStyle}flex:1;text-align:left;margin-left:${subNoteLGap}px;">${subNote}</span>` : '';
                 const subNoteBlockHtml  = (subNote && subNotePos !== 'inline') ? `<div style="${subNoteStyle}margin:4px 0;">${subNote}</div>` : '';
                 const subRowHtml = hideSub ? '' : `
                     ${subNote && subNotePos === 'above' ? subNoteBlockHtml : ''}
