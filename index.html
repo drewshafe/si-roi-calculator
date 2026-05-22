@@ -986,29 +986,29 @@
         }
         /* ── Saved Configs ── */
         .merchant-input {
-            padding: 5px 9px; font-size: 0.82em; border-radius: 6px;
-            border: 1.5px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.15);
-            color: white; font-family: inherit; width: 150px;
+            padding: 5px 9px; font-size: 0.79em; border-radius: 6px;
+            border: 1.5px solid #c7cde8; background: white;
+            color: #212529; font-family: inherit; width: 140px;
         }
-        .merchant-input::placeholder { color: rgba(255,255,255,0.6); }
-        .merchant-input:focus { outline: none; border-color: white; background: rgba(255,255,255,0.25); }
+        .merchant-input::placeholder { color: #adb5bd; }
+        .merchant-input:focus { outline: none; border-color: #4a5fc1; background: white; }
         .save-config-btn {
             display: flex; align-items: center; gap: 5px;
-            padding: 6px 11px; font-size: 0.82em; border-radius: 6px;
-            border: 1.5px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.15);
-            color: white; font-family: inherit; font-weight: 600; cursor: pointer;
+            padding: 5px 10px; font-size: 0.79em; border-radius: 6px;
+            border: 1.5px solid #c7cde8; background: white;
+            color: #4a5fc1; font-family: inherit; font-weight: 700; cursor: pointer;
             transition: background 0.15s; white-space: nowrap;
         }
-        .save-config-btn:hover { background: rgba(255,255,255,0.28); }
+        .save-config-btn:hover { background: #eef0fa; }
         .saved-configs-wrapper { position: relative; }
         .load-config-btn {
             display: flex; align-items: center; gap: 5px;
-            padding: 6px 11px; font-size: 0.82em; border-radius: 6px;
-            border: 1.5px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.15);
-            color: white; font-family: inherit; font-weight: 600; cursor: pointer;
+            padding: 5px 10px; font-size: 0.79em; border-radius: 6px;
+            border: 1.5px solid #c7cde8; background: white;
+            color: #4a5fc1; font-family: inherit; font-weight: 700; cursor: pointer;
             transition: background 0.15s; white-space: nowrap;
         }
-        .load-config-btn:hover { background: rgba(255,255,255,0.28); }
+        .load-config-btn:hover { background: #eef0fa; }
         .saved-configs-list {
             position: absolute; top: calc(100% + 6px); right: 0; z-index: 200;
             background: white; border: 1px solid #e0e3f5; border-radius: 10px;
@@ -1056,12 +1056,6 @@
                 <img id="gBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/sgbadge.png" alt="Guarantee" style="display:none;" onerror="this.style.display='none'">
             </div>
             <div class="controls-area">
-                <input type="text" id="merchantName" class="merchant-input" placeholder="Merchant name...">
-                <button class="save-config-btn" onclick="saveConfig()">💾 Save</button>
-                <div class="saved-configs-wrapper">
-                    <button class="load-config-btn" id="loadConfigBtn" onclick="toggleSavedConfigs(event)">📂 Saved <span id="savedCount">0</span></button>
-                    <div id="savedConfigsList" class="saved-configs-list" style="display:none;"></div>
-                </div>
                 <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
                 <div class="view-selector">
                     <label for="timeframe">View:</label>
@@ -1403,6 +1397,14 @@
         <div class="si-inputs-section">
             <div class="si-inputs-header">
                 <span class="si-inputs-title">ShipInsure Inputs</span>
+                <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end;margin-right:10px;">
+                    <input type="text" id="merchantName" class="merchant-input" placeholder="Merchant name...">
+                    <button class="save-config-btn" onclick="saveConfig()">💾 Save</button>
+                    <div class="saved-configs-wrapper">
+                        <button class="load-config-btn" id="loadConfigBtn" onclick="toggleSavedConfigs(event)">📂 Saved <span id="savedCount">0</span></button>
+                        <div id="savedConfigsList" class="saved-configs-list" style="display:none;"></div>
+                    </div>
+                </div>
                 <label class="view-inputs-label">
                     <input type="checkbox" id="viewInputsCheck">
                     View Inputs
