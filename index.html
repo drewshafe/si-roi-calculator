@@ -1656,6 +1656,19 @@
                                     </select>
                                 </div>
                                 <div class="wcs"><label>SI Fee Color</label><input type="color" id="wc-dual-price-color" value="#1a1a1a" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-price-color')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>SI Fee Font Family</label><input type="text" id="wc-dual-price-ff" placeholder="inherit" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>SI Fee Size</label><input type="number" id="wc-dual-price-fs" placeholder="15" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>SI Fee Weight</label>
+                                    <select id="wc-dual-price-fw" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light</option>
+                                        <option value="400">Regular</option>
+                                        <option value="500">Medium</option>
+                                        <option value="600">Semibold</option>
+                                        <option value="700" selected>Bold</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </details>
@@ -2533,7 +2546,11 @@
                 const secBtnStyle = `display:block;width:100%;padding:${ssPad}px 16px;border:${ssBdW}px solid ${ssBd};border-radius:${ssBdR}px;background:${ssBg};text-decoration:${ssUnderline ? 'underline' : 'none'};text-align:center;font-family:inherit;cursor:default;margin-top:${ssMt}px;box-sizing:border-box;${ssStyle}`;
 
                 const priceColor = gv('wc-dual-price-color', '#1a1a1a');
-                const priceHtml  = `<span class="wp-price" style="flex-shrink:0;color:${priceColor};">${fmtP}</span>`;
+                const priceFF    = gv('wc-dual-price-ff', '');
+                const priceFS    = gv('wc-dual-price-fs', '');
+                const priceFW    = gv('wc-dual-price-fw', '700');
+                const priceFStyle = `${priceFF && priceFF !== 'inherit' ? `font-family:${priceFF};` : ''}${priceFS ? `font-size:${priceFS}px;` : ''}${priceFW ? `font-weight:${priceFW};` : ''}`;
+                const priceHtml  = `<span class="wp-price" style="flex-shrink:0;color:${priceColor};${priceFStyle}">${fmtP}</span>`;
 
                 // Logo: show si_lock or custom when "Show Logo" toggle is on
                 const showDualLock  = gch('wc-dual-show-lock', false);
