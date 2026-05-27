@@ -18,38 +18,38 @@
         .page-wrap {
             max-width: 680px;
             margin: 0 auto;
-            padding: 24px 16px 48px;
+            padding: 14px 16px 28px;
         }
 
         /* ── Header ── */
         .proposal-header {
             background: white;
-            border-radius: 16px;
-            padding: 24px 28px;
-            margin-bottom: 20px;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             border-left: 4px solid #6675ff;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
         .header-logo {
-            height: 48px;
+            height: 36px;
             flex-shrink: 0;
         }
 
         .header-text h1 {
-            font-size: 1.4em;
+            font-size: 1.05em;
             font-weight: 800;
             color: #1a1a1a;
             line-height: 1.2;
         }
 
         .header-text .merchant-subtitle {
-            font-size: 0.88em;
+            font-size: 0.78em;
             color: #6c757d;
-            margin-top: 3px;
+            margin-top: 2px;
             font-weight: 500;
         }
 
@@ -58,35 +58,35 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            margin-bottom: 16px;
+            margin-bottom: 10px;
             overflow: hidden;
         }
 
         .section-title {
-            font-size: 0.72em;
+            font-size: 0.67em;
             font-weight: 800;
             color: #6c757d;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 16px 20px 0;
+            padding: 10px 16px 0;
         }
 
         /* ── Inputs ── */
         .inputs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            padding: 14px 20px 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+            padding: 10px 14px 12px;
         }
 
         .field-group {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
 
         .field-group label {
-            font-size: 0.75em;
+            font-size: 0.68em;
             font-weight: 700;
             color: #6c757d;
             text-transform: uppercase;
@@ -95,10 +95,10 @@
 
         .field-group input,
         .field-group select {
-            padding: 10px 12px;
+            padding: 7px 10px;
             border: 1.5px solid #d0d4e8;
             border-radius: 8px;
-            font-size: 0.95em;
+            font-size: 0.85em;
             color: #333;
             background: white;
             font-family: inherit;
@@ -116,11 +116,11 @@
             background: #f4f5fb;
             border: 1.5px solid #e0e3f5;
             border-radius: 6px;
-            padding: 8px 12px;
+            padding: 6px 10px;
             color: #333;
             font-weight: 600;
-            font-size: 0.95em;
-            min-height: 42px;
+            font-size: 0.85em;
+            min-height: 34px;
             display: flex;
             align-items: center;
         }
@@ -148,22 +148,23 @@
         .itype-btn:last-child { border-radius: 0 8px 8px 0; }
         .itype-btn.active { background: #6675ff; color: white; border-color: #6675ff; }
 
-        /* ── Additional inputs (collapsible) ── */
-        .additional-details {
-            padding: 0 20px 16px;
+        /* ── Collapsible input sections ── */
+        .inputs-details-wrap {
+            padding: 0 14px 10px;
         }
 
         details.add-inputs-details {
             border: 1px dashed #d0d4e8;
             border-radius: 8px;
             overflow: hidden;
+            margin-bottom: 6px;
         }
 
         details.add-inputs-details > summary {
-            padding: 10px 14px;
+            padding: 8px 12px;
             background: #f8f9ff;
             cursor: pointer;
-            font-size: 0.8em;
+            font-size: 0.75em;
             font-weight: 700;
             color: #6675ff;
             list-style: none;
@@ -177,25 +178,24 @@
         details.add-inputs-details:not([open]) > summary::before { content: '▸ '; }
 
         details.add-inputs-details .add-inputs-inner {
-            padding: 14px;
+            padding: 10px 12px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
+            gap: 8px;
         }
 
         /* ── Feature sections (returns, cashback, guarantee) ── */
         .feature-section {
-            padding: 14px 20px 20px;
-            border-top: 1px solid #f0f1f8;
+            padding: 8px 12px 10px;
         }
 
         .feature-section-title {
-            font-size: 0.72em;
+            font-size: 0.67em;
             font-weight: 800;
             color: #e67e22;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
         .feature-section-title.cashback { color: #8b5cf6; }
@@ -203,17 +203,17 @@
 
         /* ── Calculate Button ── */
         .calc-btn-wrap {
-            padding: 0 20px 20px;
+            padding: 0 14px 14px;
         }
 
         .calc-btn {
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             border: none;
-            border-radius: 10px;
+            border-radius: 9px;
             background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
             color: white;
-            font-size: 1em;
+            font-size: 0.88em;
             font-weight: 700;
             cursor: pointer;
             font-family: inherit;
@@ -240,32 +240,32 @@
         /* Hero card */
         .result-hero {
             background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 32px;
+            border-radius: 12px;
+            padding: 20px 24px;
             text-align: center;
             color: white;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
             box-shadow: 0 4px 20px rgba(102,117,255,0.3);
         }
 
         .hero-label {
-            font-size: 0.8em;
+            font-size: 0.72em;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
             opacity: 0.85;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
 
         .hero-value {
-            font-size: 3em;
+            font-size: 2.2em;
             font-weight: 900;
             line-height: 1;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .hero-sub {
-            font-size: 0.85em;
+            font-size: 0.78em;
             opacity: 0.8;
         }
 
@@ -273,8 +273,8 @@
         .result-cards-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         .result-cards-row.cost-hidden {
@@ -290,32 +290,32 @@
         .result-card-negative {
             background: linear-gradient(135deg, #fff5f5, #ffe8e8);
             border-left: 4px solid #dc3545;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
         }
 
         .result-card-positive {
             background: linear-gradient(135deg, #f0fff4, #d4f4dd);
             border-left: 4px solid #28a745;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
         }
 
         .rc-label {
-            font-size: 0.7em;
+            font-size: 0.65em;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #6c757d;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .rc-total {
-            font-size: 1.5em;
+            font-size: 1.2em;
             font-weight: 800;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .rc-total.negative { color: #dc3545; }
@@ -329,21 +329,21 @@
 
         .rc-metric {
             background: white;
-            border-radius: 6px;
-            padding: 8px 10px;
+            border-radius: 5px;
+            padding: 6px 8px;
             border: 1px solid rgba(0,0,0,0.07);
         }
 
         .rc-metric-label {
-            font-size: 0.68em;
+            font-size: 0.63em;
             font-weight: 700;
             text-transform: uppercase;
             color: #6c757d;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         .rc-metric-value {
-            font-size: 0.95em;
+            font-size: 0.88em;
             font-weight: 700;
             color: #212529;
         }
@@ -352,31 +352,31 @@
         .key-metrics {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 16px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
         .key-metric-pill {
             background: white;
-            border-radius: 10px;
-            padding: 12px 16px;
+            border-radius: 8px;
+            padding: 8px 12px;
             flex: 1;
-            min-width: 120px;
+            min-width: 110px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.07);
             text-align: center;
         }
 
         .kmp-label {
-            font-size: 0.65em;
+            font-size: 0.6em;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.4px;
             color: #6c757d;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
 
         .kmp-value {
-            font-size: 1.25em;
+            font-size: 1.05em;
             font-weight: 800;
             color: #6675ff;
         }
@@ -384,19 +384,19 @@
         /* Feature result blocks */
         .feature-result-block {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            padding: 16px 20px;
-            margin-bottom: 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            padding: 12px 14px;
+            margin-bottom: 10px;
         }
 
         .feature-result-title {
-            font-size: 0.72em;
+            font-size: 0.67em;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #e67e22;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .feature-result-title.cashback { color: #8b5cf6; }
@@ -595,33 +595,85 @@
 
         <!-- ── Inputs Section ── -->
         <div class="section-card" id="inputsSection">
-            <div class="section-title">Inputs</div>
 
-            <!-- Primary Inputs -->
-            <div class="inputs-grid" id="primaryInputsGrid">
-                <div class="field-group">
-                    <label for="p-orders" id="p-orders-label">Monthly Orders</label>
-                    <input type="text" id="p-orders" placeholder="e.g. 5000">
-                </div>
-                <div class="field-group">
-                    <label for="p-aov">Avg Order Value ($)</label>
-                    <input type="text" id="p-aov" placeholder="e.g. 85">
-                </div>
-                <div class="field-group" id="p-claims-group">
-                    <label for="p-claims" id="p-claims-label">Claims Rate %</label>
-                    <div class="input-with-type">
-                        <input type="text" id="p-claims" placeholder="e.g. 1.5">
-                        <button class="itype-btn active" id="p-claims-pct-btn" onclick="pSetClaimsType('pct')">%</button>
-                        <button class="itype-btn" id="p-claims-count-btn" onclick="pSetClaimsType('count')">#</button>
+            <div class="inputs-details-wrap">
+
+            <!-- Primary Inputs (collapsible) -->
+            <details class="add-inputs-details" id="primaryInputsDetails" open>
+                <summary>Primary Inputs</summary>
+                <div class="inputs-grid" id="primaryInputsGrid" style="padding:10px 12px 12px;">
+                    <div class="field-group">
+                        <label for="p-orders" id="p-orders-label">Monthly Orders</label>
+                        <input type="text" id="p-orders" placeholder="e.g. 5000">
+                    </div>
+                    <div class="field-group">
+                        <label for="p-aov">Avg Order Value ($)</label>
+                        <input type="text" id="p-aov" placeholder="e.g. 85">
+                    </div>
+                    <div class="field-group" id="p-claims-group">
+                        <label for="p-claims" id="p-claims-label">Claims Rate %</label>
+                        <div class="input-with-type">
+                            <input type="text" id="p-claims" placeholder="e.g. 1.5">
+                            <button class="itype-btn active" id="p-claims-pct-btn" onclick="pSetClaimsType('pct')">%</button>
+                            <button class="itype-btn" id="p-claims-count-btn" onclick="pSetClaimsType('count')">#</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Additional Inputs -->
-            <div class="additional-details">
-                <details class="add-inputs-details" open>
-                    <summary>Additional Inputs</summary>
-                    <div class="add-inputs-inner" id="additionalInputsInner">
+                <!-- Returns Feature Section (shown only if re=1 in URL) -->
+                <div class="feature-section" id="returnsFeatureSection" style="display:none;">
+                    <div class="feature-section-title">Returns</div>
+                    <div class="inputs-grid" style="padding:0 0 4px;">
+                        <div class="field-group">
+                            <label for="p-rr" id="p-rr-label">Returns Rate %</label>
+                            <div class="input-with-type">
+                                <input type="text" id="p-rr" placeholder="e.g. 8">
+                                <button class="itype-btn active" id="p-rr-pct-btn" onclick="pSetReturnsType('pct')">%</button>
+                                <button class="itype-btn" id="p-rr-count-btn" onclick="pSetReturnsType('count')">#</button>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label for="p-rpc">Returns Platform Cost ($/mo)</label>
+                            <input type="text" id="p-rpc" placeholder="e.g. 300">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cashback Feature Section (shown only if cbe=1 in URL) -->
+                <div class="feature-section" id="cashbackFeatureSection" style="display:none;">
+                    <div class="feature-section-title cashback">Customer Cashback</div>
+                    <div class="inputs-grid" style="padding:0 0 4px;">
+                        <div class="field-group">
+                            <label for="p-cb">Cashback Rate %</label>
+                            <input type="text" id="p-cb" placeholder="5" value="5">
+                        </div>
+                        <div class="field-group">
+                            <label for="p-mincb">Min Cashback Amount ($)</label>
+                            <input type="text" id="p-mincb" placeholder="5" value="5">
+                        </div>
+                        <div class="field-group">
+                            <label for="p-cbrr">Redemption Rate %</label>
+                            <input type="text" id="p-cbrr" placeholder="10" value="10">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guarantee Feature Section (shown only if guar=1 in URL) -->
+                <div class="feature-section" id="guaranteeFeatureSection" style="display:none;">
+                    <div class="feature-section-title guarantee">Quality / Satisfaction Guarantee</div>
+                    <div class="inputs-grid" style="padding:0 0 4px;">
+                        <div class="field-group">
+                            <label for="p-gcr">Guarantee Claim Rate %</label>
+                            <input type="text" id="p-gcr" placeholder="auto (1.5× claims rate)">
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Additional Inputs (collapsible) -->
+            <details class="add-inputs-details" id="additionalInputsDetails" open>
+                <summary>Additional Inputs</summary>
+                <div class="add-inputs-inner" id="additionalInputsInner">
                         <div class="field-group" id="p-cogs-group">
                             <label id="p-cogs-label">Product Cost</label>
                             <div class="input-with-type">
@@ -674,56 +726,10 @@
                         </div>
                     </div>
                 </details>
-            </div>
 
-            <!-- Returns Feature Section (shown only if re=1 in URL) -->
-            <div class="feature-section" id="returnsFeatureSection" style="display:none;">
-                <div class="feature-section-title">Returns</div>
-                <div class="inputs-grid" style="padding: 0;">
-                    <div class="field-group">
-                        <label for="p-rr" id="p-rr-label">Returns Rate %</label>
-                        <div class="input-with-type">
-                            <input type="text" id="p-rr" placeholder="e.g. 8">
-                            <button class="itype-btn active" id="p-rr-pct-btn" onclick="pSetReturnsType('pct')">%</button>
-                            <button class="itype-btn" id="p-rr-count-btn" onclick="pSetReturnsType('count')">#</button>
-                        </div>
-                    </div>
-                    <div class="field-group">
-                        <label for="p-rpc">Returns Platform Cost ($/mo)</label>
-                        <input type="text" id="p-rpc" placeholder="e.g. 300">
-                    </div>
-                </div>
-            </div>
+            </details><!-- /additionalInputsDetails -->
 
-            <!-- Cashback Feature Section (shown only if cbe=1 in URL) -->
-            <div class="feature-section" id="cashbackFeatureSection" style="display:none;">
-                <div class="feature-section-title cashback">Customer Cashback</div>
-                <div class="inputs-grid" style="padding: 0;">
-                    <div class="field-group">
-                        <label for="p-cb">Cashback Rate %</label>
-                        <input type="text" id="p-cb" placeholder="5" value="5">
-                    </div>
-                    <div class="field-group">
-                        <label for="p-mincb">Min Cashback Amount ($)</label>
-                        <input type="text" id="p-mincb" placeholder="5" value="5">
-                    </div>
-                    <div class="field-group">
-                        <label for="p-cbrr">Redemption Rate %</label>
-                        <input type="text" id="p-cbrr" placeholder="10" value="10">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Guarantee Feature Section (shown only if guar=1 in URL) -->
-            <div class="feature-section" id="guaranteeFeatureSection" style="display:none;">
-                <div class="feature-section-title guarantee">Quality / Satisfaction Guarantee</div>
-                <div class="inputs-grid" style="padding: 0;">
-                    <div class="field-group">
-                        <label for="p-gcr">Guarantee Claim Rate %</label>
-                        <input type="text" id="p-gcr" placeholder="auto (1.5× claims rate)">
-                    </div>
-                </div>
-            </div>
+            </div><!-- /inputs-details-wrap -->
 
             <!-- Calculate button -->
             <div class="calc-btn-wrap">
@@ -860,16 +866,6 @@
             <div class="widget-preview-block" id="widgetPreviewBlock" style="display:none;">
                 <div class="widget-type-label-display" id="widgetTypeLabel">Widget Preview</div>
                 <div id="p-widgetPreviewArea"></div>
-            </div>
-
-            <!-- CTA -->
-            <div class="cta-card">
-                <h3>Ready to protect your shipments?</h3>
-                <p>Discover how ShipInsure can turn your shipping claims into a revenue opportunity.</p>
-                <div class="cta-btns">
-                    <button class="cta-btn-primary">Contact Your ShipInsure Rep</button>
-                    <button class="cta-btn-secondary">Learn More &rarr;</button>
-                </div>
             </div>
 
         </div><!-- /resultsSection -->
@@ -1301,6 +1297,12 @@
                 document.getElementById('widgetPreviewBlock').style.display = '';
                 updateWidgetPreview();
             }
+
+            // Collapse input dropdowns
+            const pd = document.getElementById('primaryInputsDetails');
+            const ad = document.getElementById('additionalInputsDetails');
+            if (pd) pd.removeAttribute('open');
+            if (ad) ad.removeAttribute('open');
 
             // Show results
             const rs = document.getElementById('resultsSection');
