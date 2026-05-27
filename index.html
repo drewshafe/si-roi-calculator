@@ -1147,6 +1147,7 @@
             </div>
             <div class="controls-area">
                 <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
+                <button id="generateProposalLink" class="generate-link-btn" style="border-color:#28a745;background:#28a745;">📄 Proposal Link</button>
                 <div class="view-selector">
                     <label for="timeframe">View:</label>
                     <select id="timeframe">
@@ -1495,6 +1496,10 @@
                         <div id="savedConfigsList" class="saved-configs-list" style="display:none;"></div>
                     </div>
                 </div>
+                <label class="view-inputs-label" style="margin-right:4px;">
+                    <input type="checkbox" id="lockInputsCheck">
+                    Lock Inputs
+                </label>
                 <label class="view-inputs-label">
                     <input type="checkbox" id="viewInputsCheck">
                     View Inputs
@@ -3325,6 +3330,107 @@
             document.getElementById('linkDisplay').style.display = 'flex';
         }
 
+        function generateProposalLink() {
+            const baseUrl = 'https://drewshafe.github.io/si-roi-calculator/proposal.html';
+            const pricingTemplate = document.getElementById('pricingTemplate').value;
+            const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
+            let avgPremiumValue = 0;
+            if (pricingTemplate === 'percentage') {
+                const pp = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
+                avgPremiumValue = avgOrderValue * pp;
+            } else if (pricingTemplate === 'flat_dollar') {
+                avgPremiumValue = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
+            } else {
+                avgPremiumValue = getTieredPremium(avgOrderValue, pricingTemplate);
+            }
+
+            const gv = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const gc = id => { const el = document.getElementById(id); return (el && el.checked) ? '1' : ''; };
+
+            const merchantNameVal = (document.getElementById('merchantName') || {}).value || '';
+            const params = new URLSearchParams({
+                mname: merchantNameVal,
+                orders: removeCommas(document.getElementById('annualOrders').value) || '',
+                aov: removeCommas(document.getElementById('avgOrderValue').value) || '',
+                claims: removeCommas(document.getElementById('claimsRate').value) || '',
+                cogs: removeCommas(document.getElementById('cogsPercent').value) || '',
+                aship: removeCommas(document.getElementById('avgShipping').value) || '',
+                cs: removeCommas(document.getElementById('csCostPerClaim').value) || '',
+                share: removeCommas(document.getElementById('revenueShare').value) || '25',
+                attach: removeCommas(document.getElementById('attachRate').value) || '68',
+                premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
+                avg_premium: avgPremiumValue.toFixed(2),
+                view: document.getElementById('timeframe').value || 'monthly',
+                template: document.getElementById('pricingTemplate').value || 'percentage',
+                cogstype: _cogsType,
+                claimstype: _claimsType,
+                cr: _claimResolution,
+            });
+
+            // Feature toggles
+            if (returnsOffsetMode) params.set('rom', '1');
+            if (returnsEnabled) {
+                params.set('re', '1');
+                params.set('rr', removeCommas(document.getElementById('returnsRate').value) || '');
+                params.set('rpc', removeCommas(document.getElementById('returnsPlatformCost').value) || '');
+                params.set('rlc', removeCommas(document.getElementById('avgShipping').value) || '');
+                params.set('rtype', _returnsType);
+            }
+            if (cashbackEnabled) {
+                params.set('cbe', '1');
+                params.set('cb',   removeCommas(document.getElementById('cashbackRate').value) || '5');
+                params.set('mincb', removeCommas(document.getElementById('minCashback').value) || '5');
+                params.set('cbrr', document.getElementById('cashbackRedemptionRate').value);
+            }
+            if (guaranteeEnabled) {
+                params.set('guar', '1');
+                const gcr = gv('guaranteeClaimRateInput');
+                if (gcr) params.set('gcr', gcr);
+            }
+
+            // Hide Current Cost toggle
+            if (_hideCurrentCost) params.set('hcc', '1');
+
+            // Widget preview state
+            const wInline = gc('showWidgetInline');
+            if (wInline) params.set('wi', '1');
+            params.set('wt', _widgetType);
+            params.set('wspos', _dualSubPos);
+            if (_snapMode !== 'split') params.set('wsnap', _snapMode);
+            // Generic save: every input/select inside the widget config (except file inputs)
+            const wcSec = document.getElementById('widgetPreviewSection');
+            if (wcSec) {
+                wcSec.querySelectorAll('input:not([type="file"]), select').forEach(el => {
+                    if (!el.id || el.id === 'showWidgetInline') return;
+                    if (el.type === 'checkbox') {
+                        if (el.checked !== el.defaultChecked) params.set('wci_' + el.id, el.checked ? '1' : '0');
+                    } else {
+                        if (el.value !== el.defaultValue) params.set('wci_' + el.id, el.value);
+                    }
+                });
+            }
+
+            // Lock inputs flag
+            const lockInputs = document.getElementById('lockInputsCheck');
+            if (lockInputs && lockInputs.checked) params.set('linputs', '1');
+
+            const shareableUrl = `${baseUrl}?${params.toString()}`;
+            document.getElementById('shareableLink').value = shareableUrl;
+            document.getElementById('linkDisplay').style.display = 'flex';
+
+            // Copy to clipboard and flash button
+            navigator.clipboard.writeText(shareableUrl).then(() => {
+                const btn = document.getElementById('generateProposalLink');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                btn.style.background = '#218838';
+                setTimeout(() => {
+                    btn.innerHTML = orig;
+                    btn.style.background = '#28a745';
+                }, 2000);
+            }).catch(() => {});
+        }
+
         function copyToClipboard() {
             const linkInput = document.getElementById('shareableLink');
             linkInput.select();
@@ -3506,6 +3612,7 @@
             calculate();
         });
         document.getElementById('generateLink').addEventListener('click', generateShareableLink);
+        document.getElementById('generateProposalLink').addEventListener('click', generateProposalLink);
         document.getElementById('copyLink').addEventListener('click', copyToClipboard);
         document.getElementById('returnsOffsetModeToggle').addEventListener('click', toggleReturnsOffsetMode);
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
