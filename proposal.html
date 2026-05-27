@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShipInsure ROI Proposal</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f5fb;
+            min-height: 100vh;
+            color: #212529;
+        }
+
+        .page-wrap {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 24px 16px 48px;
+        }
+
+        /* ── Header ── */
+        .proposal-header {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid #6675ff;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            height: 48px;
+            flex-shrink: 0;
+        }
+
+        .header-text h1 {
+            font-size: 1.4em;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1.2;
+        }
+
+        .header-text .merchant-subtitle {
+            font-size: 0.88em;
+            color: #6c757d;
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        /* ── Cards / Sections ── */
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: 0.72em;
+            font-weight: 800;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 16px 20px 0;
+        }
+
+        /* ── Inputs ── */
+        .inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            padding: 14px 20px 20px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field-group label {
+            font-size: 0.75em;
+            font-weight: 700;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field-group input,
+        .field-group select {
+            padding: 10px 12px;
+            border: 1.5px solid #d0d4e8;
+            border-radius: 8px;
+            font-size: 0.95em;
+            color: #333;
+            background: white;
+            font-family: inherit;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .field-group input:focus,
+        .field-group select:focus {
+            outline: none;
+            border-color: #6675ff;
+            box-shadow: 0 0 0 3px rgba(102,117,255,0.15);
+        }
+
+        .locked-value {
+            background: #f4f5fb;
+            border: 1.5px solid #e0e3f5;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-with-type {
+            display: flex;
+        }
+        .input-with-type input {
+            border-radius: 8px 0 0 8px !important;
+            flex: 1;
+            min-width: 0;
+        }
+        .itype-btn {
+            padding: 0 10px;
+            font-size: 0.78em;
+            font-weight: 700;
+            border: 1.5px solid #d0d4e8;
+            border-left: none;
+            background: #f4f5fb;
+            cursor: pointer;
+            color: #6c757d;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .itype-btn:last-child { border-radius: 0 8px 8px 0; }
+        .itype-btn.active { background: #6675ff; color: white; border-color: #6675ff; }
+
+        /* ── Additional inputs (collapsible) ── */
+        .additional-details {
+            padding: 0 20px 16px;
+        }
+
+        details.add-inputs-details {
+            border: 1px dashed #d0d4e8;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        details.add-inputs-details > summary {
+            padding: 10px 14px;
+            background: #f8f9ff;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: #6675ff;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+        details.add-inputs-details > summary::-webkit-details-marker { display: none; }
+        details.add-inputs-details[open] > summary::before { content: '▾ '; }
+        details.add-inputs-details:not([open]) > summary::before { content: '▸ '; }
+
+        details.add-inputs-details .add-inputs-inner {
+            padding: 14px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        /* ── Feature sections (returns, cashback, guarantee) ── */
+        .feature-section {
+            padding: 14px 20px 20px;
+            border-top: 1px solid #f0f1f8;
+        }
+
+        .feature-section-title {
+            font-size: 0.72em;
+            font-weight: 800;
+            color: #e67e22;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .feature-section-title.cashback { color: #8b5cf6; }
+        .feature-section-title.guarantee { color: #764ba2; }
+
+        /* ── Calculate Button ── */
+        .calc-btn-wrap {
+            padding: 0 20px 20px;
+        }
+
+        .calc-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
+            color: white;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity 0.15s;
+        }
+
+        .calc-btn:hover { opacity: 0.9; }
+
+        /* ── Results ── */
+        #resultsSection {
+            display: none;
+        }
+
+        #resultsSection.visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Hero card */
+        .result-hero {
+            background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            color: white;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(102,117,255,0.3);
+        }
+
+        .hero-label {
+            font-size: 0.8em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.85;
+            margin-bottom: 8px;
+        }
+
+        .hero-value {
+            font-size: 3em;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .hero-sub {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        /* Two-column result cards */
+        .result-cards-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .result-cards-row.cost-hidden {
+            display: flex;
+            justify-content: center;
+        }
+
+        .result-cards-row.cost-hidden .result-card-positive {
+            max-width: 340px;
+            width: 100%;
+        }
+
+        .result-card-negative {
+            background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+            border-left: 4px solid #dc3545;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .result-card-positive {
+            background: linear-gradient(135deg, #f0fff4, #d4f4dd);
+            border-left: 4px solid #28a745;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .rc-label {
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            margin-bottom: 6px;
+        }
+
+        .rc-total {
+            font-size: 1.5em;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .rc-total.negative { color: #dc3545; }
+        .rc-total.positive { color: #28a745; }
+
+        .rc-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .rc-metric {
+            background: white;
+            border-radius: 6px;
+            padding: 8px 10px;
+            border: 1px solid rgba(0,0,0,0.07);
+        }
+
+        .rc-metric-label {
+            font-size: 0.68em;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+
+        .rc-metric-value {
+            font-size: 0.95em;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        /* Key metrics row */
+        .key-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .key-metric-pill {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 16px;
+            flex: 1;
+            min-width: 120px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            text-align: center;
+        }
+
+        .kmp-label {
+            font-size: 0.65em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+
+        .kmp-value {
+            font-size: 1.25em;
+            font-weight: 800;
+            color: #6675ff;
+        }
+
+        /* Feature result blocks */
+        .feature-result-block {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+
+        .feature-result-title {
+            font-size: 0.72em;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #e67e22;
+            margin-bottom: 12px;
+        }
+
+        .feature-result-title.cashback { color: #8b5cf6; }
+        .feature-result-title.guarantee { color: #764ba2; }
+
+        .feature-result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+        }
+
+        .feature-result-item {
+            background: #fef9f3;
+            border: 1px solid #e67e22;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .feature-result-item.cashback {
+            background: #f5f3ff;
+            border-color: #8b5cf6;
+        }
+
+        .feature-result-item.guarantee {
+            background: #f8f3ff;
+            border-color: #764ba2;
+        }
+
+        .feature-result-item-label {
+            font-size: 0.65em;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .feature-result-item-value {
+            font-size: 1em;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        /* Widget Preview */
+        .widget-preview-block {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .widget-type-label-display {
+            font-size: 0.75em;
+            font-weight: 800;
+            color: #6675ff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+
+        /* Widget preview card styles (copied from index.html) */
+        .wp-card {
+            background: white; border: 1.5px solid #e9ecef; border-radius: 12px;
+            padding: 16px 18px; max-width: 480px; width: 100%; margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        }
+        .wp-spread { display: flex; align-items: center; justify-content: space-between; }
+        .wp-header-text {
+            font-size: 0.95em; font-weight: 600; color: #1a1a1a;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .wp-info-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 16px; height: 16px; border-radius: 50%;
+            border: 1.5px solid #adb5bd; color: #adb5bd;
+            font-size: 11px; font-style: italic;
+            font-family: Georgia, serif; font-weight: 700; cursor: default; flex-shrink: 0;
+        }
+        .wp-price { font-size: 0.95em; color: #1a1a1a; font-weight: 700; }
+        .wp-btn-primary {
+            display: block; width: 100%; padding: 13px 16px;
+            border: none; border-radius: 9px;
+            background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
+            color: white; font-size: 0.96em; font-weight: 700;
+            cursor: default; margin-bottom: 8px; text-align: center; font-family: inherit;
+        }
+        .wp-btn-secondary {
+            display: block; width: 100%; padding: 11px 16px;
+            border: 1.5px solid #dee2e6; border-radius: 9px;
+            background: white; color: #495057;
+            font-size: 0.84em; font-weight: 500;
+            cursor: default; text-align: center; font-family: inherit;
+            text-decoration: underline;
+        }
+        .wp-body-text { font-size: 0.82em; color: #666; margin: 4px 0 10px; }
+        .wp-disclaimer { font-size: 0.72em; color: #aaa; margin-top: 8px; line-height: 1.4; }
+        .wp-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .wp-toggle-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+        .wp-toggle-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .wp-toggle-right { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+        .wp-ext-row { display: flex; align-items: flex-start; gap: 10px; }
+        .wp-ext-text { flex: 1; min-width: 0; }
+        .wp-learn-more { font-size: 0.78em; color: #1a73e8; text-decoration: underline; cursor: default; white-space: nowrap; flex-shrink: 0; }
+        .wp-cashback-row { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 0.82em; color: #333; }
+        .wp-leaf-icon { width: 16px; height: 16px; vertical-align: middle; margin-left: 3px; flex-shrink: 0; object-fit: contain; }
+        .wp-cash-icon { width: 22px; height: 16px; object-fit: contain; flex-shrink: 0; }
+
+        /* ── CTA card ── */
+        .cta-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 28px 24px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .cta-card h3 {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+        }
+
+        .cta-card p {
+            font-size: 0.88em;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .cta-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-btn-primary {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
+            color: white;
+            font-size: 0.9em;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .cta-btn-secondary {
+            padding: 12px 24px;
+            border: 2px solid #6675ff;
+            border-radius: 8px;
+            background: white;
+            color: #6675ff;
+            font-size: 0.9em;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 520px) {
+            .result-cards-row {
+                grid-template-columns: 1fr;
+            }
+            .result-cards-row.cost-hidden {
+                display: block;
+            }
+            .hero-value { font-size: 2.2em; }
+        }
+
+        /* ── Premium/template display row ── */
+        .premium-field-wrap {
+            display: none;
+        }
+        .premium-field-wrap.visible {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrap">
+
+        <!-- ── Header ── -->
+        <div class="proposal-header">
+            <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/2026si.png"
+                 alt="ShipInsure" class="header-logo" onerror="this.style.display='none'">
+            <div class="header-text">
+                <h1>ShipInsure ROI Summary</h1>
+                <div class="merchant-subtitle" id="merchantSubtitle" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- ── Inputs Section ── -->
+        <div class="section-card" id="inputsSection">
+            <div class="section-title">Inputs</div>
+
+            <!-- Primary Inputs -->
+            <div class="inputs-grid" id="primaryInputsGrid">
+                <div class="field-group">
+                    <label for="p-orders" id="p-orders-label">Monthly Orders</label>
+                    <input type="text" id="p-orders" placeholder="e.g. 5000">
+                </div>
+                <div class="field-group">
+                    <label for="p-aov">Avg Order Value ($)</label>
+                    <input type="text" id="p-aov" placeholder="e.g. 85">
+                </div>
+                <div class="field-group" id="p-claims-group">
+                    <label for="p-claims" id="p-claims-label">Claims Rate %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="p-claims" placeholder="e.g. 1.5">
+                        <button class="itype-btn active" id="p-claims-pct-btn" onclick="pSetClaimsType('pct')">%</button>
+                        <button class="itype-btn" id="p-claims-count-btn" onclick="pSetClaimsType('count')">#</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Inputs -->
+            <div class="additional-details">
+                <details class="add-inputs-details" open>
+                    <summary>Additional Inputs</summary>
+                    <div class="add-inputs-inner" id="additionalInputsInner">
+                        <div class="field-group" id="p-cogs-group">
+                            <label id="p-cogs-label">Product Cost</label>
+                            <div class="input-with-type">
+                                <input type="text" id="p-cogs" placeholder="38" value="38">
+                                <button class="itype-btn active" id="p-cogs-pct-btn" onclick="pSetCogsType('pct')">%</button>
+                                <button class="itype-btn" id="p-cogs-flat-btn" onclick="pSetCogsType('flat')">$</button>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label for="p-aship">Avg Shipping Cost ($)</label>
+                            <input type="text" id="p-aship" placeholder="8" value="8">
+                        </div>
+                        <div class="field-group">
+                            <label for="p-cs">CS Cost Per Claim ($)</label>
+                            <input type="text" id="p-cs" placeholder="5" value="5">
+                        </div>
+                        <div class="field-group">
+                            <label for="p-attach">Attach Rate %</label>
+                            <input type="text" id="p-attach" placeholder="68" value="68">
+                        </div>
+                        <div class="field-group">
+                            <label for="p-share">Revenue Share %</label>
+                            <input type="text" id="p-share" placeholder="25" value="25">
+                        </div>
+                        <div class="field-group">
+                            <label for="p-template">Pricing Template</label>
+                            <select id="p-template">
+                                <option value="percentage">%-Based</option>
+                                <option value="flat_dollar">$-Based</option>
+                                <option value="1.5_accurate">1.5% Acc</option>
+                                <option value="2_accurate">2% Acc</option>
+                                <option value="2_round_50">2% Round</option>
+                                <option value="2.5_accurate">2.5% Acc</option>
+                                <option value="3_accurate">3% Acc</option>
+                                <option value="3.5_accurate">3.5% Acc</option>
+                                <option value="static_1.50_300_2.00">Static $1.50/$2</option>
+                                <option value="flat_1.50">Flat $1.50</option>
+                                <option value="flat_5.95">Flat $5.95</option>
+                                <option value="2_flat_0.98">2% Min $0.98</option>
+                                <option value="3_accurate_100_1.95">3% Min $1.95</option>
+                                <option value="3.25_1.55">3.25% Min $1.55</option>
+                                <option value="2.5_1.95">2.5% Min $1.95</option>
+                                <option value="born_primitive">Born Prim</option>
+                                <option value="og_6.5_19.99_3">OG 6.5%/$19.99/3%</option>
+                            </select>
+                        </div>
+                        <div class="field-group premium-field-wrap" id="p-premium-wrap">
+                            <label for="p-premium" id="p-premium-label">SI Premium %</label>
+                            <input type="text" id="p-premium" placeholder="3.00" value="3.00">
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Returns Feature Section (shown only if re=1 in URL) -->
+            <div class="feature-section" id="returnsFeatureSection" style="display:none;">
+                <div class="feature-section-title">Returns</div>
+                <div class="inputs-grid" style="padding: 0;">
+                    <div class="field-group">
+                        <label for="p-rr" id="p-rr-label">Returns Rate %</label>
+                        <div class="input-with-type">
+                            <input type="text" id="p-rr" placeholder="e.g. 8">
+                            <button class="itype-btn active" id="p-rr-pct-btn" onclick="pSetReturnsType('pct')">%</button>
+                            <button class="itype-btn" id="p-rr-count-btn" onclick="pSetReturnsType('count')">#</button>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label for="p-rpc">Returns Platform Cost ($/mo)</label>
+                        <input type="text" id="p-rpc" placeholder="e.g. 300">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cashback Feature Section (shown only if cbe=1 in URL) -->
+            <div class="feature-section" id="cashbackFeatureSection" style="display:none;">
+                <div class="feature-section-title cashback">Customer Cashback</div>
+                <div class="inputs-grid" style="padding: 0;">
+                    <div class="field-group">
+                        <label for="p-cb">Cashback Rate %</label>
+                        <input type="text" id="p-cb" placeholder="5" value="5">
+                    </div>
+                    <div class="field-group">
+                        <label for="p-mincb">Min Cashback Amount ($)</label>
+                        <input type="text" id="p-mincb" placeholder="5" value="5">
+                    </div>
+                    <div class="field-group">
+                        <label for="p-cbrr">Redemption Rate %</label>
+                        <input type="text" id="p-cbrr" placeholder="10" value="10">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guarantee Feature Section (shown only if guar=1 in URL) -->
+            <div class="feature-section" id="guaranteeFeatureSection" style="display:none;">
+                <div class="feature-section-title guarantee">Quality / Satisfaction Guarantee</div>
+                <div class="inputs-grid" style="padding: 0;">
+                    <div class="field-group">
+                        <label for="p-gcr">Guarantee Claim Rate %</label>
+                        <input type="text" id="p-gcr" placeholder="auto (1.5× claims rate)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculate button -->
+            <div class="calc-btn-wrap">
+                <button class="calc-btn" id="calcBtn" onclick="calculateProposal()">Calculate ROI &rarr;</button>
+            </div>
+        </div><!-- /inputsSection -->
+
+        <!-- ── Results Section ── -->
+        <div id="resultsSection">
+
+            <!-- Hero -->
+            <div class="result-hero">
+                <div class="hero-label" id="heroLabel">Net Benefit With ShipInsure</div>
+                <div class="hero-value" id="heroValue">$0</div>
+                <div class="hero-sub" id="heroSub">per year</div>
+            </div>
+
+            <!-- Two-column cards -->
+            <div class="result-cards-row" id="resultCardsRow">
+                <!-- Cost card (hidden if hcc=1) -->
+                <div class="result-card-negative" id="costCard">
+                    <div class="rc-label">Current Cost Without ShipInsure</div>
+                    <div class="rc-total negative" id="r-lostRevenue">$0</div>
+                    <div class="rc-metrics">
+                        <div class="rc-metric">
+                            <div class="rc-metric-label">Cost Per Reship</div>
+                            <div class="rc-metric-value" id="r-costPerReship">$0</div>
+                        </div>
+                        <div class="rc-metric">
+                            <div class="rc-metric-label" id="r-totalClaimsLabel">Total Claims</div>
+                            <div class="rc-metric-value" id="r-totalClaims">0</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Revenue card -->
+                <div class="result-card-positive">
+                    <div class="rc-label">Extra Revenue With ShipInsure</div>
+                    <div class="rc-total positive" id="r-extraRevenue">$0</div>
+                    <div class="rc-metrics">
+                        <div class="rc-metric">
+                            <div class="rc-metric-label">SI Funded Claims Value</div>
+                            <div class="rc-metric-value" id="r-siFundedClaims">$0</div>
+                        </div>
+                        <div class="rc-metric">
+                            <div class="rc-metric-label">Protected Claims</div>
+                            <div class="rc-metric-value" id="r-protectedClaims">0</div>
+                        </div>
+                        <div class="rc-metric" id="r-revShareMetric">
+                            <div class="rc-metric-label">Revenue Share</div>
+                            <div class="rc-metric-value" id="r-revenueShare">$0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics row -->
+            <div class="key-metrics">
+                <div class="key-metric-pill">
+                    <div class="kmp-label">Premiums You Keep</div>
+                    <div class="kmp-value" id="r-premiumsPct">0%</div>
+                </div>
+                <div class="key-metric-pill">
+                    <div class="kmp-label">Total SI Premiums</div>
+                    <div class="kmp-value" id="r-totalPremiums">$0</div>
+                </div>
+                <div class="key-metric-pill">
+                    <div class="kmp-label">Attach Rate</div>
+                    <div class="kmp-value" id="r-attachRate">0%</div>
+                </div>
+                <div class="key-metric-pill">
+                    <div class="kmp-label">Avg Premium</div>
+                    <div class="kmp-value" id="r-avgPremium">$0</div>
+                </div>
+            </div>
+
+            <!-- Returns result block -->
+            <div class="feature-result-block" id="returnsResultBlock" style="display:none;">
+                <div class="feature-result-title">Returns Savings</div>
+                <div class="feature-result-grid">
+                    <div class="feature-result-item">
+                        <div class="feature-result-item-label">SI Covered Return Labels</div>
+                        <div class="feature-result-item-value" id="r-siCoveredLabels">$0</div>
+                    </div>
+                    <div class="feature-result-item">
+                        <div class="feature-result-item-label">SI Covered Platform Cost</div>
+                        <div class="feature-result-item-value" id="r-siCoveredPlatform">$0</div>
+                    </div>
+                    <div class="feature-result-item">
+                        <div class="feature-result-item-label">Total Returns Offset</div>
+                        <div class="feature-result-item-value" id="r-totalReturnsOffset">$0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cashback result block -->
+            <div class="feature-result-block" id="cashbackResultBlock" style="display:none;">
+                <div class="feature-result-title cashback">Customer Cashback</div>
+                <div class="feature-result-grid">
+                    <div class="feature-result-item cashback">
+                        <div class="feature-result-item-label">SI Cashback Funded</div>
+                        <div class="feature-result-item-value" id="r-siCashback">$0</div>
+                    </div>
+                    <div class="feature-result-item cashback">
+                        <div class="feature-result-item-label">Est. Cashback Redeemed</div>
+                        <div class="feature-result-item-value" id="r-cashbackRedeemed">$0</div>
+                    </div>
+                    <div class="feature-result-item cashback">
+                        <div class="feature-result-item-label">Repeat Revenue Driven</div>
+                        <div class="feature-result-item-value" id="r-repeatRevenue">$0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guarantee result block -->
+            <div class="feature-result-block" id="guaranteeResultBlock" style="display:none;">
+                <div class="feature-result-title guarantee">Quality / Satisfaction Guarantee</div>
+                <div class="feature-result-grid">
+                    <div class="feature-result-item guarantee">
+                        <div class="feature-result-item-label">Increased Claim Rate</div>
+                        <div class="feature-result-item-value" id="r-gClaimRate">0%</div>
+                    </div>
+                    <div class="feature-result-item guarantee">
+                        <div class="feature-result-item-label">Additional Claims Covered</div>
+                        <div class="feature-result-item-value" id="r-gAddlClaims">0</div>
+                    </div>
+                    <div class="feature-result-item guarantee">
+                        <div class="feature-result-item-label">SI Funded Guarantee Claims</div>
+                        <div class="feature-result-item-value" id="r-gSiFunded">$0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget Preview (only if wi=1) -->
+            <div class="widget-preview-block" id="widgetPreviewBlock" style="display:none;">
+                <div class="widget-type-label-display" id="widgetTypeLabel">Widget Preview</div>
+                <div id="p-widgetPreviewArea"></div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-card">
+                <h3>Ready to protect your shipments?</h3>
+                <p>Discover how ShipInsure can turn your shipping claims into a revenue opportunity.</p>
+                <div class="cta-btns">
+                    <button class="cta-btn-primary">Contact Your ShipInsure Rep</button>
+                    <button class="cta-btn-secondary">Learn More &rarr;</button>
+                </div>
+            </div>
+
+        </div><!-- /resultsSection -->
+
+    </div><!-- /page-wrap -->
+
+    <script>
+        // ── State ──────────────────────────────────────────────────────────────
+        let p_returnsEnabled    = false;
+        let p_cashbackEnabled   = false;
+        let p_guaranteeEnabled  = false;
+        let p_returnsOffsetMode = false;
+        let p_cogsType          = 'pct';
+        let p_claimsType        = 'pct';
+        let p_returnsType       = 'pct';
+        let p_claimResolution   = '2ndsale';
+        let p_hideCurrentCost   = false;
+        let p_locked            = false;
+        let _widgetType         = 'dual';
+        let _dualSubPos         = 'before-btns';
+        let _snapMode           = 'split';
+        let _dualLogoSrc        = null;
+        let _toggleLogoSrc      = null;
+        let _extLogoSrc         = null;
+        let _cashbackPerOrderCached = 0;
+
+        // ── Helpers ────────────────────────────────────────────────────────────
+        function removeCommas(s) { return String(s).replace(/,/g, ''); }
+
+        function formatNumberWithCommas(v) {
+            if (!v) return '';
+            return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function fmtDollar(n) {
+            return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:0, maximumFractionDigits:0 }).format(n);
+        }
+
+        function fmtDollarCents(n) {
+            return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n);
+        }
+
+        function fmtNum(n) {
+            return new Intl.NumberFormat('en-US', { minimumFractionDigits:0, maximumFractionDigits:0 }).format(n);
+        }
+
+        function gval(id) {
+            const el = document.getElementById(id);
+            return el ? el.value : '';
+        }
+
+        // ── Pricing Template Data ─────────────────────────────────────────────
+        const pricingTemplates = {
+            "1.5_accurate": [
+                {min:1,max:77,premium:0.98},{min:77,max:88,premium:1.23},{min:88,max:100,premium:1.40},
+                {min:100,max:114,premium:1.60},{min:115,max:131,premium:1.83},{min:131,max:150,premium:2.09},
+                {min:150,max:171,premium:2.39},{min:171,max:195,premium:2.74},{min:195,max:223,premium:3.13},
+                {min:223,max:255,premium:3.57},{min:255,max:292,premium:4.08},{min:292,max:333,premium:4.67},
+                {min:333,max:381,premium:5.33},{min:381,max:435,premium:6.10},{min:435,max:498,premium:6.97},
+                {min:498,max:569,premium:7.96},{min:569,max:650,premium:9.10},{min:650,max:743,premium:10.40},
+                {min:743,max:849,premium:11.89},{min:849,max:970,premium:13.59},{min:970,max:1109,premium:15.53},
+                {min:1109,max:1267,premium:17.74},{min:1267,max:1449,premium:20.28},{min:1449,max:1655,premium:23.18},
+                {min:1655,max:1892,premium:26.49},{min:1892,max:2162,premium:30.27},{min:2162,max:2471,premium:34.60},
+                {min:2471,max:2824,premium:39.54},{min:2824,max:3228,premium:45.19},{min:3228,max:3689,premium:51.64},
+                {min:3689,max:4216,premium:59.02},{min:4216,max:10000,premium:67.45}
+            ],
+            "2_accurate": [
+                {min:1,max:54,premium:0.98},{min:54,max:60,premium:1.14},{min:60,max:66,premium:1.26},
+                {min:66,max:73,premium:1.39},{min:73,max:81,premium:1.54},{min:81,max:89,premium:1.70},
+                {min:89,max:99,premium:1.88},{min:99,max:109,premium:2.08},{min:109,max:121,premium:2.29},
+                {min:121,max:133,premium:2.54},{min:133,max:148,premium:2.80},{min:148,max:163,premium:3.10},
+                {min:163,max:180,premium:3.43},{min:180,max:199,premium:3.79},{min:199,max:220,premium:4.18},
+                {min:220,max:243,premium:4.63},{min:243,max:269,premium:5.11},{min:269,max:297,premium:5.65},
+                {min:297,max:329,premium:6.25},{min:329,max:363,premium:6.90},{min:363,max:402,premium:7.63},
+                {min:402,max:444,premium:8.43},{min:444,max:491,premium:9.32},{min:491,max:542,premium:10.30},
+                {min:542,max:599,premium:11.39},{min:599,max:662,premium:12.59},{min:662,max:732,premium:13.91},
+                {min:732,max:809,premium:15.38},{min:809,max:894,premium:16.99},{min:894,max:989,premium:18.78},
+                {min:989,max:1093,premium:20.76},{min:1093,max:1208,premium:22.95},{min:1208,max:1335,premium:25.36},
+                {min:1335,max:1475,premium:28.03},{min:1475,max:1631,premium:30.98},{min:1631,max:1802,premium:34.25},
+                {min:1802,max:1992,premium:37.85},{min:1992,max:2202,premium:41.83},{min:2202,max:2434,premium:46.24},
+                {min:2434,max:2690,premium:51.11},{min:2690,max:2973,premium:56.49},{min:2973,max:3286,premium:62.43},
+                {min:3286,max:3632,premium:69.00},{min:3632,max:4014,premium:76.27},{min:4014,max:4437,premium:84.30},
+                {min:4437,max:10000,premium:93.17}
+            ],
+            "2_round_50": [
+                {min:1,max:50,premium:1.00},{min:50,max:80,premium:1.50},{min:80,max:110,premium:2.00},
+                {min:110,max:140,premium:2.50},{min:140,max:160,premium:3.00},{min:160,max:180,premium:3.50},
+                {min:180,max:210,premium:4.00},{min:210,max:300,premium:5.00},{min:300,max:400,premium:8.00},
+                {min:400,max:500,premium:10.00},{min:500,max:600,premium:12.00},{min:600,max:700,premium:14.00},
+                {min:700,max:800,premium:16.00},{min:800,max:900,premium:18.00},{min:900,max:10000,premium:20.00}
+            ],
+            "2.5_accurate": [
+                {min:1,max:41,premium:0.98},{min:41,max:44,premium:1.06},{min:44,max:48,premium:1.15},
+                {min:48,max:52,premium:1.25},{min:52,max:56,premium:1.35},{min:56,max:61,premium:1.47},
+                {min:61,max:66,premium:1.59},{min:66,max:72,premium:1.72},{min:72,max:78,premium:1.87},
+                {min:78,max:84,premium:2.02},{min:84,max:91,premium:2.19},{min:91,max:99,premium:2.37},
+                {min:99,max:107,premium:2.57},{min:107,max:116,premium:2.79},{min:116,max:126,premium:3.02},
+                {min:126,max:136,premium:3.27},{min:136,max:148,premium:3.54},{min:148,max:160,premium:3.84},
+                {min:160,max:173,premium:4.16},{min:173,max:188,premium:4.51},{min:188,max:203,premium:4.88},
+                {min:203,max:220,premium:5.29},{min:220,max:239,premium:5.73},{min:239,max:259,premium:6.21},
+                {min:259,max:280,premium:6.73},{min:280,max:304,premium:7.29},{min:304,max:329,premium:7.90},
+                {min:329,max:356,premium:8.55},{min:356,max:386,premium:9.27},{min:386,max:418,premium:10.04},
+                {min:418,max:453,premium:10.88},{min:453,max:491,premium:11.78},{min:491,max:532,premium:12.76},
+                {min:532,max:576,premium:13.83},{min:576,max:624,premium:14.98},{min:624,max:676,premium:16.23},
+                {min:676,max:733,premium:17.58},{min:733,max:794,premium:19.05},{min:794,max:860,premium:20.64},
+                {min:860,max:931,premium:22.36},{min:931,max:1009,premium:24.22},{min:1009,max:1093,premium:26.24},
+                {min:1093,max:1184,premium:28.42},{min:1184,max:1283,premium:30.79},{min:1283,max:1390,premium:33.36},
+                {min:1390,max:1506,premium:36.14},{min:1506,max:1631,premium:39.15},{min:1631,max:1767,premium:42.41},
+                {min:1767,max:1915,premium:45.95},{min:1915,max:2074,premium:49.78},{min:2074,max:2247,premium:53.93},
+                {min:2247,max:2434,premium:58.42},{min:2434,max:2637,premium:63.29},{min:2637,max:2857,premium:68.56},
+                {min:2857,max:3095,premium:74.28},{min:3095,max:3353,premium:80.47},{min:3353,max:3632,premium:87.17},
+                {min:3632,max:3935,premium:94.44},{min:3935,max:4263,premium:102.31},{min:4263,max:4618,premium:110.83},
+                {min:4618,max:10000,premium:120.07}
+            ],
+            "3_accurate": "USE_PERCENTAGE_3.0",
+            "3.5_accurate": "USE_PERCENTAGE_3.5",
+            "static_1.50_300_2.00": [
+                {min:1,max:300,premium:1.50},{min:300,max:10000,premium:2.00}
+            ],
+            "flat_1.50": [{min:1,max:10000,premium:1.50}],
+            "flat_5.95": [{min:0,max:10000,premium:5.95}],
+            "2_flat_0.98": "USE_PERCENTAGE_2.0_MIN_0.98",
+            "3_accurate_100_1.95": "USE_PERCENTAGE_3.0_MIN_1.95",
+            "3.25_1.55": "USE_PERCENTAGE_3.25_MIN_1.55",
+            "2.5_1.95": "USE_PERCENTAGE_2.5_MIN_1.95",
+            "born_primitive": [
+                {min:1,max:50,premium:2.25},{min:50,max:100,premium:2.75},{min:100,max:150,premium:3.25},
+                {min:150,max:200,premium:3.75},{min:200,max:300,premium:4.95},{min:300,max:500,premium:5.95},
+                {min:500,max:10000,premium:6.95}
+            ],
+            "og_6.5_19.99_3": [
+                {min:0,max:310,pct:0.065},{min:310,max:670,premium:19.99},{min:670,max:10000,pct:0.03}
+            ]
+        };
+
+        function getTieredPremium(orderValue, template) {
+            const tiers = pricingTemplates[template];
+            if (!tiers) return 0;
+            if (typeof tiers === 'string') {
+                if (tiers.startsWith('USE_PERCENTAGE_')) {
+                    const parts = tiers.replace('USE_PERCENTAGE_', '').split('_MIN_');
+                    const percentage = parseFloat(parts[0]) / 100;
+                    const calculated = orderValue * percentage;
+                    if (parts.length > 1) {
+                        const minimum = parseFloat(parts[1]);
+                        return Math.max(calculated, minimum);
+                    }
+                    return calculated;
+                }
+                return 0;
+            }
+            for (let tier of tiers) {
+                if (orderValue >= tier.min && orderValue < tier.max) {
+                    return tier.pct ? orderValue * tier.pct : tier.premium;
+                }
+            }
+            const last = tiers[tiers.length - 1];
+            return last.pct ? orderValue * last.pct : last.premium;
+        }
+
+        // ── Type toggle helpers ────────────────────────────────────────────────
+        function pSetCogsType(t) {
+            p_cogsType = t;
+            document.getElementById('p-cogs-pct-btn').classList.toggle('active', t === 'pct');
+            document.getElementById('p-cogs-flat-btn').classList.toggle('active', t === 'flat');
+            document.getElementById('p-cogs-label').textContent = t === 'flat' ? 'Product Cost $' : 'Product Cost';
+        }
+
+        function pSetClaimsType(t) {
+            p_claimsType = t;
+            document.getElementById('p-claims-pct-btn').classList.toggle('active', t === 'pct');
+            document.getElementById('p-claims-count-btn').classList.toggle('active', t === 'count');
+            const isAnn = isAnnual();
+            const lbl = document.getElementById('p-claims-label');
+            if (lbl) lbl.textContent = t === 'pct' ? 'Claims Rate %' : (isAnn ? 'Annual Claims' : 'Monthly Claims');
+        }
+
+        function pSetReturnsType(t) {
+            p_returnsType = t;
+            document.getElementById('p-rr-pct-btn').classList.toggle('active', t === 'pct');
+            document.getElementById('p-rr-count-btn').classList.toggle('active', t === 'count');
+            const isAnn = isAnnual();
+            const lbl = document.getElementById('p-rr-label');
+            if (lbl) lbl.textContent = t === 'pct' ? 'Returns Rate %' : (isAnn ? 'Annual Returns' : 'Monthly Returns');
+        }
+
+        function isAnnual() {
+            return (window._urlView || 'monthly') === 'annual';
+        }
+
+        // ── Template visibility ────────────────────────────────────────────────
+        function updatePremiumVisibility() {
+            const template = document.getElementById('p-template').value;
+            const wrap = document.getElementById('p-premium-wrap');
+            const lbl = document.getElementById('p-premium-label');
+            if (template === 'percentage' || template === 'flat_dollar') {
+                wrap.classList.add('visible');
+                lbl.textContent = template === 'flat_dollar' ? 'SI Premium $' : 'SI Premium %';
+            } else {
+                wrap.classList.remove('visible');
+            }
+        }
+
+        // ── Lock inputs ────────────────────────────────────────────────────────
+        function lockAllInputs() {
+            p_locked = true;
+            const inputsSection = document.getElementById('inputsSection');
+
+            // Replace all input fields with locked-value displays
+            inputsSection.querySelectorAll('input[type="text"], select').forEach(el => {
+                if (el.id === 'p-template') {
+                    // Show template as text
+                    const disp = document.createElement('div');
+                    disp.className = 'locked-value';
+                    disp.textContent = el.options[el.selectedIndex]?.text || el.value;
+                    el.parentNode.insertBefore(disp, el);
+                    el.style.display = 'none';
+                } else if (el.type === 'text') {
+                    const disp = document.createElement('div');
+                    disp.className = 'locked-value';
+                    disp.textContent = el.value || '—';
+                    el.parentNode.insertBefore(disp, el);
+                    el.style.display = 'none';
+                }
+            });
+
+            // Hide itype-btn buttons
+            inputsSection.querySelectorAll('.itype-btn').forEach(btn => {
+                btn.style.display = 'none';
+            });
+
+            // Also fix input-with-type border radius
+            inputsSection.querySelectorAll('.input-with-type').forEach(wrap => {
+                // If input is hidden, wrap acts like normal div
+                wrap.style.display = 'block';
+            });
+
+            // Hide the calculate button
+            const calcBtn = document.getElementById('calcBtn');
+            if (calcBtn) calcBtn.style.display = 'none';
+
+            // Keep details open
+            const det = inputsSection.querySelector('details.add-inputs-details');
+            if (det) det.open = true;
+        }
+
+        // ── Main Calculation ───────────────────────────────────────────────────
+        function calculateProposal() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewMode = urlParams.get('view') || 'monthly';
+            window._urlView = viewMode;
+
+            // Read inputs
+            const ordersInput    = parseFloat(removeCommas(document.getElementById('p-orders').value)) || 0;
+            const avgOrderValue  = parseFloat(removeCommas(document.getElementById('p-aov').value)) || 0;
+            const avgShipping    = parseFloat(removeCommas(document.getElementById('p-aship').value)) || 0;
+            const csCostPerClaim = parseFloat(removeCommas(document.getElementById('p-cs').value)) || 0;
+            const revenueShare   = (parseFloat(removeCommas(document.getElementById('p-share').value)) || 25) / 100;
+            const attachRate     = (parseFloat(removeCommas(document.getElementById('p-attach').value)) || 68) / 100;
+            const template       = document.getElementById('p-template').value;
+            const premiumRaw     = parseFloat(removeCommas(document.getElementById('p-premium').value)) || 3;
+            const cogsRaw        = parseFloat(removeCommas(document.getElementById('p-cogs').value)) || 0;
+            const claimsRaw      = parseFloat(removeCommas(document.getElementById('p-claims').value)) || 0;
+
+            // COGS
+            const cogsPercent = p_cogsType === 'flat'
+                ? (avgOrderValue > 0 ? cogsRaw / avgOrderValue : 0)
+                : cogsRaw / 100;
+
+            // Period orders
+            const periodOrders = ordersInput;
+            const periodLabel  = viewMode === 'annual' ? 'year' : 'month';
+
+            // Claims rate
+            const claimsRate = p_claimsType === 'count'
+                ? (periodOrders > 0 ? claimsRaw / periodOrders : 0)
+                : claimsRaw / 100;
+
+            // Returns
+            const returnsRaw = parseFloat(removeCommas(document.getElementById('p-rr').value)) || 0;
+            const returnsRate = p_returnsType === 'count'
+                ? (periodOrders > 0 ? returnsRaw / periodOrders : 0)
+                : returnsRaw / 100;
+            const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('p-rpc').value)) || 0;
+            const periodPlatformCost  = viewMode === 'annual' ? monthlyPlatformCost * 12 : monthlyPlatformCost;
+            const returnLabelCost = avgShipping;
+
+            // Cashback
+            const cashbackRate        = (parseFloat(removeCommas(document.getElementById('p-cb').value)) || 5) / 100;
+            const minCashback         = parseFloat(removeCommas(document.getElementById('p-mincb').value)) || 5;
+            const cashbackRedemptionRate = (parseFloat(removeCommas(document.getElementById('p-cbrr').value)) || 10) / 100;
+
+            // Premium per order
+            let avgPremium = 0;
+            if (template === 'percentage') {
+                avgPremium = avgOrderValue * (premiumRaw / 100);
+            } else if (template === 'flat_dollar') {
+                avgPremium = premiumRaw;
+            } else {
+                avgPremium = getTieredPremium(avgOrderValue, template);
+            }
+            _cashbackPerOrderCached = 0;
+
+            const protectedOrders  = periodOrders * attachRate;
+            const totalClaims      = periodOrders * claimsRate;
+            const claimsOffset     = protectedOrders * claimsRate;
+            const costPerReship    = (avgOrderValue * cogsPercent) + avgShipping + csCostPerClaim;
+            const csShippingCost   = totalClaims * (csCostPerClaim + avgShipping);
+            const cogsAmount       = totalClaims * (avgOrderValue * cogsPercent);
+            const lostRevenue      = csShippingCost + cogsAmount;
+            const premiumPool      = protectedOrders * avgPremium;
+
+            const siClaimValue     = p_claimResolution === 'cogs' ? costPerReship : avgOrderValue;
+            const siFundedReships  = claimsOffset * siClaimValue;
+
+            // Returns
+            let totalReturns = 0, returnLabelsCostTotal = 0, totalReturnsCost = 0;
+            let siCoveredLabels = 0, siCoveredPlatform = 0, totalReturnsOffset = 0;
+            if (p_returnsEnabled) {
+                totalReturns          = periodOrders * returnsRate;
+                const protectedReturns = protectedOrders * returnsRate;
+                returnLabelsCostTotal  = totalReturns * returnLabelCost;
+                totalReturnsCost       = returnLabelsCostTotal + periodPlatformCost;
+                siCoveredLabels        = protectedReturns * returnLabelCost;
+                siCoveredPlatform      = periodPlatformCost;
+                totalReturnsOffset     = siCoveredLabels + siCoveredPlatform;
+            }
+
+            // Cashback
+            let cashbackPerOrder = 0, siSponsoredCashbackTotal = 0, cashbackRedeemed = 0, totalCashbackValue = 0;
+            if (p_cashbackEnabled) {
+                cashbackPerOrder        = Math.max(avgOrderValue * cashbackRate, minCashback);
+                _cashbackPerOrderCached = cashbackPerOrder;
+                siSponsoredCashbackTotal = protectedOrders * cashbackPerOrder;
+                cashbackRedeemed        = siSponsoredCashbackTotal * cashbackRedemptionRate;
+                const redemptionCount   = cashbackPerOrder > 0 ? cashbackRedeemed / cashbackPerOrder : 0;
+                totalCashbackValue      = redemptionCount * avgOrderValue;
+            }
+
+            // Guarantee
+            let gClaimsRate = 0, gAdditionalClaims = 0, gSiFundedClaims = 0;
+            if (p_guaranteeEnabled) {
+                const gRateRaw = parseFloat(document.getElementById('p-gcr').value) || 0;
+                gClaimsRate        = gRateRaw > 0 ? gRateRaw / 100 : claimsRate * 1.5;
+                gAdditionalClaims  = protectedOrders * Math.max(0, gClaimsRate - claimsRate);
+                gSiFundedClaims    = gAdditionalClaims * siClaimValue;
+            }
+
+            // Post-claim balance and extra revenue
+            const postClaimBalance = premiumPool
+                - siFundedReships
+                - (p_guaranteeEnabled ? gSiFundedClaims : 0)
+                - (p_returnsEnabled   ? siCoveredLabels + siCoveredPlatform : 0)
+                - (p_cashbackEnabled  ? cashbackRedeemed : 0);
+            const revenueShareAmount = Math.max(0, postClaimBalance) * revenueShare;
+
+            const totalLost     = lostRevenue + (p_returnsEnabled ? totalReturnsCost : 0);
+            const extraRevenue  = siFundedReships + revenueShareAmount
+                + (p_guaranteeEnabled ? gSiFundedClaims   : 0)
+                + (p_returnsEnabled   ? totalReturnsOffset : 0)
+                + (p_cashbackEnabled  ? cashbackRedeemed   : 0);
+
+            const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
+
+            // ── Populate Results ───────────────────────────────────────────────
+            const heroEl = document.getElementById('heroValue');
+            heroEl.textContent = fmtDollar(extraRevenue);
+            document.getElementById('heroSub').textContent = 'per ' + periodLabel;
+
+            // Cost card
+            if (p_hideCurrentCost) {
+                document.getElementById('costCard').style.display = 'none';
+                document.getElementById('resultCardsRow').classList.add('cost-hidden');
+            } else {
+                document.getElementById('costCard').style.display = '';
+                document.getElementById('resultCardsRow').classList.remove('cost-hidden');
+                document.getElementById('r-lostRevenue').textContent = '-' + fmtDollar(totalLost);
+                document.getElementById('r-costPerReship').textContent = fmtDollarCents(costPerReship);
+                if (p_claimsType === 'count') {
+                    document.getElementById('r-totalClaimsLabel').textContent = 'Claims Rate';
+                    document.getElementById('r-totalClaims').textContent = (claimsRate * 100).toFixed(2).replace(/\.?0+$/,'') + '%';
+                } else {
+                    document.getElementById('r-totalClaimsLabel').textContent = 'Total Claims';
+                    document.getElementById('r-totalClaims').textContent = fmtNum(totalClaims);
+                }
+            }
+
+            // Revenue card
+            document.getElementById('r-extraRevenue').textContent = fmtDollar(extraRevenue);
+            document.getElementById('r-siFundedClaims').textContent = fmtDollarCents(siClaimValue);
+            document.getElementById('r-protectedClaims').textContent = fmtNum(claimsOffset);
+            document.getElementById('r-revenueShare').textContent = fmtDollar(revenueShareAmount);
+            const rsZero = revenueShare === 0;
+            document.getElementById('r-revShareMetric').style.display = rsZero ? 'none' : '';
+
+            // Key metrics
+            document.getElementById('r-premiumsPct').textContent = percentOfPremiums.toFixed(1) + '%';
+            document.getElementById('r-totalPremiums').textContent = fmtDollar(premiumPool);
+            document.getElementById('r-attachRate').textContent = (attachRate * 100).toFixed(0) + '%';
+            document.getElementById('r-avgPremium').textContent = fmtDollarCents(avgPremium);
+
+            // Returns block
+            if (p_returnsEnabled) {
+                document.getElementById('returnsResultBlock').style.display = '';
+                document.getElementById('r-siCoveredLabels').textContent = fmtDollar(siCoveredLabels);
+                document.getElementById('r-siCoveredPlatform').textContent = fmtDollar(siCoveredPlatform);
+                document.getElementById('r-totalReturnsOffset').textContent = fmtDollar(totalReturnsOffset);
+            }
+
+            // Cashback block
+            if (p_cashbackEnabled) {
+                document.getElementById('cashbackResultBlock').style.display = '';
+                document.getElementById('r-siCashback').textContent = fmtDollar(siSponsoredCashbackTotal);
+                document.getElementById('r-cashbackRedeemed').textContent = fmtDollar(cashbackRedeemed);
+                document.getElementById('r-repeatRevenue').textContent = fmtDollar(totalCashbackValue);
+            }
+
+            // Guarantee block
+            if (p_guaranteeEnabled) {
+                document.getElementById('guaranteeResultBlock').style.display = '';
+                document.getElementById('r-gClaimRate').textContent = (gClaimsRate * 100).toFixed(2).replace(/\.?0+$/,'') + '%';
+                document.getElementById('r-gAddlClaims').textContent = fmtNum(gAdditionalClaims);
+                document.getElementById('r-gSiFunded').textContent = fmtDollar(gSiFundedClaims);
+            }
+
+            // Widget preview
+            const urlPs = new URLSearchParams(window.location.search);
+            if (urlPs.get('wi') === '1') {
+                document.getElementById('widgetPreviewBlock').style.display = '';
+                updateWidgetPreview();
+            }
+
+            // Show results
+            const rs = document.getElementById('resultsSection');
+            rs.classList.add('visible');
+            rs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ── Widget Preview ─────────────────────────────────────────────────────
+        const _widgetTypeNames = {
+            'dual':      'Dual Checkout',
+            'toggle':    'Cart Toggle / Checkbox',
+            'extension': 'Checkout Extension'
+        };
+
+        function setWidgetType(type) {
+            _widgetType = type;
+        }
+
+        function setSubPos(pos) {
+            _dualSubPos = pos;
+        }
+
+        function setSnap(mode) {
+            _snapMode = mode;
+        }
+
+        function updateWidgetPreview() {
+            const area = document.getElementById('p-widgetPreviewArea');
+            if (!area) return;
+
+            const lbl = document.getElementById('widgetTypeLabel');
+            if (lbl) lbl.textContent = (_widgetTypeNames[_widgetType] || _widgetType) + ' Example';
+
+            // Mode
+            let mode = 'default';
+            const urlPs = new URLSearchParams(window.location.search);
+            if (p_returnsOffsetMode)     mode = 'returns-offset';
+            else if (p_cashbackEnabled)  mode = 'cashback';
+            else if (p_guaranteeEnabled) mode = 'guarantee';
+            else if (p_returnsEnabled)   mode = 'returns';
+
+            // Premium
+            const template = document.getElementById('p-template').value;
+            const aov      = parseFloat(removeCommas(document.getElementById('p-aov').value)) || 0;
+            const premRaw  = parseFloat(removeCommas(document.getElementById('p-premium').value)) || 0;
+            let avgPremium = 0;
+            if (template === 'percentage') avgPremium = aov * (premRaw / 100);
+            else if (template === 'flat_dollar') avgPremium = premRaw;
+            else avgPremium = getTieredPremium(aov, template);
+
+            const total  = aov + avgPremium;
+            const fmtP   = fmtDollarCents(avgPremium);
+            const fmtA   = fmtDollarCents(aov);
+            const fmtT   = fmtDollarCents(total);
+            const cbAmt  = Math.round(_cashbackPerOrderCached) || 5;
+            const cbStr  = `$${cbAmt}`;
+
+            // Mode defaults
+            const defMap = {
+                'default':        { dualH:'Loss, Damage, Theft Protection', togH:'Shipping Protection',            extH:'Shipping Protection',  extBody:'Effortless Protection | Loss, damage, or theft', extCb:null, btnB:'or checkout without protection' },
+                'returns':        { dualH:'Shipping Protection + Free Returns', togH:'Shipping Protection + Free Returns', extH:'Shipping Protection + Free Returns', extBody:'Effortless Protection | Loss, damage, or theft', extCb:null, btnB:'or checkout without free returns' },
+                'returns-offset': { dualH:'Unlock Free Returns',             togH:'Unlock Free Returns',           extH:'Checkout+',            extBody:'Unlock Free Returns', extCb:null, btnB:'or checkout without free returns' },
+                'cashback':       { dualH:`Shipping Protection + ${cbStr} Cashback`, togH:`${cbStr} Cashback`,    extH:'Checkout+',            extBody:'Shipping Protection', extCb:`Plus Earn {amount} Off Your Next Order`, btnB:'or checkout without protection' },
+                'guarantee':      { dualH:'Protection + Satisfaction Guarantee', togH:'Protection + Satisfaction Guarantee', extH:'Checkout+', extBody:'Protection + Satisfaction Guarantee', extCb:null, btnB:'or checkout without protection' },
+            };
+            const D = defMap[mode] || defMap['default'];
+
+            // Helpers — read from wci_ URL params (restored widget config)
+            const wciParams = {};
+            urlPs.forEach((val, key) => { if (key.startsWith('wci_')) wciParams[key.slice(4)] = val; });
+            const gv   = (id, fb) => wciParams[id] !== undefined ? wciParams[id] : fb;
+            const gch  = (id, def) => wciParams[id] !== undefined ? wciParams[id] === '1' : def;
+            const sty  = (ff, fs, fw, fc) => {
+                let s = '';
+                if (ff && ff !== 'inherit') s += `font-family:${ff};`;
+                if (fs) s += `font-size:${fs}px;`;
+                if (fw) s += `font-weight:${fw};`;
+                if (fc) s += `color:${fc};`;
+                return s;
+            };
+
+            const v = (id, fb) => wciParams[id] || fb;
+
+            const lockSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png';
+            const leafSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/leaf-icon.png';
+            const cashSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cash-icon.png';
+            const cashImg  = `<img src="${cashSrc}" class="wp-cash-icon" onerror="this.style.display='none';">`;
+            const infoBtn  = `<span class="wp-info-btn">i</span>`;
+            const learnMore = `<a class="wp-learn-more">Learn More</a>`;
+
+            if (_widgetType === 'dual') {
+                const header    = v('wc-dual-header', D.dualH);
+                const body      = v('wc-dualp-body', '');
+                const btnARaw   = v('wc-dual-btna', `Checkout | ${fmtT}`);
+                const btnBRaw   = v('wc-dual-btnb', D.btnB);
+                const disc      = v('wc-dual-disclaimer', '');
+                const between   = gch('wc-dual-between', false);
+                const infoIconColor = gv('wc-dual-h-info-color', '#adb5bd');
+                const infoBtn2  = `<span class="wp-info-btn" style="border-color:${infoIconColor};color:${infoIconColor};">i</span>`;
+                const showPriceA = gch('wc-dual-show-price-a', true);
+                const showPriceB = gch('wc-dual-show-price-b', false);
+                const bg        = gv('wc-dual-bg', '#ffffff');
+                const bdColor   = gv('wc-dual-bd-color', '#e9ecef');
+                const bdWidth   = gv('wc-dual-bd-width', '2');
+                const bdRadius  = gv('wc-dual-bd-radius', '12');
+                const pad       = gv('wc-dual-padding', '16');
+                const pricePos  = gv('wc-dual-price-pos', 'right');
+                const hStyle    = sty(gv('wc-dual-h-font',''), gv('wc-dual-h-size',''), gv('wc-dual-h-weight',''), gv('wc-dual-h-color','#333333'));
+                const bStyle    = sty(gv('wc-dual-b-font',''), gv('wc-dual-b-size',''), gv('wc-dual-b-weight',''), gv('wc-dual-b-color','#666666'));
+                const ssBg      = gv('wc-dual-s-bg','#ffffff');
+                const ssBd      = gv('wc-dual-s-bd-color','#dee2e6');
+                const ssBdW     = gv('wc-dual-s-bd-width','2');
+                const ssBdR     = gv('wc-dual-s-bd-radius','9');
+                const ssPad     = gv('wc-dual-s-padding','11');
+                const ssMt      = gv('wc-dual-s-mt','8');
+                const ssStyle   = sty(gv('wc-dual-s-font',''), gv('wc-dual-s-size',''), gv('wc-dual-s-weight',''), gv('wc-dual-s-color','#495057'));
+                const ssUnderline = gch('wc-dual-s-underline', true);
+                const cardStyle  = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
+                const secBtnStyle = `display:block;width:100%;padding:${ssPad}px 16px;border:${ssBdW}px solid ${ssBd};border-radius:${ssBdR}px;background:${ssBg};text-decoration:${ssUnderline?'underline':'none'};text-align:center;font-family:inherit;cursor:default;margin-top:${ssMt}px;box-sizing:border-box;${ssStyle}`;
+                const priceColor  = gv('wc-dual-price-color', '#1a1a1a');
+                const priceFStyle = '';
+                const priceHtml   = `<span class="wp-price" style="flex-shrink:0;color:${priceColor};">${fmtP}</span>`;
+                const showDualLock = gch('wc-dual-show-lock', false);
+                const dualLogoSrc  = _dualLogoSrc || lockSrc;
+                const dualLogoSize = parseInt(gv('wc-dual-logo-size', '28')) || 28;
+                const dualLogoHtml = (showDualLock || _dualLogoSrc) ? `<img src="${dualLogoSrc}" style="width:${dualLogoSize}px;height:${dualLogoSize}px;object-fit:contain;flex-shrink:0;margin-right:2px;" onerror="this.style.display='none';">` : '';
+                const pBg1   = gv('wc-dual-p-bg', '#6675ff');
+                const pBg2   = gv('wc-dual-p-bg2', '#764ba2');
+                const pBdR   = gv('wc-dual-p-bd-radius', '9');
+                const pPad   = gv('wc-dual-p-padding', '13');
+                const pMb    = gv('wc-dual-p-mb', '8');
+                const pColor = gv('wc-dual-p-color', '#ffffff') || '#ffffff';
+                const pStyle = sty(gv('wc-dual-p-font',''), gv('wc-dual-p-size',''), gv('wc-dual-p-weight',''), '');
+                const primaryBtnStyle = `display:block;width:100%;padding:${pPad}px 16px;border:none;border-radius:${pBdR}px;background:linear-gradient(135deg,${pBg1} 0%,${pBg2} 100%);color:${pColor};font-family:inherit;cursor:default;text-align:center;margin-bottom:${pMb}px;${pStyle}`;
+                const headerGap = parseInt(gv('wc-dual-header-gap', '0')) || 0;
+                const subLabel  = v('wc-dual-sub-label', 'Subtotal');
+                const subNote   = v('wc-dual-sub-note', '');
+                const hideSub   = gch('wc-dual-hide-sub', false);
+                const subFF     = gv('wc-dual-sub-ff', '');
+                const subFS     = gv('wc-dual-sub-fs', '');
+                const subFW     = gv('wc-dual-sub-fw', '700');
+                const subLC     = gv('wc-dual-sub-lc', '#1a1a1a');
+                const subVC     = gv('wc-dual-sub-vc', '#1a1a1a');
+                const subDivPos = gv('wc-dual-sub-div-pos', 'above');
+                const subDivColor = gv('wc-dual-sub-div-color', '#e0e0e0');
+                const subDivW   = gv('wc-dual-sub-div-width', '1');
+                const subSpacing= gv('wc-dual-sub-spacing', '10');
+                const subTextStyle = `${subFF&&subFF!=='inherit'?`font-family:${subFF};`:''}${subFS?`font-size:${subFS}px;`:''}${subFW?`font-weight:${subFW};`:''}`;
+                const subDivHtml = (subDivPos==='none'||subDivW==='0') ? '' : `<div style="border-top:${subDivW}px solid ${subDivColor};margin:${subSpacing}px 0;"></div>`;
+                const subRowStyle = `display:flex;justify-content:space-between;align-items:baseline;gap:8px;`;
+                const subRowHtml = hideSub ? '' : `
+                    ${subDivPos==='above' ? subDivHtml : ''}
+                    <div style="${subRowStyle}">
+                        <span style="${subTextStyle}color:${subLC};white-space:nowrap;">${subLabel}</span>
+                        <span style="${subTextStyle}color:${subVC};white-space:nowrap;">${fmtA}</span>
+                    </div>
+                    ${subDivPos==='below' ? subDivHtml : ''}`;
+                const headerBlock = `<div style="margin-bottom:${headerGap}px;">
+                    <div class="wp-spread" style="margin-bottom:${body?'6':'0'}px;align-items:center;gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
+                        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                            ${dualLogoHtml}
+                            <span class="wp-header-text" style="${hStyle}">${header} ${infoBtn2}</span>
+                        </div>
+                        ${pricePos!=='none' ? priceHtml : ''}
+                    </div>
+                    ${body ? `<div class="wp-body-text" style="${bStyle}margin-top:4px;margin-bottom:2px;">${body}</div>` : ''}
+                </div>`;
+                const btnABase  = btnARaw.replace(/\s*\|.*$/, '').trim();
+                const btnALabel = showPriceA ? `${btnABase} | ${fmtT}` : btnABase;
+                const btnBLabel = showPriceB ? `${btnBRaw} | ${fmtA}` : btnBRaw;
+                area.innerHTML = `<div style="${cardStyle}">
+                    ${_dualSubPos==='above-header' ? subRowHtml : ''}
+                    ${!between ? headerBlock : ''}
+                    ${_dualSubPos==='before-btns' ? subRowHtml : ''}
+                    <button style="${primaryBtnStyle}">${btnALabel}</button>
+                    ${_dualSubPos==='between-btns' ? subRowHtml : ''}
+                    <div style="${secBtnStyle}">${btnBLabel}</div>
+                    ${disc ? `<div class="wp-disclaimer" style="margin-top:6px;">${disc}</div>` : ''}
+                </div>`;
+
+            } else if (_widgetType === 'toggle') {
+                const header     = v('wc-tog-header', D.togH);
+                const body       = v('wc-tog-body', '');
+                const disclaimer = v('wc-tog-disclaimer', '');
+                const hideLock   = gch('wc-tog-hide-lock', false);
+                const isCheckbox = gch('wc-tog-is-checkbox', false);
+                const switchColor = gv('wc-tog-switch-color', '#6675ff');
+                const bg        = gv('wc-tog-bg', '#ffffff');
+                const bdColor   = gv('wc-tog-bd-color', '#e9ecef');
+                const bdWidth   = gv('wc-tog-bd-width', '2');
+                const bdRadius  = gv('wc-tog-bd-radius', '12');
+                const pad       = gv('wc-tog-padding', '16');
+                const hStyle    = sty(gv('wc-tog-h-font',''), gv('wc-tog-h-size',''), gv('wc-tog-h-weight',''), gv('wc-tog-h-color','#333333'));
+                const bStyle    = sty(gv('wc-tog-b-font',''), gv('wc-tog-b-size',''), gv('wc-tog-b-weight',''), gv('wc-tog-b-color','#666666'));
+                const dStyle    = sty(gv('wc-tog-d-font',''), gv('wc-tog-d-size',''), gv('wc-tog-d-weight',''), gv('wc-tog-d-color','#aaaaaa'));
+                const cardStyle = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
+                const logoActualSrc = _toggleLogoSrc || lockSrc;
+                const togLogoSize   = parseInt(gv('wc-tog-logo-size', '28')) || 28;
+                const leafImg   = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
+                const lockImgEl = hideLock ? '' : `<img src="${logoActualSrc}" style="width:${togLogoSize}px;height:${togLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
+                let controlHtml;
+                if (isCheckbox) {
+                    controlHtml = `<div style="width:20px;height:20px;border-radius:4px;border:2px solid ${switchColor};background:${switchColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:white;font-size:12px;font-weight:900;line-height:1;">✓</span></div>`;
+                } else {
+                    controlHtml = `<div style="width:38px;height:22px;border-radius:11px;background:${switchColor};position:relative;flex-shrink:0;"><div style="position:absolute;right:2px;top:2px;width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,0.22);"></div></div>`;
+                }
+                const snapStyle = _snapMode==='left' ? 'margin-right:auto;' : _snapMode==='right' ? 'margin-left:auto;' : 'margin:0 auto;';
+                area.innerHTML = `<div style="${cardStyle}${snapStyle}">
+                    <div class="wp-toggle-row">
+                        <div class="wp-toggle-left" style="gap:7px;">
+                            ${lockImgEl}
+                            <div class="wp-toggle-text">
+                                <span class="wp-header-text" style="${hStyle}">${header} ${leafImg}</span>
+                                ${body ? `<div class="wp-body-text" style="${bStyle}margin:2px 0 0;">${body}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="wp-toggle-right">
+                            ${controlHtml}
+                            <div class="wp-price" style="font-size:0.85em;margin-top:3px;">${fmtP}</div>
+                        </div>
+                    </div>
+                    ${disclaimer ? `<div class="wp-disclaimer" style="${dStyle}margin-top:6px;">${disclaimer}</div>` : ''}
+                </div>`;
+
+            } else if (_widgetType === 'extension') {
+                const header        = v('wc-ext-header', D.extH);
+                const body          = v('wc-ext-body', D.extBody);
+                const disclaimer    = v('wc-ext-disclaimer', '');
+                const hideLock      = gch('wc-ext-hide-lock', false);
+                const showLearnMore = gch('wc-ext-show-learn-more', true);
+                let cbRowText = null;
+                if (mode === 'cashback') {
+                    const rawCb = v('wc-ext-cashback', D.extCb || `Plus Earn {amount} Off Your Next Order`);
+                    cbRowText = rawCb.replace(/\{amount\}/g, cbStr);
+                }
+                const extLogoSrc  = _extLogoSrc || lockSrc;
+                const extLogoSize = parseInt(gv('wc-ext-logo-size', '30')) || 30;
+                const extCheckbox = `<div style="width:18px;height:18px;border-radius:3px;border:1.5px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;"><span style="color:white;font-size:10px;font-weight:900;">✓</span></div>`;
+                const extLogoHtml = hideLock ? '' : `<img src="${extLogoSrc}" style="width:${extLogoSize}px;height:${extLogoSize}px;object-fit:contain;align-self:flex-start;flex-shrink:0;" onerror="this.style.opacity='0';">`;
+                area.innerHTML = `<div class="wp-card">
+                    <div class="wp-ext-row" style="align-items:flex-start;gap:8px;">
+                        ${extCheckbox}
+                        ${extLogoHtml}
+                        <div class="wp-ext-text">
+                            <div class="wp-spread" style="margin-bottom:4px;align-items:flex-start;gap:8px;">
+                                <span class="wp-header-text" style="font-weight:700;flex:1;">${header}</span>
+                                <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <div class="wp-body-text" style="margin:0;">${body}</div>
+                                ${showLearnMore ? learnMore : ''}
+                            </div>
+                            ${disclaimer ? `<div class="wp-disclaimer" style="margin-top:5px;display:flex;align-items:flex-start;gap:4px;">${infoBtn}<span>${disclaimer}</span></div>` : ''}
+                        </div>
+                    </div>
+                    ${cbRowText ? `<div class="wp-cashback-row">${cashImg}<span>${cbRowText}</span></div>` : ''}
+                </div>`;
+            }
+        }
+
+        // ── Load URL params on page load ───────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlPs = new URLSearchParams(window.location.search);
+
+            // Helper: set field value
+            const up = (id, key, fmt) => {
+                const el = document.getElementById(id);
+                const v  = urlPs.get(key);
+                if (el && v !== null) el.value = fmt ? fmt(v) : v;
+            };
+
+            // Merchant name
+            if (urlPs.get('mname')) {
+                const sub = document.getElementById('merchantSubtitle');
+                sub.textContent = urlPs.get('mname');
+                sub.style.display = '';
+            }
+
+            // View mode
+            window._urlView = urlPs.get('view') || 'monthly';
+
+            // Primary inputs
+            up('p-orders', 'orders', formatNumberWithCommas);
+            up('p-aov', 'aov');
+            up('p-claims', 'claims');
+
+            // Additional inputs
+            const cogs = urlPs.get('cogs'); if (cogs !== null) document.getElementById('p-cogs').value = cogs;
+            const aship = urlPs.get('aship'); if (aship !== null) document.getElementById('p-aship').value = aship;
+            const cs = urlPs.get('cs'); if (cs !== null) document.getElementById('p-cs').value = cs;
+            document.getElementById('p-attach').value = urlPs.get('attach') || '68';
+            document.getElementById('p-share').value  = urlPs.get('share')  || '25';
+            document.getElementById('p-premium').value = urlPs.get('premium') || '3.00';
+
+            if (urlPs.get('template')) document.getElementById('p-template').value = urlPs.get('template');
+            if (urlPs.get('cogstype')) pSetCogsType(urlPs.get('cogstype'));
+            if (urlPs.get('claimstype')) pSetClaimsType(urlPs.get('claimstype'));
+            if (urlPs.get('cr')) p_claimResolution = urlPs.get('cr');
+
+            // Update orders label
+            const ordLbl = document.getElementById('p-orders-label');
+            if (ordLbl) ordLbl.textContent = window._urlView === 'annual' ? 'Annual Orders' : 'Monthly Orders';
+
+            // Template premium visibility
+            updatePremiumVisibility();
+            document.getElementById('p-template').addEventListener('change', updatePremiumVisibility);
+
+            // Feature sections
+            const re   = urlPs.get('re')   === '1' || urlPs.get('rr') || urlPs.get('rpc');
+            const cbe  = urlPs.get('cbe')  === '1' || urlPs.get('cb');
+            const guar = urlPs.get('guar') === '1';
+            const rom  = urlPs.get('rom')  === '1';
+
+            if (re || rom) {
+                p_returnsEnabled = true;
+                document.getElementById('returnsFeatureSection').style.display = '';
+                up('p-rr', 'rr');
+                up('p-rpc', 'rpc');
+                if (urlPs.get('rtype')) pSetReturnsType(urlPs.get('rtype'));
+            }
+            if (rom) p_returnsOffsetMode = true;
+
+            if (cbe) {
+                p_cashbackEnabled = true;
+                document.getElementById('cashbackFeatureSection').style.display = '';
+                if (urlPs.get('cb'))   document.getElementById('p-cb').value   = urlPs.get('cb');
+                if (urlPs.get('mincb')) document.getElementById('p-mincb').value = urlPs.get('mincb');
+                if (urlPs.get('cbrr')) document.getElementById('p-cbrr').value = urlPs.get('cbrr');
+            }
+
+            if (guar) {
+                p_guaranteeEnabled = true;
+                document.getElementById('guaranteeFeatureSection').style.display = '';
+                if (urlPs.get('gcr')) document.getElementById('p-gcr').value = urlPs.get('gcr');
+            }
+
+            // Hide current cost
+            if (urlPs.get('hcc') === '1') p_hideCurrentCost = true;
+
+            // Widget state
+            if (urlPs.get('wt'))    setWidgetType(urlPs.get('wt'));
+            if (urlPs.get('wspos')) setSubPos(urlPs.get('wspos'));
+            if (urlPs.get('wsnap')) setSnap(urlPs.get('wsnap'));
+
+            // Lock inputs
+            if (urlPs.get('linputs') === '1') lockAllInputs();
+
+            // Auto-calculate if primary inputs are present
+            const hasOrders  = (urlPs.get('orders') || '').trim() !== '';
+            const hasAov     = (urlPs.get('aov') || '').trim() !== '';
+            const hasClaims  = (urlPs.get('claims') || '').trim() !== '';
+            if (hasOrders && hasAov && hasClaims) {
+                calculateProposal();
+            }
+        });
+    </script>
+</body>
+</html>
