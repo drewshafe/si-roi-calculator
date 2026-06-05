@@ -1183,6 +1183,10 @@
                     <div class="om-label">Premiums</div>
                     <div class="om-value" id="premiumsPaid">$0</div>
                 </div>
+                <div class="output-metric" id="protectedClaimsMetric">
+                    <div class="om-label">Protected Claims</div>
+                    <div class="om-value" id="protectedClaimsOutput">0</div>
+                </div>
                 <div class="output-metric" id="postClaimMetric">
                     <div class="om-label" id="postClaimBalanceLabel">Post-Claim Balance</div>
                     <div class="om-value" id="postClaimBalance">$0</div>
@@ -1278,20 +1282,20 @@
                     </div>
                     <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
-                            <h4 id="siClaimLabel">SI Funded Claim</h4>
+                            <h4 id="siClaimLabel">SI Funded Cost Per Claim</h4>
                             <div class="value" id="siFundedReships">$0</div>
                         </div>
                         <div class="metric-item">
-                            <h4>Protected Claims</h4>
-                            <div class="value" id="protectedClaims">0</div>
+                            <h4>Total Claims Funded</h4>
+                            <div class="value" id="totalClaimsFunded">$0</div>
                         </div>
                         <div class="metric-item" id="revenueShareMetricItem">
                             <h4>Revenue Share</h4>
                             <div class="value" id="revenueShareAmount">$0</div>
                         </div>
                     </div>
-                    <!-- Hidden stash -->
-                    <div style="display:none;"><span id="secondSale"></span><span id="siFundedTotal"></span></div>
+                    <!-- Hidden stash — protectedClaims kept here so existing JS writes don't throw -->
+                    <div style="display:none;"><span id="secondSale"></span><span id="siFundedTotal"></span><span id="protectedClaims"></span></div>
                     <div id="returnsOffsetResults" class="returns-results">
                         <div class="sub-section-label">Returns Offset</div>
                         <div class="metrics-grid">
@@ -2053,9 +2057,7 @@
             const sel = document.getElementById('claimResolution');
             if (sel && sel.value !== t) sel.value = t;
             const lbl = document.getElementById('siClaimLabel');
-            if (lbl) lbl.textContent = t === 'cogs'
-                ? 'SI Funded Claim'
-                : 'SI Funded Claim';
+            if (lbl) lbl.textContent = 'SI Funded Cost Per Claim';
             calculate();
         }
 
@@ -3037,6 +3039,10 @@
                 document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
             }
             document.getElementById('protectedClaims').textContent = formatNumber(claimsOffset);
+            const pcOutputEl = document.getElementById('protectedClaimsOutput');
+            if (pcOutputEl) pcOutputEl.textContent = formatNumber(claimsOffset);
+            const tcfEl = document.getElementById('totalClaimsFunded');
+            if (tcfEl) tcfEl.textContent = formatCurrency(siFundedReships);
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
             if (_returnsType === 'count') {
