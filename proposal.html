@@ -770,12 +770,12 @@
                     <div class="rc-total positive" id="r-extraRevenue">$0</div>
                     <div class="rc-metrics">
                         <div class="rc-metric">
-                            <div class="rc-metric-label">SI Funded Claims Value</div>
+                            <div class="rc-metric-label">SI Funded Cost Per Claim</div>
                             <div class="rc-metric-value" id="r-siFundedClaims">$0</div>
                         </div>
                         <div class="rc-metric">
-                            <div class="rc-metric-label">Protected Claims</div>
-                            <div class="rc-metric-value" id="r-protectedClaims">0</div>
+                            <div class="rc-metric-label">Total Claims Funded</div>
+                            <div class="rc-metric-value" id="r-totalClaimsFunded">$0</div>
                         </div>
                         <div class="rc-metric" id="r-revShareMetric">
                             <div class="rc-metric-label">Revenue Share</div>
@@ -794,6 +794,10 @@
                 <div class="key-metric-pill">
                     <div class="kmp-label">Total SI Premiums</div>
                     <div class="kmp-value" id="r-totalPremiums">$0</div>
+                </div>
+                <div class="key-metric-pill">
+                    <div class="kmp-label">Protected Claims</div>
+                    <div class="kmp-value" id="r-protectedClaims">0</div>
                 </div>
                 <div class="key-metric-pill">
                     <div class="kmp-label">Attach Rate</div>
@@ -1256,6 +1260,8 @@
             // Revenue card
             document.getElementById('r-extraRevenue').textContent = fmtDollar(extraRevenue);
             document.getElementById('r-siFundedClaims').textContent = fmtDollarCents(siClaimValue);
+            const rtcfEl = document.getElementById('r-totalClaimsFunded');
+            if (rtcfEl) rtcfEl.textContent = fmtDollar(siFundedReships);
             document.getElementById('r-protectedClaims').textContent = fmtNum(claimsOffset);
             document.getElementById('r-revenueShare').textContent = fmtDollar(revenueShareAmount);
             const rsZero = revenueShare === 0;
