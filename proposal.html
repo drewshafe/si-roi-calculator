@@ -558,6 +558,91 @@
             font-family: inherit;
         }
 
+        /* ── Calculation Breakdown ── */
+        .calc-breakdown {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .calc-toggle {
+            width: 100%;
+            padding: 12px 16px;
+            background: #f8f9ff;
+            border: none;
+            color: #6675ff;
+            font-family: inherit;
+            font-size: 0.82em;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+            transition: background 0.15s;
+            letter-spacing: 0.2px;
+        }
+        .calc-toggle:hover { background: #eef0fa; }
+        .calc-toggle-arrow {
+            font-size: 0.7em;
+            color: #9ca3af;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .calc-toggle-arrow.open { transform: rotate(90deg); }
+        .bd-body {
+            display: none;
+            border-top: 1px solid #e0e3f5;
+        }
+        .bd-body.visible { display: block; }
+        .bd-shared-section {
+            padding: 10px 14px 12px;
+            border-bottom: 1px solid #e0e3f5;
+            background: #fafbff;
+        }
+        .bd-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        .bd-col {
+            padding: 10px 14px 14px;
+        }
+        .bd-col:first-child { border-right: 1px solid #e0e3f5; }
+        .bd-title {
+            font-size: 0.65em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e0e3f5;
+        }
+        .bd-title.shared { color: #6c757d; }
+        .bd-title.negative { color: #dc3545; }
+        .bd-title.positive { color: #28a745; }
+        .bd-row {
+            display: grid;
+            grid-template-columns: 130px 1fr auto;
+            gap: 4px;
+            align-items: baseline;
+            padding: 2px 0;
+            font-size: 0.72em;
+            border-bottom: 1px solid rgba(0,0,0,0.035);
+        }
+        .bd-lbl { color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bd-eq { font-family: 'Courier New', monospace; color: #495057; opacity: 0.65; font-size: 0.88em; }
+        .bd-val { font-family: 'Courier New', monospace; color: #212529; font-weight: 600; text-align: right; white-space: nowrap; }
+        .bd-row.sep {
+            border-top: 1px solid #dee2e6;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-bottom: none;
+        }
+        .bd-row.sep .bd-lbl { color: #212529; font-weight: 700; }
+        .bd-row.sep.negative .bd-val { color: #dc3545; font-weight: 700; }
+        .bd-row.sep.positive .bd-val { color: #28a745; font-weight: 700; }
+
         /* ── Responsive ── */
         @media (max-width: 520px) {
             .result-cards-row {
@@ -567,6 +652,9 @@
                 display: block;
             }
             .hero-value { font-size: 2.2em; }
+            .bd-cols { grid-template-columns: 1fr; }
+            .bd-col:first-child { border-right: none; border-bottom: 1px solid #e0e3f5; }
+            .bd-row { grid-template-columns: 110px 1fr auto; }
         }
 
         /* ── Premium/template display row ── */
@@ -872,12 +960,37 @@
                 <div id="p-widgetPreviewArea"></div>
             </div>
 
+            <!-- Calculation Breakdown -->
+            <div class="calc-breakdown" id="p-calcBreakdown">
+                <button class="calc-toggle" onclick="togglePBreakdown(this)">
+                    <span class="calc-toggle-arrow" id="p-bdArrow">▶</span>
+                    📋 Show Calculation Breakdown
+                </button>
+                <div class="bd-body" id="p-bdBody">
+                    <div class="bd-shared-section">
+                        <div class="bd-title shared">Inputs &amp; Derived Values</div>
+                        <div id="p-bd-shared"></div>
+                    </div>
+                    <div class="bd-cols">
+                        <div class="bd-col" id="p-bdCostCol">
+                            <div class="bd-title negative">Cost Without ShipInsure</div>
+                            <div id="p-bd-cost"></div>
+                        </div>
+                        <div class="bd-col">
+                            <div class="bd-title positive">Revenue With ShipInsure</div>
+                            <div id="p-bd-revenue"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- /resultsSection -->
 
     </div><!-- /page-wrap -->
 
     <script>
         // ── State ──────────────────────────────────────────────────────────────
+        let _p_bd = { ready: false };
         let p_returnsEnabled    = false;
         let p_cashbackEnabled   = false;
         let p_guaranteeEnabled  = false;
@@ -1304,6 +1417,57 @@
                 updateWidgetPreview();
             }
 
+            // Store breakdown data
+            _p_bd = {
+                ready: true,
+                orders: periodOrders,
+                aov: avgOrderValue,
+                cogsP: cogsPercent,
+                claimsP: claimsRate,
+                avgShipping: avgShipping,
+                csPerClaim: csCostPerClaim,
+                attachP: attachRate,
+                avgPremium: avgPremium,
+                revShareP: revenueShare,
+                costPerReship: costPerReship,
+                totalClaims: totalClaims,
+                csCostTotal: csShippingCost,
+                cogsAmount: cogsAmount,
+                totalLost: totalLost,
+                protectedOrders: protectedOrders,
+                premiumPool: premiumPool,
+                protectedClaims: claimsOffset,
+                siClaimValue: siClaimValue,
+                siFundedReships: siFundedReships,
+                postClaimBalance: postClaimBalance,
+                revenueShareAmount: revenueShareAmount,
+                extraRevenue: extraRevenue,
+                percentOfPremiums: percentOfPremiums,
+                returnsEnabled: p_returnsEnabled,
+                totalReturns: totalReturns,
+                returnLabelsCostTotal: returnLabelsCostTotal,
+                periodPlatformCost: periodPlatformCost,
+                totalReturnsCost: totalReturnsCost,
+                siCoveredLabels: siCoveredLabels,
+                siCoveredPlatform: siCoveredPlatform,
+                guaranteeEnabled: p_guaranteeEnabled,
+                gAdditionalClaims: gAdditionalClaims,
+                gSiFundedClaims: gSiFundedClaims,
+                cashbackEnabled: p_cashbackEnabled,
+                cashbackRate: cashbackRate,
+                minCashback: minCashback,
+                cashbackPerOrder: cashbackPerOrder,
+                cashbackRedemptionRate: cashbackRedemptionRate,
+                siSponsoredCashbackTotal: siSponsoredCashbackTotal,
+                cashbackRedeemed: cashbackRedeemed,
+                totalCashbackValueTotal: totalCashbackValue,
+            };
+            // Re-render breakdown if it's open
+            if (document.getElementById('p-bdBody').classList.contains('visible')) renderPBreakdown();
+            // Show/hide cost column based on p_hideCurrentCost
+            const pBdCostCol = document.getElementById('p-bdCostCol');
+            if (pBdCostCol) pBdCostCol.style.display = p_hideCurrentCost ? 'none' : '';
+
             // Collapse input dropdowns
             const pd = document.getElementById('primaryInputsDetails');
             const ad = document.getElementById('additionalInputsDetails');
@@ -1567,6 +1731,94 @@
                     ${cbRowText ? `<div class="wp-cashback-row">${cashImg}<span>${cbRowText}</span></div>` : ''}
                 </div>`;
             }
+        }
+
+        // ── Calculation Breakdown ──────────────────────────────────────────────
+        function togglePBreakdown(btn) {
+            const body  = document.getElementById('p-bdBody');
+            const arrow = document.getElementById('p-bdArrow');
+            const open  = body.classList.toggle('visible');
+            arrow.classList.toggle('open', open);
+            btn.querySelector('.calc-toggle-arrow').textContent = open ? '▼' : '▶';
+            if (open) renderPBreakdown();
+        }
+
+        function renderPBreakdown() {
+            const d = _p_bd;
+            if (!d.ready) return;
+            const row = (lbl, eq, val, cls='') =>
+                `<div class="bd-row ${cls}"><span class="bd-lbl">${lbl}</span><span class="bd-eq">${eq}</span><span class="bd-val">${val}</span></div>`;
+            const pct = v => (v * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
+            const fp  = v => v.toFixed(1) + '%';
+            const fn  = v => fmtNum(v);
+            const fc  = v => fmtDollar(v);
+            const fcc = v => fmtDollarCents(v);
+
+            // Shared inputs & derived values
+            document.getElementById('p-bd-shared').innerHTML =
+                row('Orders (period)', '',            fn(d.orders)) +
+                row('AOV', '',                        fcc(d.aov)) +
+                row('Product Cost', '',               pct(d.cogsP)) +
+                row('Claims Rate', '',                pct(d.claimsP)) +
+                row('Avg Shipping', '',               fc(d.avgShipping)) +
+                row('Avg Ticket Cost', '',            fc(d.csPerClaim)) +
+                row('Attach Rate', '',                pct(d.attachP)) +
+                row('Avg Premium / Order', '',        fcc(d.avgPremium)) +
+                row('Rev Share %', '',                pct(d.revShareP)) +
+                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.avgShipping)} + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
+
+            // Cost without ShipInsure
+            let costHTML =
+                row('Total Claims',   `${fn(d.orders)} × ${pct(d.claimsP)}`,              fn(d.totalClaims)) +
+                row('CS & Shipping',  `${fn(d.totalClaims)} × (${fc(d.avgShipping)} + ${fc(d.csPerClaim)})`, fc(d.csCostTotal)) +
+                row('COGS',           `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
+            if (d.returnsEnabled) {
+                costHTML +=
+                    row('Return Labels',    `${fn(d.totalReturns)} × ${fc(d.avgShipping)}`, fc(d.returnLabelsCostTotal)) +
+                    row('Returns Platform', 'monthly fee',                                   fc(d.periodPlatformCost)) +
+                    row('Total Returns Cost', 'labels + platform',                           fc(d.totalReturnsCost));
+            }
+            costHTML += row('Total Cost Without SI', d.returnsEnabled ? 'claims + returns' : 'CS + COGS',
+                            '-' + fc(d.totalLost), 'sep negative');
+            document.getElementById('p-bd-cost').innerHTML = costHTML;
+
+            // Revenue with ShipInsure
+            let revHTML =
+                row('Protected Orders',   `${fn(d.orders)} × ${pct(d.attachP)}`,             fn(d.protectedOrders)) +
+                row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
+                row('Protected Claims',   `${fn(d.protectedOrders)} × ${pct(d.claimsP)}`,    fn(d.protectedClaims)) +
+                row('SI Funded Claim',    `${fn(d.protectedClaims)} claims × ${fcc(d.siClaimValue)}`, fc(d.siFundedReships)) +
+                (d.guaranteeEnabled ? row('SI Funded Guarantee', `${fn(d.gAdditionalClaims)} addl × ${fcc(d.siClaimValue)}`, fc(d.gSiFundedClaims)) : '') +
+                row('Post-Claim Balance', [
+                    'Premiums − SI Funded',
+                    d.guaranteeEnabled ? '− Guarantee Claims' : '',
+                    d.returnsEnabled  ? '− Return Labels' : '',
+                    d.cashbackEnabled ? '− Cashback Redeemed' : ''
+                ].filter(Boolean).join(' '), fc(d.postClaimBalance)) +
+                row('Rev Share', `${fc(d.postClaimBalance)} × ${pct(d.revShareP)}`, fc(d.revenueShareAmount));
+            if (d.returnsEnabled) {
+                revHTML +=
+                    row('SI Covered Labels',   'from premiums', fc(d.siCoveredLabels)) +
+                    row('SI Covered Platform', 'from premiums', fc(d.siCoveredPlatform));
+            }
+            if (d.cashbackEnabled) {
+                revHTML +=
+                    row('Cashback Per Order', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
+                    row('SI Cashback Funded', `${fn(d.protectedOrders)} × ${fcc(d.cashbackPerOrder)}`, fc(d.siSponsoredCashbackTotal)) +
+                    row('Est. Cashback Redeemed', `${fc(d.siSponsoredCashbackTotal)} × ${pct(d.cashbackRedemptionRate)}`, fc(d.cashbackRedeemed)) +
+                    row('Repeat Revenue Driven', `(${fc(d.cashbackRedeemed)} ÷ ${fcc(d.cashbackPerOrder)}) × ${fcc(d.aov)}`, fc(d.totalCashbackValueTotal));
+            }
+            const extraLabel = [
+                'funded + rev share',
+                d.guaranteeEnabled ? '+ guarantee claims' : '',
+                d.returnsEnabled ? '+ returns offset' : '',
+                d.cashbackEnabled ? '+ cashback' : ''
+            ].filter(Boolean).join(' ');
+            revHTML +=
+                row('Extra Revenue With SI', extraLabel, fc(d.extraRevenue), 'sep positive') +
+                row('% of Premiums Kept', `${fc(d.extraRevenue)} ÷ ${fc(d.premiumPool)}`,
+                    fp(d.percentOfPremiums), 'sep positive');
+            document.getElementById('p-bd-revenue').innerHTML = revHTML;
         }
 
         // ── Load URL params on page load ───────────────────────────────────────
