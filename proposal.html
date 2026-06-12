@@ -10,25 +10,67 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f4f5fb;
+            background: #c2c7db;
             min-height: 100vh;
             color: #212529;
         }
 
-        .page-wrap {
-            max-width: 680px;
+        /* ── Two-column split layout ── */
+        .proposal-layout {
+            display: flex;
+            min-height: 100vh;
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 14px 16px 28px;
+            box-shadow: 0 0 60px rgba(0,0,0,0.2);
+        }
+
+        .left-panel {
+            width: 370px;
+            flex-shrink: 0;
+            background: white;
+            border-right: 2px solid #dde0f2;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .right-panel {
+            flex: 1;
+            background: #d8dced;
+            overflow-y: auto;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .no-results-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 55vh;
+            gap: 10px;
+            color: #a0a8c4;
+            text-align: center;
+        }
+        .no-results-placeholder .nrp-icon { font-size: 2.4em; opacity: 0.4; }
+        .no-results-placeholder p { font-size: 0.84em; line-height: 1.7; }
+        .no-results-placeholder strong { color: #6675ff; }
+
+        @media (max-width: 740px) {
+            .proposal-layout { flex-direction: column; max-width: 100%; }
+            .left-panel { width: 100%; border-right: none; border-bottom: 2px solid #dde0f2; }
+            .right-panel { min-height: unset; }
         }
 
         /* ── Header ── */
         .proposal-header {
             background: white;
-            border-radius: 12px;
-            padding: 14px 18px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            border-left: 4px solid #6675ff;
+            border-radius: 0;
+            padding: 16px 18px;
+            margin-bottom: 0;
+            box-shadow: none;
+            border-left: none;
+            border-bottom: 3px solid #6675ff;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -56,10 +98,13 @@
         /* ── Cards / Sections ── */
         .section-card {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            margin-bottom: 10px;
+            border-radius: 0;
+            box-shadow: none;
+            margin-bottom: 0;
             overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .section-title {
@@ -669,7 +714,10 @@
     </style>
 </head>
 <body>
-    <div class="page-wrap">
+    <div class="proposal-layout">
+
+        <!-- ── Left Panel: Inputs ── -->
+        <div class="left-panel">
 
         <!-- ── Header ── -->
         <div class="proposal-header">
@@ -824,6 +872,15 @@
                 <button class="calc-btn" id="calcBtn" onclick="calculateProposal()">Calculate ROI &rarr;</button>
             </div>
         </div><!-- /inputsSection -->
+        </div><!-- /left-panel -->
+
+        <!-- ── Right Panel: Results ── -->
+        <div class="right-panel">
+
+        <div id="noResultsPlaceholder" class="no-results-placeholder">
+            <div class="nrp-icon">📊</div>
+            <p>Enter your inputs and click<br><strong>Calculate ROI →</strong><br>to see results here.</p>
+        </div>
 
         <!-- ── Results Section ── -->
         <div id="resultsSection">
@@ -986,7 +1043,8 @@
 
         </div><!-- /resultsSection -->
 
-    </div><!-- /page-wrap -->
+        </div><!-- /right-panel -->
+    </div><!-- /proposal-layout -->
 
     <script>
         // ── State ──────────────────────────────────────────────────────────────
@@ -1474,10 +1532,12 @@
             if (pd) pd.removeAttribute('open');
             if (ad) ad.removeAttribute('open');
 
-            // Show results
+            // Show results, hide placeholder
+            const placeholder = document.getElementById('noResultsPlaceholder');
+            if (placeholder) placeholder.style.display = 'none';
             const rs = document.getElementById('resultsSection');
             rs.classList.add('visible');
-            rs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // ── Widget Preview ─────────────────────────────────────────────────────
