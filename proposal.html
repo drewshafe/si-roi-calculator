@@ -1058,6 +1058,7 @@
         let p_returnsType       = 'pct';
         let p_claimResolution   = '2ndsale';
         let p_hideCurrentCost   = false;
+        let p_grossRevShare     = false;
         let p_locked            = false;
         let _widgetType         = 'dual';
         let _dualSubPos         = 'before-btns';
@@ -1395,7 +1396,7 @@
                 - (p_guaranteeEnabled ? gSiFundedClaims : 0)
                 - (p_returnsEnabled   ? siCoveredLabels + siCoveredPlatform : 0)
                 - (p_cashbackEnabled  ? cashbackRedeemed : 0);
-            const revenueShareAmount = Math.max(0, postClaimBalance) * revenueShare;
+            const revenueShareAmount = p_grossRevShare ? premiumPool * revenueShare : Math.max(0, postClaimBalance) * revenueShare;
 
             const totalLost     = lostRevenue + (p_returnsEnabled ? totalReturnsCost : 0);
             const extraRevenue  = siFundedReships + revenueShareAmount
@@ -1519,6 +1520,7 @@
                 siSponsoredCashbackTotal: siSponsoredCashbackTotal,
                 cashbackRedeemed: cashbackRedeemed,
                 totalCashbackValueTotal: totalCashbackValue,
+                grossRevShare: p_grossRevShare,
             };
             // Re-render breakdown if it's open
             if (document.getElementById('p-bdBody').classList.contains('visible')) renderPBreakdown();
@@ -1855,7 +1857,7 @@
                     d.returnsEnabled  ? '− Return Labels' : '',
                     d.cashbackEnabled ? '− Cashback Redeemed' : ''
                 ].filter(Boolean).join(' '), fc(d.postClaimBalance)) +
-                row('Rev Share', `${fc(d.postClaimBalance)} × ${pct(d.revShareP)}`, fc(d.revenueShareAmount));
+                row('Rev Share', `${d.grossRevShare ? fc(d.premiumPool) : fc(d.postClaimBalance)} × ${pct(d.revShareP)}`, fc(d.revenueShareAmount));
             if (d.returnsEnabled) {
                 revHTML +=
                     row('SI Covered Labels',   'from premiums', fc(d.siCoveredLabels)) +
@@ -1959,6 +1961,7 @@
 
             // Hide current cost
             if (urlPs.get('hcc') === '1') p_hideCurrentCost = true;
+            if (urlPs.get('grs') === '1') p_grossRevShare   = true;
 
             // Widget state
             if (urlPs.get('wt'))    setWidgetType(urlPs.get('wt'));
