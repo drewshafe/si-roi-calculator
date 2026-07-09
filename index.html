@@ -1605,6 +1605,16 @@
                             <input type="text" id="wc-dual-btnb" placeholder="or checkout without protection" oninput="updateWidgetPreview()">
                         </div>
                         <div class="wconfig-field">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                <label style="margin-bottom:0;">Button C <span style="font-size:0.75em;color:#aaa;">(3rd button)</span></label>
+                                <label class="wconfig-sl" style="margin:0;">
+                                    <input type="checkbox" id="wc-dual-show-btnc" onchange="updateWidgetPreview()">
+                                    <span class="sl-track"></span>
+                                </label>
+                            </div>
+                            <input type="text" id="wc-dual-btnc" placeholder="View Bag" oninput="updateWidgetPreview()">
+                        </div>
+                        <div class="wconfig-field">
                             <label>Disclaimer</label>
                             <input type="text" id="wc-dual-disclaimer" placeholder="" oninput="updateWidgetPreview()">
                         </div>
@@ -1845,6 +1855,39 @@
                                 <button onclick="(function(){var e=document.getElementById('wc-dual-s-bd-width');if(e){e.value=0;updateWidgetPreview();}})()" style="padding:3px 10px;font-size:0.68em;border:1px solid #dc3545;border-radius:4px;background:white;cursor:pointer;color:#dc3545;">✕ Remove Border</button>
                                 <label class="wconfig-sl" style="margin:0;">
                                     <input type="checkbox" id="wc-dual-s-underline" checked onchange="updateWidgetPreview()">
+                                    <span class="sl-track"></span> Underline Text
+                                </label>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="wconfig-style-grp">
+                        <summary>3rd Button Style</summary>
+                        <div>
+                            <div class="wconfig-style-row">
+                                <div class="wcs"><label>BG Color</label><input type="color" id="wc-dual-c-bg" value="#ffffff" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-c-bg')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Border Color</label><input type="color" id="wc-dual-c-bd-color" value="#dee2e6" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-c-bd-color')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Border Width</label><input type="number" id="wc-dual-c-bd-width" value="2" min="0" max="5" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Border Radius</label><input type="number" id="wc-dual-c-bd-radius" value="9" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Padding</label><input type="number" id="wc-dual-c-padding" value="11" min="0" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs"><label>Font Size</label><input type="number" id="wc-dual-c-size" placeholder="13" min="8" max="32" onchange="updateWidgetPreview()"></div>
+                                <div class="wcs">
+                                    <label>Font Weight</label>
+                                    <select id="wc-dual-c-weight" onchange="updateWidgetPreview()">
+                                        <option value="">Default</option>
+                                        <option value="300">Light (300)</option>
+                                        <option value="400">Regular (400)</option>
+                                        <option value="500">Medium (500)</option>
+                                        <option value="600">Semibold (600)</option>
+                                        <option value="700">Bold (700)</option>
+                                    </select>
+                                </div>
+                                <div class="wcs"><label>Color</label><input type="color" id="wc-dual-c-color" value="#495057" onchange="updateWidgetPreview()"><button type="button" class="eye-drop-btn" onclick="eyeDrop('wc-dual-c-color')" title="Pick color from screen">💧</button></div>
+                                <div class="wcs"><label>Margin Top</label><input type="number" id="wc-dual-c-mt" value="8" min="0" onchange="updateWidgetPreview()"></div>
+                            </div>
+                            <div style="margin-top:6px;display:flex;align-items:center;gap:10px;">
+                                <button onclick="(function(){var e=document.getElementById('wc-dual-c-bd-width');if(e){e.value=0;updateWidgetPreview();}})()" style="padding:3px 10px;font-size:0.68em;border:1px solid #dc3545;border-radius:4px;background:white;cursor:pointer;color:#dc3545;">✕ Remove Border</button>
+                                <label class="wconfig-sl" style="margin:0;">
+                                    <input type="checkbox" id="wc-dual-c-underline" onchange="updateWidgetPreview()">
                                     <span class="sl-track"></span> Underline Text
                                 </label>
                             </div>
@@ -2645,6 +2688,19 @@
                 // Button B: show subtotal WITHOUT ShipInsure fee (i.e. just AOV)
                 const btnBLabel = showPriceB ? `${btnBRaw} | ${fmtA}` : btnBRaw;
 
+                // Button C (optional 3rd button for sites that already have Checkout + View Bag)
+                const showBtnC    = gch('wc-dual-show-btnc', false);
+                const btnCRaw     = v('wc-dual-btnc', 'View Bag');
+                const cBg         = gv('wc-dual-c-bg', '#ffffff');
+                const cBdColor    = gv('wc-dual-c-bd-color', '#dee2e6');
+                const cBdW        = gv('wc-dual-c-bd-width', '2');
+                const cBdR        = gv('wc-dual-c-bd-radius', '9');
+                const cPad        = gv('wc-dual-c-padding', '11');
+                const cMt         = gv('wc-dual-c-mt', '8');
+                const cStyle      = sty(gv('wc-dual-c-font',''), gv('wc-dual-c-size',''), gv('wc-dual-c-weight',''), gv('wc-dual-c-color','#495057'));
+                const cUnderline  = gch('wc-dual-c-underline', false);
+                const thirdBtnStyle = `display:block;width:100%;padding:${cPad}px 16px;border:${cBdW}px solid ${cBdColor};border-radius:${cBdR}px;background:${cBg};text-decoration:${cUnderline ? 'underline' : 'none'};text-align:center;font-family:inherit;cursor:default;margin-top:${cMt}px;box-sizing:border-box;${cStyle}`;
+
                 const betweenBlock = between ? `<div style="padding:10px 0 ${headerGap > 0 ? headerGap : 8}px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                         <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
@@ -2701,6 +2757,7 @@
                     ${between ? betweenBlock : ''}
                     ${_dualSubPos === 'between-btns' ? subRowHtml : ''}
                     <div style="${secBtnStyle}">${btnBLabel}</div>
+                    ${showBtnC ? `<div style="${thirdBtnStyle}">${btnCRaw}</div>` : ''}
                     ${disc ? `<div class="wp-disclaimer" style="margin-top:6px;">${disc}</div>` : ''}
                 </div>`;
 
