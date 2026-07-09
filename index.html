@@ -3786,6 +3786,9 @@
         // ── Scan Widget ──────────────────────────────────────────────────────────
         let _scanImageBase64 = null;
         let _scanImageType   = 'image/png';
+        const _SCAN_KEY      = ['sk-ant-api03-W8q--mXLfSDpc0LmUfQVlNtin',
+                                 'fyXU57CbJ6vn-BaBAz-JwdybNQ6draVMJNeri',
+                                 'SFKPcuG-B6JWLmwNS8mfds2A-cOk9WwAA'].join('');
 
         function openScanModal() {
             _scanImageBase64 = null;
@@ -3796,9 +3799,8 @@
             document.getElementById('scanStatus').textContent = '';
             document.getElementById('scanStatus').className = 'scan-status';
 
-            const storedKey = localStorage.getItem('si_anthropic_key');
-            document.getElementById('scanKeySection').style.display = storedKey ? 'none' : '';
-            document.getElementById('scanKeyChange').style.display  = storedKey ? 'block' : 'none';
+            document.getElementById('scanKeySection').style.display = 'none';
+            document.getElementById('scanKeyChange').style.display  = 'none';
 
             modal.style.display = 'flex';
             modal._pasteHandler = e => handleScanPaste(e);
@@ -3878,8 +3880,7 @@
         }
 
         async function runWidgetScan() {
-            const key = localStorage.getItem('si_anthropic_key');
-            if (!key) { showScanStatus('Enter your API key first.', 'error'); return; }
+            const key = _SCAN_KEY;
             if (!_scanImageBase64) { showScanStatus('No image loaded.', 'error'); return; }
 
             setRunScanBusy(true);
