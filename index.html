@@ -1412,7 +1412,7 @@
                     <input type="text" id="attachRate" placeholder="0" value="68">
                 </div>
                 <div class="input-group">
-                    <label for="revenueShare">Rev Share %</label>
+                    <label for="revenueShare" id="revShareLabel">Rev Share % (net claims)</label>
                     <input type="text" id="revenueShare" placeholder="0">
                 </div>
             </div>
@@ -2410,12 +2410,15 @@
         function toggleGrossRevShare() {
             _grossRevShare = !_grossRevShare;
             const btn = document.getElementById('grossRevShareToggle');
+            const lbl = document.getElementById('revShareLabel');
             if (_grossRevShare) {
                 btn.classList.add('active');
                 btn.innerHTML = '<span>✓</span> Gross Rev Share';
+                if (lbl) lbl.textContent = 'Rev Share % (gross)';
             } else {
                 btn.classList.remove('active');
                 btn.innerHTML = '<span>◌</span> Gross Rev Share';
+                if (lbl) lbl.textContent = 'Rev Share % (net claims)';
             }
             calculate();
         }
