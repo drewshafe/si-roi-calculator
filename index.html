@@ -3168,7 +3168,7 @@
             document.getElementById('cashbackPerOrderDisplay').textContent = cashbackEnabled ? formatCurrencyWithCents(cashbackPerOrder) : '$0';
 
             // Revenue Impact box: % as main metric, breakdown by claims + rev share
-            document.getElementById('percentOfPremiums').textContent = percentOfPremiums.toFixed(1) + '%';
+            document.getElementById('percentOfPremiums').textContent = Math.round(percentOfPremiums) + '%';
             document.getElementById('claimsImpactPct').textContent = siFundedPct.toFixed(1) + '% from claims';
             document.getElementById('revShareImpactPct').textContent = revenueSharePct.toFixed(1) + '% from rev share';
             document.getElementById('revShareImpactPct').style.display = rsZero ? 'none' : '';
