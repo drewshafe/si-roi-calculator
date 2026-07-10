@@ -494,6 +494,12 @@
         }
         .returns-offset-toggle-btn:hover { background: #f0f9ff; }
         .returns-offset-toggle-btn.active { background: #0ea5e9; color: white; }
+        .returns-coverage-bar { width:100%; padding:8px 0 2px; border-top:1px solid #f0f0f0; margin-top:6px; }
+        .rc-divider { font-size:0.67em; text-transform:uppercase; letter-spacing:0.05em; color:#aaa; margin-bottom:5px; padding:0 2px; }
+        .rc-buttons { display:flex; flex-wrap:wrap; gap:4px; }
+        .rc-btn { font-size:0.71em; padding:3px 7px; border:1px solid #dee2e6; border-radius:4px; background:#f8f9fa; color:#555; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+        .rc-btn:hover { background:#e8f5e9; border-color:#a5d6a7; }
+        .rc-btn.active { background:#2e7d32; color:#fff; border-color:#2e7d32; }
 
         .hide-cost-btn {
             display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -1259,11 +1265,11 @@
                     <div id="returnsOffsetResults" class="returns-results">
                         <div class="sub-section-label">Returns Offset</div>
                         <div class="metrics-grid">
-                            <div class="metric-item returns-highlight">
+                            <div class="metric-item returns-highlight" id="siCoveredLabelsMetric">
                                 <h4>SI Covered Return Labels</h4>
                                 <div class="value" id="siCoveredReturnLabels">$0</div>
                             </div>
-                            <div class="metric-item returns-highlight">
+                            <div class="metric-item returns-highlight" id="siCoveredPlatformMetric">
                                 <h4>SI Covered Platform Cost</h4>
                                 <div class="value" id="siCoveredPlatformCost">$0</div>
                             </div>
@@ -1334,11 +1340,11 @@
                     <div id="returnsCostResults" class="returns-results">
                         <div class="sub-section-label">Returns Costs</div>
                         <div class="metrics-grid">
-                            <div class="metric-item returns-highlight">
+                            <div class="metric-item returns-highlight" id="returnLabelsCostMetric">
                                 <h4>Return Labels Cost</h4>
                                 <div class="value" id="returnLabelsCost">$0</div>
                             </div>
-                            <div class="metric-item returns-highlight">
+                            <div class="metric-item returns-highlight" id="returnsPlatformCostMetric">
                                 <h4>Returns Platform Cost</h4>
                                 <div class="value" id="returnsPlatformCostDisplay">$0</div>
                             </div>
@@ -1418,7 +1424,7 @@
             </div>
 
             <div id="returnsInputs" class="returns-section">
-                <div class="input-group returns">
+                <div id="returnsRateGroup" class="input-group returns">
                     <label id="returnsRateLabel" for="returnsRate">Returns Rate %</label>
                     <div class="input-with-type">
                         <input type="text" id="returnsRate" placeholder="0">
@@ -1426,13 +1432,23 @@
                         <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
                     </div>
                 </div>
-                <div class="input-group returns">
+                <div id="avgReturnCostGroup" class="input-group returns">
                     <label for="avgReturnCost">Avg Return Cost ($)</label>
                     <input type="text" id="avgReturnCost" placeholder="$">
                 </div>
-                <div class="input-group returns">
+                <div id="returnsPlatformGroup" class="input-group returns">
                     <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
                     <input type="text" id="returnsPlatformCost" placeholder="$">
+                </div>
+                <div class="returns-coverage-bar" id="returnsCoverageBar">
+                    <div class="rc-divider">Coverage Mode</div>
+                    <div class="rc-buttons">
+                        <button class="rc-btn active" data-rc="default" onclick="setReturnsCoverage('default')">Protected + Platform</button>
+                        <button class="rc-btn" data-rc="platform_only" onclick="setReturnsCoverage('platform_only')">Platform Only</button>
+                        <button class="rc-btn" data-rc="labels_protected" onclick="setReturnsCoverage('labels_protected')">Protected Labels</button>
+                        <button class="rc-btn" data-rc="all_labels_platform" onclick="setReturnsCoverage('all_labels_platform')">All + Platform</button>
+                        <button class="rc-btn" data-rc="all_labels" onclick="setReturnsCoverage('all_labels')">All Labels</button>
+                    </div>
                 </div>
             </div>
 
@@ -2093,6 +2109,7 @@
 
     <script>
         let returnsEnabled      = false;
+        let _returnsCoverage    = 'default'; // default | platform_only | labels_protected | all_labels_platform | all_labels
         let cashbackEnabled     = false;
         let guaranteeEnabled    = false;
         let returnsOffsetMode   = false;
@@ -2132,6 +2149,39 @@
             document.getElementById('retPctBtn').classList.toggle('active', t === 'pct');
             document.getElementById('retCountBtn').classList.toggle('active', t === 'count');
             updateDynamicLabels();
+            calculate();
+        }
+
+        function applyReturnsCoverageVisibility() {
+            const m = _returnsCoverage;
+            const showRateInputs   = m !== 'platform_only';
+            const showPlatformInput = (m === 'default' || m === 'platform_only' || m === 'all_labels_platform');
+            const showLabelsMetric  = m !== 'platform_only';
+            const showPlatformMetric = showPlatformInput;
+
+            const ids = {
+                returnsRateGroup:        showRateInputs,
+                avgReturnCostGroup:      showRateInputs,
+                returnsPlatformGroup:    showPlatformInput,
+                siCoveredLabelsMetric:   showLabelsMetric,
+                siCoveredPlatformMetric: showPlatformMetric,
+                returnLabelsCostMetric:  showLabelsMetric,
+                returnsPlatformCostMetric: showPlatformMetric,
+            };
+            Object.entries(ids).forEach(([id, show]) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = show ? '' : 'none';
+            });
+
+            document.querySelectorAll('.rc-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.rc === m);
+            });
+        }
+
+        function setReturnsCoverage(mode) {
+            _returnsCoverage = mode;
+            localStorage.setItem('shipinsure_returnsCoverage', mode);
+            applyReturnsCoverageVisibility();
             calculate();
         }
 
@@ -2359,6 +2409,7 @@
                 document.getElementById('returnsOffsetResults').classList.add('visible');
                 document.getElementById('totalReturnsMetric').style.display = 'block';
                 document.getElementById('premiumsBadgeSub').style.display = '';
+                applyReturnsCoverageVisibility();
             } else {
                 btn.classList.remove('active');
                 btn.innerHTML = '<span>＋</span> Protection + Returns';
@@ -3106,10 +3157,33 @@
             if (returnsEnabled) {
                 totalReturns = periodOrders * returnsRate;
                 const protectedReturns = protectedOrders * returnsRate;
-                returnLabelsCostTotal = totalReturns * returnLabelCost;
-                totalReturnsCost = returnLabelsCostTotal + periodPlatformCost;
-                siCoveredLabels = protectedReturns * returnLabelCost;
-                siCoveredPlatform = periodPlatformCost;
+                // What SI covers depends on coverage mode
+                if (_returnsCoverage === 'platform_only') {
+                    siCoveredLabels   = 0;
+                    siCoveredPlatform = periodPlatformCost;
+                    returnLabelsCostTotal = 0;
+                    totalReturnsCost  = periodPlatformCost;
+                } else if (_returnsCoverage === 'labels_protected') {
+                    siCoveredLabels   = protectedReturns * returnLabelCost;
+                    siCoveredPlatform = 0;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal;
+                } else if (_returnsCoverage === 'all_labels_platform') {
+                    siCoveredLabels   = totalReturns * returnLabelCost;
+                    siCoveredPlatform = periodPlatformCost;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal + periodPlatformCost;
+                } else if (_returnsCoverage === 'all_labels') {
+                    siCoveredLabels   = totalReturns * returnLabelCost;
+                    siCoveredPlatform = 0;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal;
+                } else { // default: protected labels + platform
+                    siCoveredLabels   = protectedReturns * returnLabelCost;
+                    siCoveredPlatform = periodPlatformCost;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal + periodPlatformCost;
+                }
                 totalReturnsOffset = siCoveredLabels + siCoveredPlatform;
             }
 
@@ -3322,6 +3396,7 @@
                     up('returnsPlatformCost', 'rpc');
                     up('avgReturnCost', 'arc');
                     if (urlParams.get('rtype')) setReturnsType(urlParams.get('rtype'));
+                    if (urlParams.get('rc')) _returnsCoverage = urlParams.get('rc');
                     if (!returnsEnabled) toggleReturns();
                 }
                 if (urlParams.get('cbe') === '1' || urlParams.get('cb') || urlParams.get('cbpc')) {
@@ -3379,6 +3454,7 @@
                 if (s('avgReturnCost')) document.getElementById('avgReturnCost').value = s('avgReturnCost');
                 if (s('returnsPlatformCost')) document.getElementById('returnsPlatformCost').value = s('returnsPlatformCost');
                 if (s('returnsType')) setReturnsType(s('returnsType'));
+                if (s('returnsCoverage')) _returnsCoverage = s('returnsCoverage');
                 if (s('returnsEnabled') === '1') toggleReturns();
                 if (s('cashbackRate')) document.getElementById('cashbackRate').value = s('cashbackRate');
                 if (s('minCashback')) document.getElementById('minCashback').value = s('minCashback');
@@ -3438,6 +3514,7 @@
                 const arcVal = removeCommas(document.getElementById('avgReturnCost').value);
                 if (arcVal) params.set('arc', arcVal);
                 params.set('rtype', _returnsType);
+                if (_returnsCoverage !== 'default') params.set('rc', _returnsCoverage);
             }
             if (cashbackEnabled) {
                 params.set('cbe', '1');
@@ -3527,6 +3604,7 @@
                 const arcVal = removeCommas(document.getElementById('avgReturnCost').value);
                 if (arcVal) params.set('arc', arcVal);
                 params.set('rtype', _returnsType);
+                if (_returnsCoverage !== 'default') params.set('rc', _returnsCoverage);
             }
             if (cashbackEnabled) {
                 params.set('cbe', '1');
@@ -3716,11 +3794,12 @@
             ['annualOrders','avgOrderValue','claimsRate','cogsPercent','avgShipping','csCostPerClaim',
              'revenueShare','attachRate','protectionPremium','timeframe','pricingTemplate',
              'returnsRate','avgReturnCost','returnsPlatformCost','returnsEnabled',
-             'cogsType','claimsType','returnsType',
+             'cogsType','claimsType','returnsType','returnsCoverage',
              'cashbackEnabled','cashbackRate','minCashback','cashbackRedemptionRate',
              'grossRevShare'].forEach(k => {
                 localStorage.removeItem('shipinsure_' + k);
             });
+            _returnsCoverage = 'default';
             if (returnsEnabled) toggleReturns();
             if (cashbackEnabled) toggleCashback();
             if (guaranteeEnabled) toggleGuarantee();
