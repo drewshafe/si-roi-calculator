@@ -914,21 +914,6 @@
 
             <!-- Two-column cards -->
             <div class="result-cards-row" id="resultCardsRow">
-                <!-- Cost card (hidden if hcc=1) -->
-                <div class="result-card-negative" id="costCard">
-                    <div class="rc-label">Current Cost Without ShipInsure</div>
-                    <div class="rc-total negative" id="r-lostRevenue">$0</div>
-                    <div class="rc-metrics">
-                        <div class="rc-metric">
-                            <div class="rc-metric-label">Cost Per Reship</div>
-                            <div class="rc-metric-value" id="r-costPerReship">$0</div>
-                        </div>
-                        <div class="rc-metric">
-                            <div class="rc-metric-label" id="r-totalClaimsLabel">Total Claims</div>
-                            <div class="rc-metric-value" id="r-totalClaims">0</div>
-                        </div>
-                    </div>
-                </div>
                 <!-- Revenue card -->
                 <div class="result-card-positive">
                     <div class="rc-label">Extra Revenue With ShipInsure</div>
@@ -945,6 +930,21 @@
                         <div class="rc-metric" id="r-revShareMetric">
                             <div class="rc-metric-label">Revenue Share</div>
                             <div class="rc-metric-value" id="r-revenueShare">$0</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Cost card (hidden if hcc=1) -->
+                <div class="result-card-negative" id="costCard">
+                    <div class="rc-label">Current Cost Without ShipInsure</div>
+                    <div class="rc-total negative" id="r-lostRevenue">$0</div>
+                    <div class="rc-metrics">
+                        <div class="rc-metric">
+                            <div class="rc-metric-label">Cost Per Reship</div>
+                            <div class="rc-metric-value" id="r-costPerReship">$0</div>
+                        </div>
+                        <div class="rc-metric">
+                            <div class="rc-metric-label" id="r-totalClaimsLabel">Total Claims</div>
+                            <div class="rc-metric-value" id="r-totalClaims">0</div>
                         </div>
                     </div>
                 </div>
