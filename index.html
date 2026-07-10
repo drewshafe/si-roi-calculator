@@ -1348,7 +1348,7 @@
                                 <h4>Returns Platform Cost</h4>
                                 <div class="value" id="returnsPlatformCostDisplay">$0</div>
                             </div>
-                            <div class="metric-item returns-highlight">
+                            <div class="metric-item returns-highlight" id="totalReturnsCostMetric">
                                 <h4>Total Returns Cost</h4>
                                 <div class="value" id="totalReturnsCost">$0</div>
                             </div>
@@ -2159,14 +2159,17 @@
             const showLabelsMetric  = m !== 'platform_only';
             const showPlatformMetric = showPlatformInput;
 
+            const showBothCosts = showLabelsMetric && showPlatformMetric;
+
             const ids = {
-                returnsRateGroup:        showRateInputs,
-                avgReturnCostGroup:      showRateInputs,
-                returnsPlatformGroup:    showPlatformInput,
-                siCoveredLabelsMetric:   showLabelsMetric,
-                siCoveredPlatformMetric: showPlatformMetric,
-                returnLabelsCostMetric:  showLabelsMetric,
+                returnsRateGroup:          showRateInputs,
+                avgReturnCostGroup:        showRateInputs,
+                returnsPlatformGroup:      showPlatformInput,
+                siCoveredLabelsMetric:     showLabelsMetric,
+                siCoveredPlatformMetric:   showPlatformMetric,
+                returnLabelsCostMetric:    showLabelsMetric,
                 returnsPlatformCostMetric: showPlatformMetric,
+                totalReturnsCostMetric:    showBothCosts,
             };
             Object.entries(ids).forEach(([id, show]) => {
                 const el = document.getElementById(id);
