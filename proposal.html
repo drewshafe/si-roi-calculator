@@ -721,7 +721,7 @@
 
         <!-- ── Header ── -->
         <div class="proposal-header">
-            <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/2026si.png"
+            <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/impactlogo.png"
                  alt="ShipInsure" class="header-logo" onerror="this.style.display='none'">
             <div class="header-text">
                 <h1>ShipInsure ROI Summary</h1>
@@ -734,9 +734,8 @@
 
             <div class="inputs-details-wrap">
 
-            <!-- Primary Inputs (collapsible) -->
-            <details class="add-inputs-details" id="primaryInputsDetails" open>
-                <summary>Primary Inputs</summary>
+            <!-- Primary Inputs (always visible) -->
+            <div id="primaryInputsDetails">
                 <div class="inputs-grid" id="primaryInputsGrid" style="padding:10px 12px 12px;">
                     <div class="field-group">
                         <label for="p-orders" id="p-orders-label">Monthly Orders</label>
@@ -754,6 +753,18 @@
                             <button class="itype-btn" id="p-claims-count-btn" onclick="pSetClaimsType('count')">#</button>
                         </div>
                     </div>
+                    <div class="field-group premium-field-wrap" id="p-premium-wrap">
+                        <label for="p-premium" id="p-premium-label">SI Premium %</label>
+                        <input type="text" id="p-premium" placeholder="3.00" value="3.00">
+                    </div>
+                    <div class="field-group">
+                        <label for="p-attach">Attach Rate %</label>
+                        <input type="text" id="p-attach" placeholder="68" value="68">
+                    </div>
+                    <div class="field-group">
+                        <label for="p-share" id="p-share-label">Revenue Share %</label>
+                        <input type="text" id="p-share" placeholder="25" value="25">
+                    </div>
                 </div>
 
                 <!-- Returns Feature Section (shown only if re=1 in URL) -->
@@ -767,6 +778,10 @@
                                 <button class="itype-btn active" id="p-rr-pct-btn" onclick="pSetReturnsType('pct')">%</button>
                                 <button class="itype-btn" id="p-rr-count-btn" onclick="pSetReturnsType('count')">#</button>
                             </div>
+                        </div>
+                        <div class="field-group">
+                            <label for="p-arc">Avg Return Cost ($)</label>
+                            <input type="text" id="p-arc" placeholder="e.g. 8">
                         </div>
                         <div class="field-group">
                             <label for="p-rpc">Returns Platform Cost ($/mo)</label>
@@ -804,7 +819,7 @@
                         </div>
                     </div>
                 </div>
-            </details>
+            </div>
 
             <!-- Additional Inputs (collapsible) -->
             <details class="add-inputs-details" id="additionalInputsDetails" open>
@@ -825,40 +840,6 @@
                         <div class="field-group">
                             <label for="p-cs">CS Cost Per Claim ($)</label>
                             <input type="text" id="p-cs" placeholder="5" value="5">
-                        </div>
-                        <div class="field-group">
-                            <label for="p-attach">Attach Rate %</label>
-                            <input type="text" id="p-attach" placeholder="68" value="68">
-                        </div>
-                        <div class="field-group">
-                            <label for="p-share">Revenue Share %</label>
-                            <input type="text" id="p-share" placeholder="25" value="25">
-                        </div>
-                        <div class="field-group">
-                            <label for="p-template">Pricing Template</label>
-                            <select id="p-template">
-                                <option value="percentage">%-Based</option>
-                                <option value="flat_dollar">$-Based</option>
-                                <option value="1.5_accurate">1.5% Acc</option>
-                                <option value="2_accurate">2% Acc</option>
-                                <option value="2_round_50">2% Round</option>
-                                <option value="2.5_accurate">2.5% Acc</option>
-                                <option value="3_accurate">3% Acc</option>
-                                <option value="3.5_accurate">3.5% Acc</option>
-                                <option value="static_1.50_300_2.00">Static $1.50/$2</option>
-                                <option value="flat_1.50">Flat $1.50</option>
-                                <option value="flat_5.95">Flat $5.95</option>
-                                <option value="2_flat_0.98">2% Min $0.98</option>
-                                <option value="3_accurate_100_1.95">3% Min $1.95</option>
-                                <option value="3.25_1.55">3.25% Min $1.55</option>
-                                <option value="2.5_1.95">2.5% Min $1.95</option>
-                                <option value="born_primitive">Born Prim</option>
-                                <option value="og_6.5_19.99_3">OG 6.5%/$19.99/3%</option>
-                            </select>
-                        </div>
-                        <div class="field-group premium-field-wrap" id="p-premium-wrap">
-                            <label for="p-premium" id="p-premium-label">SI Premium %</label>
-                            <input type="text" id="p-premium" placeholder="3.00" value="3.00">
                         </div>
                     </div>
                 </details>
@@ -1327,7 +1308,7 @@
                 : returnsRaw / 100;
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('p-rpc').value)) || 0;
             const periodPlatformCost  = viewMode === 'annual' ? monthlyPlatformCost * 12 : monthlyPlatformCost;
-            const returnLabelCost = avgShipping;
+            const returnLabelCost = parseFloat(removeCommas(document.getElementById('p-arc')?.value)) || avgShipping;
 
             // Cashback
             const cashbackRate        = (parseFloat(removeCommas(document.getElementById('p-cb').value)) || 5) / 100;
@@ -1505,6 +1486,7 @@
                 returnsEnabled: p_returnsEnabled,
                 totalReturns: totalReturns,
                 returnLabelsCostTotal: returnLabelsCostTotal,
+                returnLabelCost: returnLabelCost,
                 periodPlatformCost: periodPlatformCost,
                 totalReturnsCost: totalReturnsCost,
                 siCoveredLabels: siCoveredLabels,
@@ -1836,7 +1818,7 @@
                 row('COGS',           `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
             if (d.returnsEnabled) {
                 costHTML +=
-                    row('Return Labels',    `${fn(d.totalReturns)} × ${fc(d.avgShipping)}`, fc(d.returnLabelsCostTotal)) +
+                    row('Return Labels',    `${fn(d.totalReturns)} × ${fc(d.returnLabelCost)}`, fc(d.returnLabelsCostTotal)) +
                     row('Returns Platform', 'monthly fee',                                   fc(d.periodPlatformCost)) +
                     row('Total Returns Cost', 'labels + platform',                           fc(d.totalReturnsCost));
             }
@@ -1941,6 +1923,7 @@
                 document.getElementById('returnsFeatureSection').style.display = '';
                 up('p-rr', 'rr');
                 up('p-rpc', 'rpc');
+                up('p-arc', 'arc');
                 if (urlPs.get('rtype')) pSetReturnsType(urlPs.get('rtype'));
             }
             if (rom) p_returnsOffsetMode = true;
