@@ -1135,7 +1135,7 @@
         <!-- Top strip: logo upper-left, controls right -->
         <div class="top-strip">
             <div class="logo-area">
-                <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/2026si.png"
+                <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/impactlogo.png"
                      alt="ShipInsure" class="logo-img"
                      onerror="this.style.display='none'">
             </div>
@@ -1234,47 +1234,7 @@
             <!-- Red | Green cards -->
             <div class="cards-row" id="cardsRow">
 
-                <!-- Left: Total Cost Without ShipInsure -->
-                <div class="result-card negative" id="currentCostCard">
-                    <div class="card-header">
-                        <h3 id="lostRevenueLabel">Current Cost (Without ShipInsure)</h3>
-                        <div class="card-total negative" id="lostRevenue">$0</div>
-                    </div>
-                    <div class="metrics-grid" id="mainCostGrid">
-                        <div class="metric-item">
-                            <h4>Cost Per Reship</h4>
-                            <div class="value" id="costPerReship">$0</div>
-                        </div>
-                        <div class="metric-item">
-                            <h4 id="totalClaimsLabel">Total Claims</h4>
-                            <div class="value" id="totalClaims">0</div>
-                        </div>
-                    </div>
-                    <!-- Hidden stash — values still computed, used in breakdown -->
-                    <div style="display:none;">
-                        <span id="csCost"></span>
-                        <span id="cogs"></span>
-                    </div>
-                    <div id="returnsCostResults" class="returns-results">
-                        <div class="sub-section-label">Returns Costs</div>
-                        <div class="metrics-grid">
-                            <div class="metric-item returns-highlight">
-                                <h4>Return Labels Cost</h4>
-                                <div class="value" id="returnLabelsCost">$0</div>
-                            </div>
-                            <div class="metric-item returns-highlight">
-                                <h4>Returns Platform Cost</h4>
-                                <div class="value" id="returnsPlatformCostDisplay">$0</div>
-                            </div>
-                            <div class="metric-item returns-highlight">
-                                <h4>Total Returns Cost</h4>
-                                <div class="value" id="totalReturnsCost">$0</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: Extra Revenue With ShipInsure -->
+                <!-- Left: Extra Revenue With ShipInsure -->
                 <div class="result-card positive">
                     <div class="card-header">
                         <h3>Extra Revenue With ShipInsure</h3>
@@ -1345,6 +1305,46 @@
                             <div class="metric-item cashback-highlight">
                                 <h4>Repeat Revenue Driven</h4>
                                 <div class="value" id="totalCashbackValue">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Current Cost Without ShipInsure -->
+                <div class="result-card negative" id="currentCostCard">
+                    <div class="card-header">
+                        <h3 id="lostRevenueLabel">Current Cost (Without ShipInsure)</h3>
+                        <div class="card-total negative" id="lostRevenue">$0</div>
+                    </div>
+                    <div class="metrics-grid" id="mainCostGrid">
+                        <div class="metric-item">
+                            <h4>Cost Per Reship</h4>
+                            <div class="value" id="costPerReship">$0</div>
+                        </div>
+                        <div class="metric-item">
+                            <h4 id="totalClaimsLabel">Total Claims</h4>
+                            <div class="value" id="totalClaims">0</div>
+                        </div>
+                    </div>
+                    <!-- Hidden stash — values still computed, used in breakdown -->
+                    <div style="display:none;">
+                        <span id="csCost"></span>
+                        <span id="cogs"></span>
+                    </div>
+                    <div id="returnsCostResults" class="returns-results">
+                        <div class="sub-section-label">Returns Costs</div>
+                        <div class="metrics-grid">
+                            <div class="metric-item returns-highlight">
+                                <h4>Return Labels Cost</h4>
+                                <div class="value" id="returnLabelsCost">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>Returns Platform Cost</h4>
+                                <div class="value" id="returnsPlatformCostDisplay">$0</div>
+                            </div>
+                            <div class="metric-item returns-highlight">
+                                <h4>Total Returns Cost</h4>
+                                <div class="value" id="totalReturnsCost">$0</div>
                             </div>
                         </div>
                     </div>
@@ -1425,6 +1425,10 @@
                         <button class="itype-btn active" id="retPctBtn" onclick="setReturnsType('pct')">%</button>
                         <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
                     </div>
+                </div>
+                <div class="input-group returns">
+                    <label for="avgReturnCost">Avg Return Cost ($)</label>
+                    <input type="text" id="avgReturnCost" placeholder="$">
                 </div>
                 <div class="input-group returns">
                     <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
@@ -2975,8 +2979,8 @@
             // Returns: % or count (resolved after periodOrders computed)
             const returnsRaw = parseFloat(removeCommas(document.getElementById('returnsRate').value)) || 0;
 
-            // Return label cost = avg shipping (no separate input)
-            const returnLabelCost = avgShipping;
+            // Return label cost — use dedicated input if set, fall back to avg shipping
+            const returnLabelCost = parseFloat(removeCommas(document.getElementById('avgReturnCost').value)) || avgShipping;
 
             const urlParams = new URLSearchParams(window.location.search);
             if (!urlParams.toString()) {
@@ -2992,6 +2996,7 @@
                 localStorage.setItem('shipinsure_timeframe', timeframe);
                 localStorage.setItem('shipinsure_pricingTemplate', pricingTemplate);
                 localStorage.setItem('shipinsure_returnsRate', document.getElementById('returnsRate').value);
+                localStorage.setItem('shipinsure_avgReturnCost', document.getElementById('avgReturnCost').value);
                 localStorage.setItem('shipinsure_returnsPlatformCost', document.getElementById('returnsPlatformCost').value);
                 localStorage.setItem('shipinsure_returnsEnabled', returnsEnabled ? '1' : '0');
                 localStorage.setItem('shipinsure_cogsType', _cogsType);
@@ -3227,7 +3232,7 @@
                 avgShipping,
                 returnsEnabled, totalReturns, returnLabelsCostTotal, periodPlatformCost,
                 totalReturnsCost, siCoveredLabels, siCoveredPlatform, totalReturnsOffset,
-                returnsRate, returnsOffsetPct,
+                returnsRate, returnsOffsetPct, returnLabelCost,
                 cogsRaw, claimsRaw, returnsRaw,
                 cashbackEnabled, cashbackPerOrder, siSponsoredCashbackTotal,
                 cashbackRedeemed, totalCashbackValueTotal, cashbackPct,
@@ -3275,6 +3280,7 @@
                 if (urlParams.get('re') === '1' || urlParams.get('rr') || urlParams.get('rpc')) {
                     up('returnsRate', 'rr');
                     up('returnsPlatformCost', 'rpc');
+                    up('avgReturnCost', 'arc');
                     if (urlParams.get('rtype')) setReturnsType(urlParams.get('rtype'));
                     if (!returnsEnabled) toggleReturns();
                 }
@@ -3330,6 +3336,7 @@
                 if (s('cogsType')) setCogsType(s('cogsType'));
                 if (s('claimsType')) setClaimsType(s('claimsType'));
                 if (s('returnsRate')) document.getElementById('returnsRate').value = s('returnsRate');
+                if (s('avgReturnCost')) document.getElementById('avgReturnCost').value = s('avgReturnCost');
                 if (s('returnsPlatformCost')) document.getElementById('returnsPlatformCost').value = s('returnsPlatformCost');
                 if (s('returnsType')) setReturnsType(s('returnsType'));
                 if (s('returnsEnabled') === '1') toggleReturns();
@@ -3388,6 +3395,8 @@
                 params.set('rr', removeCommas(document.getElementById('returnsRate').value) || '');
                 params.set('rpc', removeCommas(document.getElementById('returnsPlatformCost').value) || '');
                 params.set('rlc', removeCommas(document.getElementById('avgShipping').value) || '');
+                const arcVal = removeCommas(document.getElementById('avgReturnCost').value);
+                if (arcVal) params.set('arc', arcVal);
                 params.set('rtype', _returnsType);
             }
             if (cashbackEnabled) {
@@ -3475,6 +3484,8 @@
                 params.set('rr', removeCommas(document.getElementById('returnsRate').value) || '');
                 params.set('rpc', removeCommas(document.getElementById('returnsPlatformCost').value) || '');
                 params.set('rlc', removeCommas(document.getElementById('avgShipping').value) || '');
+                const arcVal = removeCommas(document.getElementById('avgReturnCost').value);
+                if (arcVal) params.set('arc', arcVal);
                 params.set('rtype', _returnsType);
             }
             if (cashbackEnabled) {
@@ -3589,7 +3600,7 @@
                 row('COGS',         `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
             if (d.returnsEnabled) {
                 costHTML +=
-                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.avgShipping)}`,         fc(d.returnLabelsCostTotal)) +
+                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.returnLabelCost)}`,      fc(d.returnLabelsCostTotal)) +
                     row('Returns Platform', 'monthly fee',                                       fc(d.periodPlatformCost)) +
                     row('Total Returns Cost', 'labels + platform',                               fc(d.totalReturnsCost));
             }
@@ -3664,7 +3675,7 @@
             setReturnsType('pct');
             ['annualOrders','avgOrderValue','claimsRate','cogsPercent','avgShipping','csCostPerClaim',
              'revenueShare','attachRate','protectionPremium','timeframe','pricingTemplate',
-             'returnsRate','returnsPlatformCost','returnsEnabled',
+             'returnsRate','avgReturnCost','returnsPlatformCost','returnsEnabled',
              'cogsType','claimsType','returnsType',
              'cashbackEnabled','cashbackRate','minCashback','cashbackRedemptionRate',
              'grossRevShare'].forEach(k => {
