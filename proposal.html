@@ -842,11 +842,30 @@
                             <input type="text" id="p-cs" placeholder="5" value="5">
                         </div>
                     </div>
-                </details>
-
             </details><!-- /additionalInputsDetails -->
 
             </div><!-- /inputs-details-wrap -->
+
+            <!-- Hidden: pricing template (read from URL param, used in calculation) -->
+            <select id="p-template" style="display:none;">
+                <option value="percentage">%-Based</option>
+                <option value="flat_dollar">$-Based</option>
+                <option value="1.5_accurate">1.5% Acc</option>
+                <option value="2_accurate">2% Acc</option>
+                <option value="2_round_50">2% Round</option>
+                <option value="2.5_accurate">2.5% Acc</option>
+                <option value="3_accurate">3% Acc</option>
+                <option value="3.5_accurate">3.5% Acc</option>
+                <option value="static_1.50_300_2.00">Static $1.50/$2</option>
+                <option value="flat_1.50">Flat $1.50</option>
+                <option value="flat_5.95">Flat $5.95</option>
+                <option value="2_flat_0.98">2% Min $0.98</option>
+                <option value="3_accurate_100_1.95">3% Min $1.95</option>
+                <option value="3.25_1.55">3.25% Min $1.55</option>
+                <option value="2.5_1.95">2.5% Min $1.95</option>
+                <option value="born_primitive">Born Prim</option>
+                <option value="og_6.5_19.99_3">OG 6.5%/$19.99/3%</option>
+            </select>
 
             <!-- Calculate button -->
             <div class="calc-btn-wrap">
