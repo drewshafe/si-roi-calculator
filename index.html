@@ -2202,8 +2202,8 @@
         }
 
         function updateBadges() {
-            // ppBadge: always on unless guaranteeEnabled (guarantee has its own badge)
-            document.getElementById('ppBadge').style.display  = (guaranteeEnabled || returnsOffsetMode) ? 'none' : '';
+            // ppBadge: base protection badge — hidden only in Returns Offset mode (rbadge takes over)
+            document.getElementById('ppBadge').style.display  = returnsOffsetMode ? 'none' : '';
             document.getElementById('rBadge').style.display   = (returnsEnabled || returnsOffsetMode) ? '' : 'none';
             document.getElementById('cbBadge').style.display  = cashbackEnabled ? '' : 'none';
             document.getElementById('gBadge').style.display   = guaranteeEnabled ? '' : 'none';
