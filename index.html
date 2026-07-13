@@ -654,10 +654,26 @@
             gap: 8px;
             flex: 1;
             justify-content: center;
+            flex-wrap: wrap;
         }
-        .badge-area img {
-            height: 36px;
+        .badge-pill {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.13);
+            border: 1px solid rgba(255,255,255,0.28);
+            border-radius: 999px;
+            padding: 5px 14px;
+            height: 44px;
+            box-sizing: border-box;
+            backdrop-filter: blur(4px);
+        }
+        .badge-pill img {
+            height: 26px;
+            width: auto;
+            max-width: 180px;
             object-fit: contain;
+            display: block;
         }
 
         /* ── ShipInsure Inputs section ── */
@@ -1146,10 +1162,10 @@
                      onerror="this.style.display='none'">
             </div>
             <div class="badge-area" id="badgeArea">
-                <img id="ppBadge" src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/protectionbadges.png" alt="Protection" onerror="this.style.display='none'">
-                <img id="rBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/returnbadges.png"  alt="Returns Offset" style="display:none;" onerror="this.style.display='none'">
-                <img id="cbBadge" src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cashbackbadges.png" alt="Cashback" style="display:none;" onerror="this.style.display='none'">
-                <img id="gBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png" alt="Guarantee" style="display:none;" onerror="this.style.display='none'">
+                <div class="badge-pill" id="ppBadge"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/protectionbadges.png" alt="Protection" onerror="this.closest('.badge-pill').style.display='none'"></div>
+                <div class="badge-pill" id="rBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/returnbadges.png"  alt="Returns" onerror="this.closest('.badge-pill').style.display='none'"></div>
+                <div class="badge-pill" id="cbBadge" style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cashbackbadges.png" alt="Cashback" onerror="this.closest('.badge-pill').style.display='none'"></div>
+                <div class="badge-pill" id="gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png" alt="Guarantee" onerror="this.closest('.badge-pill').style.display='none'"></div>
             </div>
             <div class="controls-area">
                 <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
