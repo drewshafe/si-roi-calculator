@@ -1148,8 +1148,8 @@
             <div class="badge-area" id="badgeArea">
                 <img id="ppBadge" src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/ppbadge.png" alt="Protection" onerror="this.style.display='none'">
                 <img id="rBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/rbadge.png"  alt="Returns Offset" style="display:none;" onerror="this.style.display='none'">
-                <img id="cbBadge" src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cbbadge.png" alt="Cashback" style="display:none;" onerror="this.style.display='none'">
-                <img id="gBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/sgbadge.png" alt="Guarantee" style="display:none;" onerror="this.style.display='none'">
+                <img id="cbBadge" src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cashback.png" alt="Cashback" style="display:none;" onerror="this.style.display='none'">
+                <img id="gBadge"  src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png" alt="Guarantee" style="display:none;" onerror="this.style.display='none'">
             </div>
             <div class="controls-area">
                 <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
@@ -2179,6 +2179,10 @@
             document.querySelectorAll('.rc-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.rc === m);
             });
+
+            // Hide Total Returns metric when rate input is hidden (platform_only)
+            const tmEl = document.getElementById('totalReturnsMetric');
+            if (tmEl && returnsEnabled) tmEl.style.display = showRateInputs ? 'block' : 'none';
         }
 
         function setReturnsCoverage(mode) {
