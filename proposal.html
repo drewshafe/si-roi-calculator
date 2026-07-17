@@ -1033,7 +1033,17 @@
 
             <!-- Widget Preview (only if wi=1) -->
             <div class="widget-preview-block" id="widgetPreviewBlock" style="display:none;">
-                <div class="widget-type-label-display" id="widgetTypeLabel">Widget Preview</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                    <div class="widget-type-label-display" style="margin-bottom:0;" id="widgetTypeLabel">Widget Preview</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.78em;color:#555;background:#f4f5ff;border:1px solid #d0d4ff;border-radius:6px;padding:4px 10px;white-space:nowrap;">
+                            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#6675ff" stroke-width="2" stroke-linecap="round"><path d="M10 13V3M6 7l4-4 4 4"/><path d="M3 15h14v2H3z" fill="#6675ff" stroke="none"/></svg>
+                            Custom Logo
+                            <input type="file" id="p-logo-upload" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" style="display:none;" onchange="handleProposalLogo(this)">
+                        </label>
+                        <span id="p-logo-clear" style="display:none;font-size:0.78em;color:#999;cursor:pointer;text-decoration:underline;" onclick="clearProposalLogo()">Clear</span>
+                    </div>
+                </div>
                 <div id="p-widgetPreviewArea"></div>
             </div>
 
@@ -1087,6 +1097,25 @@
         let _toggleLogoSrc      = null;
         let _extLogoSrc         = null;
         let _cashbackPerOrderCached = 0;
+
+        function handleProposalLogo(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = e.target.result;
+                document.getElementById('p-logo-clear').style.display = '';
+                renderWidget();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function clearProposalLogo() {
+            _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = null;
+            const inp = document.getElementById('p-logo-upload');
+            if (inp) inp.value = '';
+            document.getElementById('p-logo-clear').style.display = 'none';
+            renderWidget();
+        }
 
         // ── Helpers ────────────────────────────────────────────────────────────
         function removeCommas(s) { return String(s).replace(/,/g, ''); }
