@@ -1041,6 +1041,7 @@
                             Custom Logo
                             <input type="file" id="p-logo-upload" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" style="display:none;" onchange="handleProposalLogo(this)">
                         </label>
+                        <button type="button" onclick="openLockBuilder()" style="font-size:0.78em;padding:4px 10px;background:#1a1a2e;color:white;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;font-weight:700;">🔒 Build in Lock</button>
                         <span id="p-logo-clear" style="display:none;font-size:0.78em;color:#999;cursor:pointer;text-decoration:underline;" onclick="clearProposalLogo()">Clear</span>
                     </div>
                 </div>
@@ -2062,6 +2063,117 @@
                 calculateProposal();
             }
         });
+
+        // ── Lock Logo Builder ────────────────────────────────────────────────────
+        const _LB_LOCK_SRC = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png';
+        let _lbLockImg = null;
+        let _lbBrandImg = null;
+
+        function openLockBuilder() {
+            document.getElementById('lockBuilderOverlay').style.display = 'flex';
+            if (!_lbLockImg) {
+                _lbLockImg = new Image();
+                _lbLockImg.crossOrigin = 'anonymous';
+                _lbLockImg.onload = lbRender;
+                _lbLockImg.src = _LB_LOCK_SRC;
+            } else { lbRender(); }
+        }
+
+        function closeLockBuilder() {
+            document.getElementById('lockBuilderOverlay').style.display = 'none';
+        }
+
+        function lbLoadLogo(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                _lbBrandImg = new Image();
+                _lbBrandImg.onload = lbRender;
+                _lbBrandImg.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function lbRender() {
+            const canvas = document.getElementById('lb-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const sz = canvas.width;
+            ctx.clearRect(0, 0, sz, sz);
+            const scalePct = parseInt(document.getElementById('lb-size').value) / 100;
+            const offX = parseFloat(document.getElementById('lb-x').value) / 30 * sz * 0.22;
+            const offY = parseFloat(document.getElementById('lb-y').value) / 30 * sz * 0.15;
+            if (_lbLockImg) ctx.drawImage(_lbLockImg, 0, 0, sz, sz);
+            if (_lbBrandImg) {
+                const maxW = sz * scalePct * 1.6;
+                const maxH = sz * scalePct;
+                const ratio = _lbBrandImg.width / _lbBrandImg.height;
+                const bh = Math.min(maxH, maxW / ratio);
+                const bw = bh * ratio;
+                ctx.drawImage(_lbBrandImg, (sz - bw) / 2 + offX, sz * 0.77 - bh / 2 + offY, bw, bh);
+            }
+        }
+
+        function lbGetDataUrl() { lbRender(); return document.getElementById('lb-canvas').toDataURL('image/png'); }
+
+        function lbDownload() {
+            const a = document.createElement('a');
+            a.href = lbGetDataUrl();
+            a.download = 'si-lock-custom.png';
+            a.click();
+        }
+
+        function lbApply() {
+            const dataUrl = lbGetDataUrl();
+            _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = dataUrl;
+            document.getElementById('p-logo-clear').style.display = '';
+            renderWidget();
+            closeLockBuilder();
+        }
     </script>
+
+<!-- Lock Logo Builder Modal -->
+<div id="lockBuilderOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:10001;align-items:center;justify-content:center;" onclick="if(event.target===this)closeLockBuilder()">
+    <div style="background:white;border-radius:16px;padding:24px;max-width:480px;width:92%;box-shadow:0 8px 48px rgba(0,0,0,0.28);max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+            <div>
+                <div style="font-size:1em;font-weight:800;color:#1a1a1a;">🔒 Lock Logo Builder</div>
+                <div style="font-size:0.76em;color:#999;margin-top:2px;">Place your brand logo inside the SI lock</div>
+            </div>
+            <button onclick="closeLockBuilder()" style="background:none;border:none;cursor:pointer;font-size:1.4em;color:#bbb;line-height:1;padding:0 0 0 12px;flex-shrink:0;">✕</button>
+        </div>
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+                <canvas id="lb-canvas" width="160" height="160" style="border-radius:10px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#f8f8f8 0% 50%) 0 0/12px 12px;width:160px;height:160px;display:block;"></canvas>
+                <div style="font-size:0.68em;color:#bbb;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Preview</div>
+            </div>
+            <div style="flex:1;min-width:160px;">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block;font-size:0.72em;font-weight:700;color:#666;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em;">Brand Logo</label>
+                    <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82em;color:#6675ff;background:#f4f5ff;border:1px solid #c8ccff;border-radius:7px;padding:7px 13px;font-weight:700;">
+                        ↑ Upload logo
+                        <input type="file" id="lb-logo-input" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" style="display:none;" onchange="lbLoadLogo(this)">
+                    </label>
+                </div>
+                <div style="margin-bottom:9px;">
+                    <label style="display:flex;justify-content:space-between;font-size:0.72em;font-weight:700;color:#666;margin-bottom:4px;"><span>Logo Size</span><span id="lb-size-val" style="color:#6675ff;">28%</span></label>
+                    <input type="range" id="lb-size" min="8" max="60" value="28" style="width:100%;accent-color:#6675ff;" oninput="document.getElementById('lb-size-val').textContent=this.value+'%';lbRender()">
+                </div>
+                <div style="margin-bottom:9px;">
+                    <label style="display:flex;justify-content:space-between;font-size:0.72em;font-weight:700;color:#666;margin-bottom:4px;"><span>Up / Down</span><span id="lb-y-val" style="color:#6675ff;">0</span></label>
+                    <input type="range" id="lb-y" min="-30" max="30" value="0" style="width:100%;accent-color:#6675ff;" oninput="document.getElementById('lb-y-val').textContent=this.value;lbRender()">
+                </div>
+                <div>
+                    <label style="display:flex;justify-content:space-between;font-size:0.72em;font-weight:700;color:#666;margin-bottom:4px;"><span>Left / Right</span><span id="lb-x-val" style="color:#6675ff;">0</span></label>
+                    <input type="range" id="lb-x" min="-30" max="30" value="0" style="width:100%;accent-color:#6675ff;" oninput="document.getElementById('lb-x-val').textContent=this.value;lbRender()">
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:18px;">
+            <button onclick="lbApply()" style="flex:1;padding:11px;background:linear-gradient(135deg,#6675ff,#764ba2);color:white;border:none;border-radius:9px;cursor:pointer;font-weight:800;font-size:0.88em;">✓ Use as Logo</button>
+            <button onclick="lbDownload()" title="Download PNG" style="padding:11px 16px;background:#f4f5ff;color:#6675ff;border:1px solid #c8ccff;border-radius:9px;cursor:pointer;font-weight:800;font-size:0.88em;">⬇ Download</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
