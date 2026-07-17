@@ -4353,14 +4353,25 @@ For uncertain values make your best visual estimate. Always use valid hex colors
             const scalePct = parseInt(document.getElementById('lb-size').value) / 100;
             const offX = parseFloat(document.getElementById('lb-x').value) / 30 * sz * 0.22;
             const offY = parseFloat(document.getElementById('lb-y').value) / 30 * sz * 0.15;
-            if (_lbLockImg) ctx.drawImage(_lbLockImg, 0, 0, sz, sz);
+
+            // Draw lock contain-fit (preserve aspect ratio, centered)
+            let lockX = 0, lockY = 0, lockW = sz, lockH = sz;
+            if (_lbLockImg) {
+                const r = _lbLockImg.width / _lbLockImg.height;
+                if (r < 1) { lockW = sz * r; lockX = (sz - lockW) / 2; }
+                else        { lockH = sz / r; lockY = (sz - lockH) / 2; }
+                ctx.drawImage(_lbLockImg, lockX, lockY, lockW, lockH);
+            }
+
+            // Brand logo on top, centered in the lock body (~71% down the lock height)
             if (_lbBrandImg) {
-                const maxW = sz * scalePct * 1.6;
-                const maxH = sz * scalePct;
+                const maxW = lockW * scalePct * 1.6;
+                const maxH = lockH * scalePct;
                 const ratio = _lbBrandImg.width / _lbBrandImg.height;
                 const bh = Math.min(maxH, maxW / ratio);
                 const bw = bh * ratio;
-                ctx.drawImage(_lbBrandImg, (sz - bw) / 2 + offX, sz * 0.77 - bh / 2 + offY, bw, bh);
+                const bodyCY = lockY + lockH * 0.71;
+                ctx.drawImage(_lbBrandImg, lockX + (lockW - bw) / 2 + offX, bodyCY - bh / 2 + offY, bw, bh);
             }
         }
 
