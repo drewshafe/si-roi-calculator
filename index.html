@@ -1732,6 +1732,7 @@
                                 <option value="flex-start">Top</option>
                             </select>
                         </div>
+                        <div class="wcs" style="flex:1 1 100%;"><label>Logo URL <span style="color:#aaa;font-size:0.85em;">(for share links)</span></label><input type="text" id="wc-dual-logo-url" placeholder="https://..." style="width:100%;min-width:0;" onchange="updateWidgetPreview()"></div>
                     </div>
                     <details class="wconfig-style-grp">
                         <summary>Info Container Style</summary>
@@ -2000,6 +2001,7 @@
                                 <option value="flex-start">Top</option>
                             </select>
                         </div>
+                        <div class="wcs" style="flex:1 1 100%;"><label>Logo URL <span style="color:#aaa;font-size:0.85em;">(for share links)</span></label><input type="text" id="wc-tog-logo-url" placeholder="https://..." style="width:100%;min-width:0;" onchange="updateWidgetPreview()"></div>
                     </div>
                     <div class="wconfig-divider">Snap Mode</div>
                     <div class="wconfig-snap" style="margin-bottom:8px;">
@@ -2135,6 +2137,7 @@
                                 <option value="flex-end">Bottom</option>
                             </select>
                         </div>
+                        <div class="wcs" style="flex:1 1 100%;"><label>Logo URL <span style="color:#aaa;font-size:0.85em;">(for share links)</span></label><input type="text" id="wc-ext-logo-url" placeholder="https://..." style="width:100%;min-width:0;" onchange="updateWidgetPreview()"></div>
                     </div>
                     <div class="wconfig-divider">Snap Mode</div>
                     <div class="wconfig-snap" style="margin-bottom:8px;">
@@ -2783,12 +2786,13 @@
 
                 // Logo: show si_lock or custom when "Show Logo" toggle is on
                 const showDualLock  = gch('wc-dual-show-lock', false);
-                const dualLogoSrc   = _dualLogoSrc || lockSrc;
+                const dualLogoUrlParam = gv('wc-dual-logo-url', '');
+                const dualLogoSrc   = _dualLogoSrc || dualLogoUrlParam || lockSrc;
                 const dualLogoSize  = parseInt(gv('wc-dual-logo-size', '28')) || 28;
                 const dualLogoW     = parseInt(gv('wc-dual-logo-width', '')) || dualLogoSize;
                 const dualLogoGap   = parseInt(gv('wc-dual-logo-gap', '6')) || 6;
                 const dualLogoAlign = gv('wc-dual-logo-align', 'center');
-                const dualLogoHtml  = (showDualLock || _dualLogoSrc)
+                const dualLogoHtml  = (showDualLock || _dualLogoSrc || dualLogoUrlParam)
                     ? `<img src="${dualLogoSrc}" style="width:${dualLogoW}px;height:${dualLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none';">`
                     : '';
 
@@ -2935,13 +2939,14 @@
 
                 const cardStyle = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
 
-                const logoActualSrc = _toggleLogoSrc || lockSrc;
+                const togLogoUrlParam = gv('wc-tog-logo-url', '');
+                const logoActualSrc = _toggleLogoSrc || togLogoUrlParam || lockSrc;
                 const togLogoSize  = parseInt(gv('wc-tog-logo-size', '28')) || 28;
                 const togLogoW     = parseInt(gv('wc-tog-logo-width', '')) || togLogoSize;
                 const togLogoGap   = parseInt(gv('wc-tog-logo-gap', '7')) || 7;
                 const togLogoAlign = gv('wc-tog-logo-align', 'center');
                 const leafImg  = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
-                const lockImgEl = hideLock ? '' : `<img src="${logoActualSrc}" style="width:${togLogoW}px;height:${togLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
+                const lockImgEl = (hideLock && !togLogoUrlParam) ? '' : `<img src="${logoActualSrc}" style="width:${togLogoW}px;height:${togLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
 
                 let controlHtml;
                 if (isCheckbox) {
@@ -2984,13 +2989,14 @@
                 }
 
                 // Extension: checkbox left, then optional logo, then text — all top-aligned
-                const extLogoSrc    = _extLogoSrc || lockSrc;
+                const extLogoUrlParam  = gv('wc-ext-logo-url', '');
+                const extLogoSrc    = _extLogoSrc || extLogoUrlParam || lockSrc;
                 const extLogoSize   = parseInt(gv('wc-ext-logo-size', '30')) || 30;
                 const extLogoW      = parseInt(gv('wc-ext-logo-width', '')) || extLogoSize;
                 const extLogoGap    = parseInt(gv('wc-ext-logo-gap', '8')) || 8;
                 const extLogoAlign  = gv('wc-ext-logo-align', 'flex-start');
                 const extCheckbox   = `<div style="width:18px;height:18px;border-radius:3px;border:1.5px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;"><span style="color:white;font-size:10px;font-weight:900;">✓</span></div>`;
-                const extLogoHtml   = hideLock ? '' : `<img src="${extLogoSrc}" style="width:${extLogoW}px;height:${extLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
+                const extLogoHtml   = (hideLock && !extLogoUrlParam) ? '' : `<img src="${extLogoSrc}" style="width:${extLogoW}px;height:${extLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
 
                 const snapStyle = _snapMode === 'left' ? 'margin-right:auto;' : _snapMode === 'right' ? 'margin-left:auto;' : 'margin:0 auto;';
                 area.innerHTML = `<div class="wp-card" style="${snapStyle}">
