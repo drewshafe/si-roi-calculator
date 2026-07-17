@@ -1051,6 +1051,10 @@
                             <button type="button" onclick="openLockBuilder()" style="display:flex;align-items:center;gap:7px;font-size:0.82em;padding:4px 0;background:none;border:none;cursor:pointer;color:#444;font-weight:600;font-family:inherit;text-align:left;">
                                 🔒 Build in Lock
                             </button>
+                            <button type="button" id="p-logo-saved-btn" onclick="loadSavedLogo()" style="display:none;align-items:center;justify-content:space-between;gap:7px;font-size:0.82em;padding:4px 0;background:none;border:none;cursor:pointer;color:#444;font-weight:600;font-family:inherit;text-align:left;width:100%;">
+                                <span>⭐ Previously Saved</span>
+                                <span id="p-logo-saved-date" style="font-size:0.82em;color:#aaa;font-weight:400;"></span>
+                            </button>
                             <div id="p-logo-active-row" style="display:none;padding-top:8px;border-top:1px solid #f0f0f0;align-items:center;justify-content:space-between;gap:6px;">
                                 <span style="font-size:0.76em;color:#6675ff;font-weight:700;">✓ Logo set</span>
                                 <div style="display:flex;align-items:center;gap:6px;">
@@ -1120,6 +1124,7 @@
             const reader = new FileReader();
             reader.onload = e => {
                 _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = e.target.result;
+                saveLogo(e.target.result);
                 showLogoActive(true);
                 updateWidgetPreview();
                 document.getElementById('p-logo-menu').style.display = 'none';
@@ -1139,6 +1144,33 @@
         function showLogoActive(on) {
             document.getElementById('p-logo-dot').style.display = on ? '' : 'none';
             document.getElementById('p-logo-active-row').style.display = on ? 'flex' : 'none';
+        }
+
+        function saveLogo(dataUrl) {
+            try {
+                localStorage.setItem('shipinsure_savedLogo', dataUrl);
+                localStorage.setItem('shipinsure_savedLogoDate', new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}));
+                updateLogoMenuSavedItem();
+            } catch(e) { /* storage quota exceeded */ }
+        }
+
+        function loadSavedLogo() {
+            const dataUrl = localStorage.getItem('shipinsure_savedLogo');
+            if (!dataUrl) return;
+            _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = dataUrl;
+            showLogoActive(true);
+            updateWidgetPreview();
+            document.getElementById('p-logo-menu').style.display = 'none';
+        }
+
+        function updateLogoMenuSavedItem() {
+            const btn = document.getElementById('p-logo-saved-btn');
+            const dateEl = document.getElementById('p-logo-saved-date');
+            if (!btn) return;
+            const saved = localStorage.getItem('shipinsure_savedLogo');
+            const date = localStorage.getItem('shipinsure_savedLogoDate');
+            btn.style.display = saved ? 'flex' : 'none';
+            if (dateEl && date) dateEl.textContent = date;
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────
@@ -2085,6 +2117,8 @@
             if (hasOrders && hasAov && hasClaims) {
                 calculateProposal();
             }
+
+            updateLogoMenuSavedItem();
         });
 
         // ── Logo dropdown ────────────────────────────────────────────────────────
@@ -2197,6 +2231,7 @@
         function lbApply() {
             const dataUrl = lbGetDataUrl();
             _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = dataUrl;
+            saveLogo(dataUrl);
             showLogoActive(true);
             updateWidgetPreview();
             closeLockBuilder();
