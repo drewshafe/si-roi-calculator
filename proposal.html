@@ -890,6 +890,7 @@
             <!-- Calculate button -->
             <div class="calc-btn-wrap">
                 <button class="calc-btn" id="calcBtn" onclick="calculateProposal()">Calculate ROI &rarr;</button>
+                <button id="p-save-link-btn" onclick="saveProposalLink()" style="margin-top:8px;width:100%;padding:9px;border:1px solid #d0d4ff;border-radius:9px;background:#f4f5ff;color:#6675ff;font-size:0.82em;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copy Link</button>
             </div>
         </div><!-- /inputsSection -->
         </div><!-- /left-panel -->
@@ -1035,14 +1036,29 @@
             <div class="widget-preview-block" id="widgetPreviewBlock" style="display:none;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
                     <div class="widget-type-label-display" style="margin-bottom:0;" id="widgetTypeLabel">Widget Preview</div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.78em;color:#555;background:#f4f5ff;border:1px solid #d0d4ff;border-radius:6px;padding:4px 10px;white-space:nowrap;">
-                            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#6675ff" stroke-width="2" stroke-linecap="round"><path d="M10 13V3M6 7l4-4 4 4"/><path d="M3 15h14v2H3z" fill="#6675ff" stroke="none"/></svg>
-                            Custom Logo
-                            <input type="file" id="p-logo-upload" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" style="display:none;" onchange="handleProposalLogo(this)">
-                        </label>
-                        <button type="button" onclick="openLockBuilder()" style="font-size:0.78em;padding:4px 10px;background:#1a1a2e;color:white;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;font-weight:700;">🔒 Build in Lock</button>
-                        <span id="p-logo-clear" style="display:none;font-size:0.78em;color:#999;cursor:pointer;text-decoration:underline;" onclick="clearProposalLogo()">Clear</span>
+                    <div style="position:relative;" id="p-logo-dropdown-wrap">
+                        <button onclick="toggleLogoDropdown(event)" style="font-size:0.78em;color:#555;background:#f4f5ff;border:1px solid #d0d4ff;border-radius:6px;padding:4px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:600;">
+                            Add Logo
+                            <span id="p-logo-dot" style="display:none;width:7px;height:7px;background:#6675ff;border-radius:50%;flex-shrink:0;"></span>
+                            <span style="font-size:0.8em;opacity:0.6;">▾</span>
+                        </button>
+                        <div id="p-logo-menu" style="display:none;position:absolute;right:0;top:calc(100% + 5px);background:white;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;box-shadow:0 4px 20px rgba(0,0,0,0.13);z-index:200;min-width:185px;flex-direction:column;gap:7px;">
+                            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.82em;color:#444;font-weight:600;padding:3px 0;">
+                                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#6675ff" stroke-width="2" stroke-linecap="round"><path d="M10 13V3M6 7l4-4 4 4"/><path d="M3 15h14v2H3z" fill="#6675ff" stroke="none"/></svg>
+                                Upload Custom Logo
+                                <input type="file" id="p-logo-upload" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" style="display:none;" onchange="handleProposalLogo(this)">
+                            </label>
+                            <button type="button" onclick="openLockBuilder()" style="display:flex;align-items:center;gap:7px;font-size:0.82em;padding:4px 0;background:none;border:none;cursor:pointer;color:#444;font-weight:600;font-family:inherit;text-align:left;">
+                                🔒 Build in Lock
+                            </button>
+                            <div id="p-logo-active-row" style="display:none;padding-top:8px;border-top:1px solid #f0f0f0;align-items:center;justify-content:space-between;gap:6px;">
+                                <span style="font-size:0.76em;color:#6675ff;font-weight:700;">✓ Logo set</span>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <button onclick="updateWidgetPreview()" style="font-size:0.74em;padding:3px 8px;background:#6675ff;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:700;">↻ Apply</button>
+                                    <span onclick="clearProposalLogo()" style="font-size:0.74em;color:#aaa;cursor:pointer;text-decoration:underline;">Clear</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="p-widgetPreviewArea"></div>
@@ -1104,8 +1120,9 @@
             const reader = new FileReader();
             reader.onload = e => {
                 _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = e.target.result;
-                document.getElementById('p-logo-clear').style.display = '';
-                renderWidget();
+                showLogoActive(true);
+                updateWidgetPreview();
+                document.getElementById('p-logo-menu').style.display = 'none';
             };
             reader.readAsDataURL(input.files[0]);
         }
@@ -1114,8 +1131,14 @@
             _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = null;
             const inp = document.getElementById('p-logo-upload');
             if (inp) inp.value = '';
-            document.getElementById('p-logo-clear').style.display = 'none';
-            renderWidget();
+            showLogoActive(false);
+            updateWidgetPreview();
+            document.getElementById('p-logo-menu').style.display = 'none';
+        }
+
+        function showLogoActive(on) {
+            document.getElementById('p-logo-dot').style.display = on ? '' : 'none';
+            document.getElementById('p-logo-active-row').style.display = on ? 'flex' : 'none';
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────
@@ -2064,6 +2087,43 @@
             }
         });
 
+        // ── Logo dropdown ────────────────────────────────────────────────────────
+        function toggleLogoDropdown(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('p-logo-menu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+        document.addEventListener('click', e => {
+            const wrap = document.getElementById('p-logo-dropdown-wrap');
+            if (wrap && !wrap.contains(e.target)) {
+                document.getElementById('p-logo-menu').style.display = 'none';
+            }
+        });
+
+        // ── Save / copy shareable link ───────────────────────────────────────────
+        function saveProposalLink() {
+            const p = new URLSearchParams(window.location.search);
+            const inputMap = {
+                orders: 'p-orders', aov: 'p-aov', claims: 'p-claims',
+                cogs:   'p-cogs',   aship: 'p-aship', cs: 'p-cs',
+                share:  'p-share',  attach: 'p-attach', premium: 'p-premium',
+                template: 'p-template'
+            };
+            for (const [key, id] of Object.entries(inputMap)) {
+                const el = document.getElementById(id);
+                if (el) p.set(key, removeCommas(el.value));
+            }
+            p.set('cogstype',   p_cogsType);
+            p.set('claimstype', p_claimsType);
+            p.set('cr',         p_claimResolution);
+            const url = location.origin + location.pathname + '?' + p.toString();
+            const btn = document.getElementById('p-save-link-btn');
+            navigator.clipboard.writeText(url).then(() => {
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2200);
+            }).catch(() => { prompt('Copy this link:', url); });
+        }
+
         // ── Lock Logo Builder ────────────────────────────────────────────────────
         const _LB_LOCK_SRC = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/silocktemplate.png';
         let _lbLockImg = null;
@@ -2137,8 +2197,8 @@
         function lbApply() {
             const dataUrl = lbGetDataUrl();
             _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = dataUrl;
-            document.getElementById('p-logo-clear').style.display = '';
-            renderWidget();
+            showLogoActive(true);
+            updateWidgetPreview();
             closeLockBuilder();
         }
     </script>
