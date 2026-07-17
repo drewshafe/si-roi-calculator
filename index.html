@@ -1721,7 +1721,17 @@
                         <label>Custom Logo</label>
                         <input type="file" id="wc-dual-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('dual',this)">
                         <button onclick="clearLogo('dual')">✕ Clear</button>
-                        <div class="wcs" style="flex-shrink:0;"><label>Size (px)</label><input type="number" id="wc-dual-logo-size" value="28" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Height (px)</label><input type="number" id="wc-dual-logo-size" value="28" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Width (px)</label><input type="number" id="wc-dual-logo-width" placeholder="auto" min="12" max="160" style="width:54px;" onchange="updateWidgetPreview()" title="Leave blank to match height"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Gap (px)</label><input type="number" id="wc-dual-logo-gap" value="6" min="0" max="24" style="width:46px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;">
+                            <label>Text Align</label>
+                            <select id="wc-dual-logo-align" onchange="updateWidgetPreview()" style="width:76px;">
+                                <option value="center">Center</option>
+                                <option value="flex-end">Bottom</option>
+                                <option value="flex-start">Top</option>
+                            </select>
+                        </div>
                     </div>
                     <details class="wconfig-style-grp">
                         <summary>Info Container Style</summary>
@@ -1979,7 +1989,17 @@
                         <label>Custom Logo</label>
                         <input type="file" id="wc-toggle-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('toggle',this)">
                         <button onclick="clearLogo('toggle')">✕ Clear</button>
-                        <div class="wcs" style="flex-shrink:0;"><label>Size (px)</label><input type="number" id="wc-tog-logo-size" value="28" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Height (px)</label><input type="number" id="wc-tog-logo-size" value="28" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Width (px)</label><input type="number" id="wc-tog-logo-width" placeholder="auto" min="12" max="160" style="width:54px;" onchange="updateWidgetPreview()" title="Leave blank to match height"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Gap (px)</label><input type="number" id="wc-tog-logo-gap" value="7" min="0" max="24" style="width:46px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;">
+                            <label>Text Align</label>
+                            <select id="wc-tog-logo-align" onchange="updateWidgetPreview()" style="width:76px;">
+                                <option value="center">Center</option>
+                                <option value="flex-end">Bottom</option>
+                                <option value="flex-start">Top</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="wconfig-divider">Snap Mode</div>
                     <div class="wconfig-snap" style="margin-bottom:8px;">
@@ -2104,7 +2124,17 @@
                         <label>Custom Logo</label>
                         <input type="file" id="wc-ext-logo" accept=".png,.jpg,.jpeg,.gif" onchange="handleLogoUpload('extension',this)">
                         <button onclick="clearLogo('extension')">✕ Clear</button>
-                        <div class="wcs" style="flex-shrink:0;"><label>Size (px)</label><input type="number" id="wc-ext-logo-size" value="30" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Height (px)</label><input type="number" id="wc-ext-logo-size" value="30" min="12" max="80" style="width:50px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Width (px)</label><input type="number" id="wc-ext-logo-width" placeholder="auto" min="12" max="160" style="width:54px;" onchange="updateWidgetPreview()" title="Leave blank to match height"></div>
+                        <div class="wcs" style="flex-shrink:0;"><label>Gap (px)</label><input type="number" id="wc-ext-logo-gap" value="8" min="0" max="24" style="width:46px;" onchange="updateWidgetPreview()"></div>
+                        <div class="wcs" style="flex-shrink:0;">
+                            <label>Text Align</label>
+                            <select id="wc-ext-logo-align" onchange="updateWidgetPreview()" style="width:76px;">
+                                <option value="flex-start">Top</option>
+                                <option value="center">Center</option>
+                                <option value="flex-end">Bottom</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="wconfig-divider">Snap Mode</div>
                     <div class="wconfig-snap" style="margin-bottom:8px;">
@@ -2755,8 +2785,11 @@
                 const showDualLock  = gch('wc-dual-show-lock', false);
                 const dualLogoSrc   = _dualLogoSrc || lockSrc;
                 const dualLogoSize  = parseInt(gv('wc-dual-logo-size', '28')) || 28;
+                const dualLogoW     = parseInt(gv('wc-dual-logo-width', '')) || dualLogoSize;
+                const dualLogoGap   = parseInt(gv('wc-dual-logo-gap', '6')) || 6;
+                const dualLogoAlign = gv('wc-dual-logo-align', 'center');
                 const dualLogoHtml  = (showDualLock || _dualLogoSrc)
-                    ? `<img src="${dualLogoSrc}" style="width:${dualLogoSize}px;height:${dualLogoSize}px;object-fit:contain;flex-shrink:0;margin-right:2px;" onerror="this.style.display='none';">`
+                    ? `<img src="${dualLogoSrc}" style="width:${dualLogoW}px;height:${dualLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none';">`
                     : '';
 
                 // Primary button style
@@ -2789,7 +2822,7 @@
                     <div style="margin-bottom:${headerGap}px;">
                         ${hDivPos === 'above' ? hDivHtml : ''}
                         <div class="wp-spread" style="margin-bottom:${body?'6':'0'}px;align-items:center;gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
-                            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                            <div style="display:flex;align-items:${dualLogoAlign};gap:${dualLogoGap}px;flex:1;min-width:0;">
                                 ${dualLogoHtml}
                                 <span class="wp-header-text" style="${hStyle}">${header} ${infoBtn}</span>
                             </div>
@@ -2824,7 +2857,7 @@
 
                 const betweenBlock = between ? `<div style="padding:10px 0 ${headerGap > 0 ? headerGap : 8}px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                        <div style="display:flex;align-items:${dualLogoAlign};gap:${dualLogoGap}px;flex:1;min-width:0;">
                             ${dualLogoHtml}
                             <span class="wp-header-text" style="${hStyle}">${header} ${infoBtn}</span>
                         </div>
@@ -2904,8 +2937,11 @@
 
                 const logoActualSrc = _toggleLogoSrc || lockSrc;
                 const togLogoSize  = parseInt(gv('wc-tog-logo-size', '28')) || 28;
+                const togLogoW     = parseInt(gv('wc-tog-logo-width', '')) || togLogoSize;
+                const togLogoGap   = parseInt(gv('wc-tog-logo-gap', '7')) || 7;
+                const togLogoAlign = gv('wc-tog-logo-align', 'center');
                 const leafImg  = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
-                const lockImgEl = hideLock ? '' : `<img src="${logoActualSrc}" style="width:${togLogoSize}px;height:${togLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
+                const lockImgEl = hideLock ? '' : `<img src="${logoActualSrc}" style="width:${togLogoW}px;height:${togLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
 
                 let controlHtml;
                 if (isCheckbox) {
@@ -2918,7 +2954,7 @@
 
                 area.innerHTML = `<div style="${cardStyle}${snapStyle}">
                     <div class="wp-toggle-row">
-                        <div class="wp-toggle-left" style="gap:7px;">
+                        <div class="wp-toggle-left" style="gap:${togLogoGap}px;align-items:${togLogoAlign};">
                             ${lockImgEl}
                             <div class="wp-toggle-text">
                                 <span class="wp-header-text" style="${hStyle}">${header} ${leafImg}</span>
@@ -2950,12 +2986,15 @@
                 // Extension: checkbox left, then optional logo, then text — all top-aligned
                 const extLogoSrc    = _extLogoSrc || lockSrc;
                 const extLogoSize   = parseInt(gv('wc-ext-logo-size', '30')) || 30;
+                const extLogoW      = parseInt(gv('wc-ext-logo-width', '')) || extLogoSize;
+                const extLogoGap    = parseInt(gv('wc-ext-logo-gap', '8')) || 8;
+                const extLogoAlign  = gv('wc-ext-logo-align', 'flex-start');
                 const extCheckbox   = `<div style="width:18px;height:18px;border-radius:3px;border:1.5px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;"><span style="color:white;font-size:10px;font-weight:900;">✓</span></div>`;
-                const extLogoHtml   = hideLock ? '' : `<img src="${extLogoSrc}" style="width:${extLogoSize}px;height:${extLogoSize}px;object-fit:contain;align-self:flex-start;flex-shrink:0;" onerror="this.style.opacity='0';">`;
+                const extLogoHtml   = hideLock ? '' : `<img src="${extLogoSrc}" style="width:${extLogoW}px;height:${extLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
 
                 const snapStyle = _snapMode === 'left' ? 'margin-right:auto;' : _snapMode === 'right' ? 'margin-left:auto;' : 'margin:0 auto;';
                 area.innerHTML = `<div class="wp-card" style="${snapStyle}">
-                    <div class="wp-ext-row" style="align-items:flex-start;gap:8px;">
+                    <div class="wp-ext-row" style="align-items:${extLogoAlign};gap:${extLogoGap}px;">
                         ${extCheckbox}
                         ${extLogoHtml}
                         <div class="wp-ext-text">
