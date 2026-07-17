@@ -2821,7 +2821,7 @@
                 const headerBlock = `
                     <div style="margin-bottom:${headerGap}px;">
                         ${hDivPos === 'above' ? hDivHtml : ''}
-                        <div class="wp-spread" style="margin-bottom:${body?'6':'0'}px;align-items:center;gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
+                        <div class="wp-spread" style="margin-bottom:${body?'6':'0'}px;align-items:${dualLogoAlign};gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
                             <div style="display:flex;align-items:${dualLogoAlign};gap:${dualLogoGap}px;flex:1;min-width:0;">
                                 ${dualLogoHtml}
                                 <span class="wp-header-text" style="${hStyle}">${header} ${infoBtn}</span>
