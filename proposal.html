@@ -314,6 +314,34 @@
             opacity: 0.8;
         }
 
+        .hero-badge-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .hero-badge-pill {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 999px;
+            padding: 4px 12px;
+            height: 36px;
+            box-sizing: border-box;
+            backdrop-filter: blur(4px);
+        }
+        .hero-badge-pill img {
+            height: 20px;
+            width: auto;
+            max-width: 160px;
+            object-fit: contain;
+            display: block;
+        }
+
         /* Two-column result cards */
         .result-cards-row {
             display: grid;
@@ -911,6 +939,12 @@
                 <div class="hero-label" id="heroLabel">Net Benefit With ShipInsure</div>
                 <div class="hero-value" id="heroValue">$0</div>
                 <div class="hero-sub" id="heroSub">per year</div>
+                <div class="hero-badge-area" id="heroBadgeArea" style="display:none;">
+                    <div class="hero-badge-pill" id="p-ppBadge"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/protectionbadges.png" alt="Protection" onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
+                    <div class="hero-badge-pill" id="p-rBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/returnbadges.png"  alt="Returns"    onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
+                    <div class="hero-badge-pill" id="p-cbBadge" style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cashbackbadges.png" alt="Cashback"   onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
+                    <div class="hero-badge-pill" id="p-gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png"      alt="Guarantee"  onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
+                </div>
             </div>
 
             <!-- Two-column cards -->
@@ -1618,6 +1652,8 @@
                 document.getElementById('r-gSiFunded').textContent = fmtDollar(gSiFundedClaims);
             }
 
+            updateProposalBadges();
+
             // Widget preview
             const urlPs = new URLSearchParams(window.location.search);
             if (urlPs.get('wi') === '1') {
@@ -2145,6 +2181,15 @@
 
             updateLogoMenuSavedItem();
         });
+
+        function updateProposalBadges() {
+            const sd = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+            sd('heroBadgeArea', true);
+            sd('p-ppBadge',  !p_returnsOffsetMode);
+            sd('p-rBadge',   p_returnsEnabled || p_returnsOffsetMode);
+            sd('p-cbBadge',  p_cashbackEnabled);
+            sd('p-gBadge',   p_guaranteeEnabled);
+        }
 
         // ── Logo dropdown ────────────────────────────────────────────────────────
         function toggleLogoDropdown(e) {
