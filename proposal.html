@@ -979,15 +979,15 @@
             <div class="feature-result-block" id="returnsResultBlock" style="display:none;">
                 <div class="feature-result-title">Returns Savings</div>
                 <div class="feature-result-grid">
-                    <div class="feature-result-item">
+                    <div class="feature-result-item" id="r-siCoveredLabelsItem">
                         <div class="feature-result-item-label">SI Covered Return Labels</div>
                         <div class="feature-result-item-value" id="r-siCoveredLabels">$0</div>
                     </div>
-                    <div class="feature-result-item">
+                    <div class="feature-result-item" id="r-siCoveredPlatformItem">
                         <div class="feature-result-item-label">SI Covered Platform Cost</div>
                         <div class="feature-result-item-value" id="r-siCoveredPlatform">$0</div>
                     </div>
-                    <div class="feature-result-item">
+                    <div class="feature-result-item" id="r-totalReturnsOffsetItem">
                         <div class="feature-result-item-label">Total Returns Offset</div>
                         <div class="feature-result-item-value" id="r-totalReturnsOffset">$0</div>
                     </div>
@@ -1101,6 +1101,7 @@
         // ── State ──────────────────────────────────────────────────────────────
         let _p_bd = { ready: false };
         let p_returnsEnabled    = false;
+        let p_returnsCoverage   = 'default'; // default | platform_only | labels_protected | all_labels_platform | all_labels
         let p_cashbackEnabled   = false;
         let p_guaranteeEnabled  = false;
         let p_returnsOffsetMode = false;
@@ -1490,9 +1491,24 @@
                 const protectedReturns = protectedOrders * returnsRate;
                 returnLabelsCostTotal  = totalReturns * returnLabelCost;
                 totalReturnsCost       = returnLabelsCostTotal + periodPlatformCost;
-                siCoveredLabels        = protectedReturns * returnLabelCost;
-                siCoveredPlatform      = periodPlatformCost;
-                totalReturnsOffset     = siCoveredLabels + siCoveredPlatform;
+                const rc = p_returnsCoverage;
+                if (rc === 'platform_only') {
+                    siCoveredLabels   = 0;
+                    siCoveredPlatform = periodPlatformCost;
+                } else if (rc === 'labels_protected') {
+                    siCoveredLabels   = protectedReturns * returnLabelCost;
+                    siCoveredPlatform = 0;
+                } else if (rc === 'all_labels_platform') {
+                    siCoveredLabels   = totalReturns * returnLabelCost;
+                    siCoveredPlatform = periodPlatformCost;
+                } else if (rc === 'all_labels') {
+                    siCoveredLabels   = totalReturns * returnLabelCost;
+                    siCoveredPlatform = 0;
+                } else {
+                    siCoveredLabels   = protectedReturns * returnLabelCost;
+                    siCoveredPlatform = periodPlatformCost;
+                }
+                totalReturnsOffset = siCoveredLabels + siCoveredPlatform;
             }
 
             // Cashback
@@ -1576,6 +1592,14 @@
                 document.getElementById('r-siCoveredLabels').textContent = fmtDollar(siCoveredLabels);
                 document.getElementById('r-siCoveredPlatform').textContent = fmtDollar(siCoveredPlatform);
                 document.getElementById('r-totalReturnsOffset').textContent = fmtDollar(totalReturnsOffset);
+                const rc = p_returnsCoverage;
+                const showBoth = rc === 'default' || rc === 'all_labels_platform';
+                const showLbl  = rc !== 'platform_only';
+                const showPlat = rc === 'default' || rc === 'platform_only' || rc === 'all_labels_platform';
+                const sv = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+                sv('r-siCoveredLabelsItem',   showLbl);
+                sv('r-siCoveredPlatformItem', showPlat);
+                sv('r-totalReturnsOffsetItem', showBoth);
             }
 
             // Cashback block
@@ -2081,6 +2105,7 @@
                 up('p-rpc', 'rpc');
                 up('p-arc', 'arc');
                 if (urlPs.get('rtype')) pSetReturnsType(urlPs.get('rtype'));
+                if (urlPs.get('rc')) p_returnsCoverage = urlPs.get('rc');
             }
             if (rom) p_returnsOffsetMode = true;
 
