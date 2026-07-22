@@ -512,70 +512,6 @@
             color: #212529;
         }
 
-        /* Widget Preview */
-        .widget-preview-block {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-
-        .widget-type-label-display {
-            font-size: 0.75em;
-            font-weight: 800;
-            color: #6675ff;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 14px;
-        }
-
-        /* Widget preview card styles (copied from index.html) */
-        .wp-card {
-            background: white; border: 1.5px solid #e9ecef; border-radius: 12px;
-            padding: 16px 18px; max-width: 480px; width: 100%; margin: 0 auto;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-        }
-        .wp-spread { display: flex; align-items: center; justify-content: space-between; }
-        .wp-header-text {
-            font-size: 0.95em; font-weight: 600; color: #1a1a1a;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .wp-info-btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 16px; height: 16px; border-radius: 50%;
-            border: 1.5px solid #adb5bd; color: #adb5bd;
-            font-size: 11px; font-style: italic;
-            font-family: Georgia, serif; font-weight: 700; cursor: default; flex-shrink: 0;
-        }
-        .wp-price { font-size: 0.95em; color: #1a1a1a; font-weight: 700; }
-        .wp-btn-primary {
-            display: block; width: 100%; padding: 13px 16px;
-            border: none; border-radius: 9px;
-            background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
-            color: white; font-size: 0.96em; font-weight: 700;
-            cursor: default; margin-bottom: 8px; text-align: center; font-family: inherit;
-        }
-        .wp-btn-secondary {
-            display: block; width: 100%; padding: 11px 16px;
-            border: 1.5px solid #dee2e6; border-radius: 9px;
-            background: white; color: #495057;
-            font-size: 0.84em; font-weight: 500;
-            cursor: default; text-align: center; font-family: inherit;
-            text-decoration: underline;
-        }
-        .wp-body-text { font-size: 0.82em; color: #666; margin: 4px 0 10px; }
-        .wp-disclaimer { font-size: 0.72em; color: #aaa; margin-top: 8px; line-height: 1.4; }
-        .wp-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .wp-toggle-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-        .wp-toggle-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .wp-toggle-right { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
-        .wp-ext-row { display: flex; align-items: flex-start; gap: 10px; }
-        .wp-ext-text { flex: 1; min-width: 0; }
-        .wp-learn-more { font-size: 0.78em; color: #1a73e8; text-decoration: underline; cursor: default; white-space: nowrap; flex-shrink: 0; }
-        .wp-cashback-row { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 0.82em; color: #333; }
-        .wp-leaf-icon { width: 16px; height: 16px; vertical-align: middle; margin-left: 3px; flex-shrink: 0; object-fit: contain; }
-        .wp-cash-icon { width: 22px; height: 16px; object-fit: contain; flex-shrink: 0; }
 
         /* ── CTA card ── */
         .cta-card {
@@ -1066,41 +1002,6 @@
                 </div>
             </div>
 
-            <!-- Widget Preview (only if wi=1) -->
-            <div class="widget-preview-block" id="widgetPreviewBlock" style="display:none;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-                    <div class="widget-type-label-display" style="margin-bottom:0;" id="widgetTypeLabel">Widget Preview</div>
-                    <div style="position:relative;" id="p-logo-dropdown-wrap">
-                        <button onclick="toggleLogoDropdown(event)" style="font-size:0.78em;color:#555;background:#f4f5ff;border:1px solid #d0d4ff;border-radius:6px;padding:4px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:600;">
-                            Add Logo
-                            <span id="p-logo-dot" style="display:none;width:7px;height:7px;background:#6675ff;border-radius:50%;flex-shrink:0;"></span>
-                            <span style="font-size:0.8em;opacity:0.6;">▾</span>
-                        </button>
-                        <div id="p-logo-menu" style="display:none;position:absolute;right:0;top:calc(100% + 5px);background:white;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;box-shadow:0 4px 20px rgba(0,0,0,0.13);z-index:200;min-width:185px;flex-direction:column;gap:7px;">
-                            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.82em;color:#444;font-weight:600;padding:3px 0;">
-                                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#6675ff" stroke-width="2" stroke-linecap="round"><path d="M10 13V3M6 7l4-4 4 4"/><path d="M3 15h14v2H3z" fill="#6675ff" stroke="none"/></svg>
-                                Upload Custom Logo
-                                <input type="file" id="p-logo-upload" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" style="display:none;" onchange="handleProposalLogo(this)">
-                            </label>
-                            <button type="button" onclick="openLockBuilder()" style="display:flex;align-items:center;gap:7px;font-size:0.82em;padding:4px 0;background:none;border:none;cursor:pointer;color:#444;font-weight:600;font-family:inherit;text-align:left;">
-                                🔒 Build in Lock
-                            </button>
-                            <button type="button" id="p-logo-saved-btn" onclick="loadSavedLogo()" style="display:none;align-items:center;justify-content:space-between;gap:7px;font-size:0.82em;padding:4px 0;background:none;border:none;cursor:pointer;color:#444;font-weight:600;font-family:inherit;text-align:left;width:100%;">
-                                <span>⭐ Previously Saved</span>
-                                <span id="p-logo-saved-date" style="font-size:0.82em;color:#aaa;font-weight:400;"></span>
-                            </button>
-                            <div id="p-logo-active-row" style="display:none;padding-top:8px;border-top:1px solid #f0f0f0;align-items:center;justify-content:space-between;gap:6px;">
-                                <span style="font-size:0.76em;color:#6675ff;font-weight:700;">✓ Logo set</span>
-                                <div style="display:flex;align-items:center;gap:6px;">
-                                    <button onclick="updateWidgetPreview()" style="font-size:0.74em;padding:3px 8px;background:#6675ff;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:700;">↻ Apply</button>
-                                    <span onclick="clearProposalLogo()" style="font-size:0.74em;color:#aaa;cursor:pointer;text-decoration:underline;">Clear</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="p-widgetPreviewArea"></div>
-            </div>
 
             <!-- Calculation Breakdown -->
             <div class="calc-breakdown" id="p-calcBreakdown">
@@ -1146,69 +1047,8 @@
         let p_hideCurrentCost   = false;
         let p_grossRevShare     = false;
         let p_locked            = false;
-        let _widgetType         = 'dual';
-        let _dualSubPos         = 'before-btns';
-        let _snapMode           = 'split';
-        let _dualLogoSrc        = null;
-        let _toggleLogoSrc      = null;
-        let _extLogoSrc         = null;
         let _cashbackPerOrderCached = 0;
 
-        function handleProposalLogo(input) {
-            if (!input.files || !input.files[0]) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = e.target.result;
-                saveLogo(e.target.result);
-                showLogoActive(true);
-                updateWidgetPreview();
-                document.getElementById('p-logo-menu').style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function clearProposalLogo() {
-            _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = null;
-            const inp = document.getElementById('p-logo-upload');
-            if (inp) inp.value = '';
-            showLogoActive(false);
-            updateWidgetPreview();
-            document.getElementById('p-logo-menu').style.display = 'none';
-        }
-
-        function showLogoActive(on) {
-            document.getElementById('p-logo-dot').style.display = on ? '' : 'none';
-            document.getElementById('p-logo-active-row').style.display = on ? 'flex' : 'none';
-        }
-
-        function saveLogo(dataUrl) {
-            try {
-                localStorage.setItem('shipinsure_savedLogo', dataUrl);
-                localStorage.setItem('shipinsure_savedLogoDate', new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}));
-                updateLogoMenuSavedItem();
-            } catch(e) { /* storage quota exceeded */ }
-        }
-
-        function loadSavedLogo() {
-            const dataUrl = localStorage.getItem('shipinsure_savedLogo');
-            if (!dataUrl) return;
-            _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = dataUrl;
-            showLogoActive(true);
-            updateWidgetPreview();
-            document.getElementById('p-logo-menu').style.display = 'none';
-        }
-
-        function updateLogoMenuSavedItem() {
-            const btn = document.getElementById('p-logo-saved-btn');
-            const dateEl = document.getElementById('p-logo-saved-date');
-            if (!btn) return;
-            const saved = localStorage.getItem('shipinsure_savedLogo');
-            const date = localStorage.getItem('shipinsure_savedLogoDate');
-            btn.style.display = saved ? 'flex' : 'none';
-            if (dateEl && date) dateEl.textContent = date;
-        }
-
-        // ── Helpers ────────────────────────────────────────────────────────────
         function removeCommas(s) { return String(s).replace(/,/g, ''); }
 
         function formatNumberWithCommas(v) {
@@ -1655,12 +1495,6 @@
             updateProposalBadges();
 
             // Widget preview
-            const urlPs = new URLSearchParams(window.location.search);
-            if (urlPs.get('wi') === '1') {
-                document.getElementById('widgetPreviewBlock').style.display = '';
-                updateWidgetPreview();
-            }
-
             // Store breakdown data
             _p_bd = {
                 ready: true,
@@ -1728,272 +1562,6 @@
             document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // ── Widget Preview ─────────────────────────────────────────────────────
-        const _widgetTypeNames = {
-            'dual':      'Dual Checkout',
-            'toggle':    'Cart Toggle / Checkbox',
-            'extension': 'Checkout Extension'
-        };
-
-        function setWidgetType(type) {
-            _widgetType = type;
-        }
-
-        function setSubPos(pos) {
-            _dualSubPos = pos;
-        }
-
-        function setSnap(mode) {
-            _snapMode = mode;
-        }
-
-        function updateWidgetPreview() {
-            const area = document.getElementById('p-widgetPreviewArea');
-            if (!area) return;
-
-            const lbl = document.getElementById('widgetTypeLabel');
-            if (lbl) lbl.textContent = (_widgetTypeNames[_widgetType] || _widgetType) + ' Example';
-
-            // Mode
-            let mode = 'default';
-            const urlPs = new URLSearchParams(window.location.search);
-            if (p_returnsOffsetMode)     mode = 'returns-offset';
-            else if (p_cashbackEnabled)  mode = 'cashback';
-            else if (p_guaranteeEnabled) mode = 'guarantee';
-            else if (p_returnsEnabled)   mode = 'returns';
-
-            // Premium
-            const template = document.getElementById('p-template').value;
-            const aov      = parseFloat(removeCommas(document.getElementById('p-aov').value)) || 0;
-            const premRaw  = parseFloat(removeCommas(document.getElementById('p-premium').value)) || 0;
-            let avgPremium = 0;
-            if (template === 'percentage') avgPremium = aov * (premRaw / 100);
-            else if (template === 'flat_dollar') avgPremium = premRaw;
-            else avgPremium = getTieredPremium(aov, template);
-
-            const total  = aov + avgPremium;
-            const fmtP   = fmtDollarCents(avgPremium);
-            const fmtA   = fmtDollarCents(aov);
-            const fmtT   = fmtDollarCents(total);
-            const cbAmt  = Math.round(_cashbackPerOrderCached) || 5;
-            const cbStr  = `$${cbAmt}`;
-
-            // Mode defaults
-            const defMap = {
-                'default':        { dualH:'Loss, Damage, Theft Protection', togH:'Shipping Protection',            extH:'Shipping Protection',  extBody:'Effortless Protection | Loss, damage, or theft', extCb:null, btnB:'or checkout without protection' },
-                'returns':        { dualH:'Shipping Protection + Free Returns', togH:'Shipping Protection + Free Returns', extH:'Shipping Protection + Free Returns', extBody:'Effortless Protection | Loss, damage, or theft', extCb:null, btnB:'or checkout without free returns' },
-                'returns-offset': { dualH:'Unlock Free Returns',             togH:'Unlock Free Returns',           extH:'Checkout+',            extBody:'Unlock Free Returns', extCb:null, btnB:'or checkout without free returns' },
-                'cashback':       { dualH:`Shipping Protection + ${cbStr} Cashback`, togH:`${cbStr} Cashback`,    extH:'Checkout+',            extBody:'Shipping Protection', extCb:`Plus Earn {amount} Off Your Next Order`, btnB:'or checkout without protection' },
-                'guarantee':      { dualH:'Protection + Satisfaction Guarantee', togH:'Protection + Satisfaction Guarantee', extH:'Checkout+', extBody:'Protection + Satisfaction Guarantee', extCb:null, btnB:'or checkout without protection' },
-            };
-            const D = defMap[mode] || defMap['default'];
-
-            // Helpers — read from wci_ URL params (restored widget config)
-            const wciParams = {};
-            urlPs.forEach((val, key) => { if (key.startsWith('wci_')) wciParams[key.slice(4)] = val; });
-            const gv   = (id, fb) => wciParams[id] !== undefined ? wciParams[id] : fb;
-            const gch  = (id, def) => wciParams[id] !== undefined ? wciParams[id] === '1' : def;
-            const sty  = (ff, fs, fw, fc) => {
-                let s = '';
-                if (ff && ff !== 'inherit') s += `font-family:${ff};`;
-                if (fs) s += `font-size:${fs}px;`;
-                if (fw) s += `font-weight:${fw};`;
-                if (fc) s += `color:${fc};`;
-                return s;
-            };
-
-            const v = (id, fb) => wciParams[id] || fb;
-
-            const lockSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/si_lock.png';
-            const leafSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/leaf-icon.png';
-            const cashSrc  = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cash-icon.png';
-            const cashImg  = `<img src="${cashSrc}" class="wp-cash-icon" onerror="this.style.display='none';">`;
-            const infoBtn  = `<span class="wp-info-btn">i</span>`;
-            const learnMore = `<a class="wp-learn-more">Learn More</a>`;
-
-            if (_widgetType === 'dual') {
-                const header    = v('wc-dual-header', D.dualH);
-                const body      = v('wc-dualp-body', '');
-                const btnARaw   = v('wc-dual-btna', `Checkout | ${fmtT}`);
-                const btnBRaw   = v('wc-dual-btnb', D.btnB);
-                const disc      = v('wc-dual-disclaimer', '');
-                const between   = gch('wc-dual-between', false);
-                const infoIconColor = gv('wc-dual-h-info-color', '#adb5bd');
-                const infoBtn2  = `<span class="wp-info-btn" style="border-color:${infoIconColor};color:${infoIconColor};">i</span>`;
-                const showPriceA = gch('wc-dual-show-price-a', true);
-                const showPriceB = gch('wc-dual-show-price-b', false);
-                const bg        = gv('wc-dual-bg', '#ffffff');
-                const bdColor   = gv('wc-dual-bd-color', '#e9ecef');
-                const bdWidth   = gv('wc-dual-bd-width', '2');
-                const bdRadius  = gv('wc-dual-bd-radius', '12');
-                const pad       = gv('wc-dual-padding', '16');
-                const pricePos  = gv('wc-dual-price-pos', 'right');
-                const hStyle    = sty(gv('wc-dual-h-font',''), gv('wc-dual-h-size',''), gv('wc-dual-h-weight',''), gv('wc-dual-h-color','#333333'));
-                const bStyle    = sty(gv('wc-dual-b-font',''), gv('wc-dual-b-size',''), gv('wc-dual-b-weight',''), gv('wc-dual-b-color','#666666'));
-                const ssBg      = gv('wc-dual-s-bg','#ffffff');
-                const ssBd      = gv('wc-dual-s-bd-color','#dee2e6');
-                const ssBdW     = gv('wc-dual-s-bd-width','2');
-                const ssBdR     = gv('wc-dual-s-bd-radius','9');
-                const ssPad     = gv('wc-dual-s-padding','11');
-                const ssMt      = gv('wc-dual-s-mt','8');
-                const ssStyle   = sty(gv('wc-dual-s-font',''), gv('wc-dual-s-size',''), gv('wc-dual-s-weight',''), gv('wc-dual-s-color','#495057'));
-                const ssUnderline = gch('wc-dual-s-underline', true);
-                const cardStyle  = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
-                const secBtnStyle = `display:block;width:100%;padding:${ssPad}px 16px;border:${ssBdW}px solid ${ssBd};border-radius:${ssBdR}px;background:${ssBg};text-decoration:${ssUnderline?'underline':'none'};text-align:center;font-family:inherit;cursor:default;margin-top:${ssMt}px;box-sizing:border-box;${ssStyle}`;
-                const priceColor  = gv('wc-dual-price-color', '#1a1a1a');
-                const priceFStyle = '';
-                const priceHtml   = `<span class="wp-price" style="flex-shrink:0;color:${priceColor};">${fmtP}</span>`;
-                const showDualLock   = gch('wc-dual-show-lock', false);
-                const dualLogoUrlParam = gv('wc-dual-logo-url', '');
-                const dualLogoSrc    = _dualLogoSrc || dualLogoUrlParam || lockSrc;
-                const dualLogoSize   = parseInt(gv('wc-dual-logo-size', '28')) || 28;
-                const dualLogoW      = parseInt(gv('wc-dual-logo-width', '')) || dualLogoSize;
-                const dualLogoGap    = parseInt(gv('wc-dual-logo-gap', '6')) || 6;
-                const dualLogoAlign  = gv('wc-dual-logo-align', 'center');
-                const dualLogoHtml   = (showDualLock || _dualLogoSrc || dualLogoUrlParam) ? `<img src="${dualLogoSrc}" style="width:${dualLogoW}px;height:${dualLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none';">` : '';
-                const pBg1   = gv('wc-dual-p-bg', '#6675ff');
-                const pBg2   = gv('wc-dual-p-bg2', '#764ba2');
-                const pBdR   = gv('wc-dual-p-bd-radius', '9');
-                const pPad   = gv('wc-dual-p-padding', '13');
-                const pMb    = gv('wc-dual-p-mb', '8');
-                const pColor = gv('wc-dual-p-color', '#ffffff') || '#ffffff';
-                const pStyle = sty(gv('wc-dual-p-font',''), gv('wc-dual-p-size',''), gv('wc-dual-p-weight',''), '');
-                const primaryBtnStyle = `display:block;width:100%;padding:${pPad}px 16px;border:none;border-radius:${pBdR}px;background:linear-gradient(135deg,${pBg1} 0%,${pBg2} 100%);color:${pColor};font-family:inherit;cursor:default;text-align:center;margin-bottom:${pMb}px;${pStyle}`;
-                const headerGap = parseInt(gv('wc-dual-header-gap', '0')) || 0;
-                const subLabel  = v('wc-dual-sub-label', 'Subtotal');
-                const subNote   = v('wc-dual-sub-note', '');
-                const hideSub   = gch('wc-dual-hide-sub', false);
-                const subFF     = gv('wc-dual-sub-ff', '');
-                const subFS     = gv('wc-dual-sub-fs', '');
-                const subFW     = gv('wc-dual-sub-fw', '700');
-                const subLC     = gv('wc-dual-sub-lc', '#1a1a1a');
-                const subVC     = gv('wc-dual-sub-vc', '#1a1a1a');
-                const subDivPos = gv('wc-dual-sub-div-pos', 'above');
-                const subDivColor = gv('wc-dual-sub-div-color', '#e0e0e0');
-                const subDivW   = gv('wc-dual-sub-div-width', '1');
-                const subSpacing= gv('wc-dual-sub-spacing', '10');
-                const subTextStyle = `${subFF&&subFF!=='inherit'?`font-family:${subFF};`:''}${subFS?`font-size:${subFS}px;`:''}${subFW?`font-weight:${subFW};`:''}`;
-                const subDivHtml = (subDivPos==='none'||subDivW==='0') ? '' : `<div style="border-top:${subDivW}px solid ${subDivColor};margin:${subSpacing}px 0;"></div>`;
-                const subRowStyle = `display:flex;justify-content:space-between;align-items:baseline;gap:8px;`;
-                const subRowHtml = hideSub ? '' : `
-                    ${subDivPos==='above' ? subDivHtml : ''}
-                    <div style="${subRowStyle}">
-                        <span style="${subTextStyle}color:${subLC};white-space:nowrap;">${subLabel}</span>
-                        <span style="${subTextStyle}color:${subVC};white-space:nowrap;">${fmtA}</span>
-                    </div>
-                    ${subDivPos==='below' ? subDivHtml : ''}`;
-                const headerBlock = `<div style="margin-bottom:${headerGap}px;">
-                    <div class="wp-spread" style="margin-bottom:${body?'6':'0'}px;align-items:${dualLogoAlign};gap:8px;${pricePos==='left'?'flex-direction:row-reverse;':''}">
-                        <div style="display:flex;align-items:${dualLogoAlign};gap:${dualLogoGap}px;flex:1;min-width:0;">
-                            ${dualLogoHtml}
-                            <span class="wp-header-text" style="${hStyle}">${header} ${infoBtn2}</span>
-                        </div>
-                        ${pricePos!=='none' ? priceHtml : ''}
-                    </div>
-                    ${body ? `<div class="wp-body-text" style="${bStyle}margin-top:4px;margin-bottom:2px;">${body}</div>` : ''}
-                </div>`;
-                const btnABase  = btnARaw.replace(/\s*\|.*$/, '').trim();
-                const btnALabel = showPriceA ? `${btnABase} | ${fmtT}` : btnABase;
-                const btnBLabel = showPriceB ? `${btnBRaw} | ${fmtA}` : btnBRaw;
-                area.innerHTML = `<div style="${cardStyle}">
-                    ${_dualSubPos==='above-header' ? subRowHtml : ''}
-                    ${!between ? headerBlock : ''}
-                    ${_dualSubPos==='before-btns' ? subRowHtml : ''}
-                    <button style="${primaryBtnStyle}">${btnALabel}</button>
-                    ${_dualSubPos==='between-btns' ? subRowHtml : ''}
-                    <div style="${secBtnStyle}">${btnBLabel}</div>
-                    ${disc ? `<div class="wp-disclaimer" style="margin-top:6px;">${disc}</div>` : ''}
-                </div>`;
-
-            } else if (_widgetType === 'toggle') {
-                const header     = v('wc-tog-header', D.togH);
-                const body       = v('wc-tog-body', '');
-                const disclaimer = v('wc-tog-disclaimer', '');
-                const hideLock   = gch('wc-tog-hide-lock', false);
-                const isCheckbox = gch('wc-tog-is-checkbox', false);
-                const switchColor = gv('wc-tog-switch-color', '#6675ff');
-                const bg        = gv('wc-tog-bg', '#ffffff');
-                const bdColor   = gv('wc-tog-bd-color', '#e9ecef');
-                const bdWidth   = gv('wc-tog-bd-width', '2');
-                const bdRadius  = gv('wc-tog-bd-radius', '12');
-                const pad       = gv('wc-tog-padding', '16');
-                const hStyle    = sty(gv('wc-tog-h-font',''), gv('wc-tog-h-size',''), gv('wc-tog-h-weight',''), gv('wc-tog-h-color','#333333'));
-                const bStyle    = sty(gv('wc-tog-b-font',''), gv('wc-tog-b-size',''), gv('wc-tog-b-weight',''), gv('wc-tog-b-color','#666666'));
-                const dStyle    = sty(gv('wc-tog-d-font',''), gv('wc-tog-d-size',''), gv('wc-tog-d-weight',''), gv('wc-tog-d-color','#aaaaaa'));
-                const cardStyle = `background:${bg};border:${bdWidth}px solid ${bdColor};border-radius:${bdRadius}px;padding:${pad}px;box-shadow:0 2px 10px rgba(0,0,0,0.07);max-width:480px;width:100%;`;
-                const togLogoUrlParam = gv('wc-tog-logo-url', '');
-                const logoActualSrc = _toggleLogoSrc || togLogoUrlParam || lockSrc;
-                const togLogoSize   = parseInt(gv('wc-tog-logo-size', '28')) || 28;
-                const togLogoW      = parseInt(gv('wc-tog-logo-width', '')) || togLogoSize;
-                const togLogoGap    = parseInt(gv('wc-tog-logo-gap', '7')) || 7;
-                const togLogoAlign  = gv('wc-tog-logo-align', 'center');
-                const leafImg   = `<img src="${leafSrc}" class="wp-leaf-icon" onerror="this.style.display='none';">`;
-                const lockImgEl = (hideLock && !togLogoUrlParam) ? '' : `<img src="${logoActualSrc}" style="width:${togLogoW}px;height:${togLogoSize}px;object-fit:contain;flex-shrink:0;" onerror="this.style.opacity='0';">`;
-                let controlHtml;
-                if (isCheckbox) {
-                    controlHtml = `<div style="width:20px;height:20px;border-radius:4px;border:2px solid ${switchColor};background:${switchColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:white;font-size:12px;font-weight:900;line-height:1;">✓</span></div>`;
-                } else {
-                    controlHtml = `<div style="width:38px;height:22px;border-radius:11px;background:${switchColor};position:relative;flex-shrink:0;"><div style="position:absolute;right:2px;top:2px;width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,0.22);"></div></div>`;
-                }
-                const snapStyle = _snapMode==='left' ? 'margin-right:auto;' : _snapMode==='right' ? 'margin-left:auto;' : 'margin:0 auto;';
-                area.innerHTML = `<div style="${cardStyle}${snapStyle}">
-                    <div class="wp-toggle-row">
-                        <div class="wp-toggle-left" style="gap:${togLogoGap}px;align-items:${togLogoAlign};">
-                            ${lockImgEl}
-                            <div class="wp-toggle-text">
-                                <span class="wp-header-text" style="${hStyle}">${header} ${leafImg}</span>
-                                ${body ? `<div class="wp-body-text" style="${bStyle}margin:2px 0 0;">${body}</div>` : ''}
-                            </div>
-                        </div>
-                        <div class="wp-toggle-right">
-                            ${controlHtml}
-                            <div class="wp-price" style="font-size:0.85em;margin-top:3px;">${fmtP}</div>
-                        </div>
-                    </div>
-                    ${disclaimer ? `<div class="wp-disclaimer" style="${dStyle}margin-top:6px;">${disclaimer}</div>` : ''}
-                </div>`;
-
-            } else if (_widgetType === 'extension') {
-                const header        = v('wc-ext-header', D.extH);
-                const body          = v('wc-ext-body', D.extBody);
-                const disclaimer    = v('wc-ext-disclaimer', '');
-                const hideLock      = gch('wc-ext-hide-lock', false);
-                const showLearnMore = gch('wc-ext-show-learn-more', true);
-                let cbRowText = null;
-                if (mode === 'cashback') {
-                    const rawCb = v('wc-ext-cashback', D.extCb || `Plus Earn {amount} Off Your Next Order`);
-                    cbRowText = rawCb.replace(/\{amount\}/g, cbStr);
-                }
-                const extLogoUrlParam = gv('wc-ext-logo-url', '');
-                const extLogoSrc  = _extLogoSrc || extLogoUrlParam || lockSrc;
-                const extLogoSize = parseInt(gv('wc-ext-logo-size', '30')) || 30;
-                const extLogoW    = parseInt(gv('wc-ext-logo-width', '')) || extLogoSize;
-                const extLogoGap  = parseInt(gv('wc-ext-logo-gap', '8')) || 8;
-                const extLogoAlign = gv('wc-ext-logo-align', 'flex-start');
-                const extCheckbox = `<div style="width:18px;height:18px;border-radius:3px;border:1.5px solid #6675ff;background:linear-gradient(135deg,#6675ff,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;"><span style="color:white;font-size:10px;font-weight:900;">✓</span></div>`;
-                const extLogoHtml = (hideLock && !extLogoUrlParam) ? '' : `<img src="${extLogoSrc}" style="width:${extLogoW}px;height:${extLogoSize}px;object-fit:contain;align-self:flex-start;flex-shrink:0;" onerror="this.style.opacity='0';">`;
-                area.innerHTML = `<div class="wp-card">
-                    <div class="wp-ext-row" style="align-items:${extLogoAlign};gap:${extLogoGap}px;">
-                        ${extCheckbox}
-                        ${extLogoHtml}
-                        <div class="wp-ext-text">
-                            <div class="wp-spread" style="margin-bottom:4px;align-items:flex-start;gap:8px;">
-                                <span class="wp-header-text" style="font-weight:700;flex:1;">${header}</span>
-                                <span class="wp-price" style="flex-shrink:0;">${fmtP}</span>
-                            </div>
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                <div class="wp-body-text" style="margin:0;">${body}</div>
-                                ${showLearnMore ? learnMore : ''}
-                            </div>
-                            ${disclaimer ? `<div class="wp-disclaimer" style="margin-top:5px;display:flex;align-items:flex-start;gap:4px;">${infoBtn}<span>${disclaimer}</span></div>` : ''}
-                        </div>
-                    </div>
-                    ${cbRowText ? `<div class="wp-cashback-row">${cashImg}<span>${cbRowText}</span></div>` : ''}
-                </div>`;
-            }
-        }
-
-        // ── Calculation Breakdown ──────────────────────────────────────────────
         function togglePBreakdown(btn) {
             const body  = document.getElementById('p-bdBody');
             const arrow = document.getElementById('p-bdArrow');
@@ -2163,10 +1731,6 @@
             if (urlPs.get('hcc') === '1') p_hideCurrentCost = true;
             if (urlPs.get('grs') === '1') p_grossRevShare   = true;
 
-            // Widget state
-            if (urlPs.get('wt'))    setWidgetType(urlPs.get('wt'));
-            if (urlPs.get('wspos')) setSubPos(urlPs.get('wspos'));
-            if (urlPs.get('wsnap')) setSnap(urlPs.get('wsnap'));
 
             // Lock inputs
             if (urlPs.get('linputs') === '1') lockAllInputs();
@@ -2179,7 +1743,6 @@
                 calculateProposal();
             }
 
-            updateLogoMenuSavedItem();
         });
 
         function updateProposalBadges() {
@@ -2192,19 +1755,6 @@
         }
 
         // ── Logo dropdown ────────────────────────────────────────────────────────
-        function toggleLogoDropdown(e) {
-            e.stopPropagation();
-            const menu = document.getElementById('p-logo-menu');
-            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
-        }
-        document.addEventListener('click', e => {
-            const wrap = document.getElementById('p-logo-dropdown-wrap');
-            if (wrap && !wrap.contains(e.target)) {
-                document.getElementById('p-logo-menu').style.display = 'none';
-            }
-        });
-
-        // ── Save / copy shareable link ───────────────────────────────────────────
         function saveProposalLink() {
             const p = new URLSearchParams(window.location.search);
             const inputMap = {
@@ -2228,128 +1778,8 @@
             }).catch(() => { prompt('Copy this link:', url); });
         }
 
-        // ── Lock Logo Builder ────────────────────────────────────────────────────
-        const _LB_LOCK_SRC = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/silocktemplate.png';
-        let _lbLockImg = null;
-        let _lbBrandImg = null;
 
-        function openLockBuilder() {
-            document.getElementById('lockBuilderOverlay').style.display = 'flex';
-            if (!_lbLockImg) {
-                _lbLockImg = new Image();
-                _lbLockImg.crossOrigin = 'anonymous';
-                _lbLockImg.onload = lbRender;
-                _lbLockImg.src = _LB_LOCK_SRC;
-            } else { lbRender(); }
-        }
-
-        function closeLockBuilder() {
-            document.getElementById('lockBuilderOverlay').style.display = 'none';
-        }
-
-        function lbLoadLogo(input) {
-            if (!input.files || !input.files[0]) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                _lbBrandImg = new Image();
-                _lbBrandImg.onload = lbRender;
-                _lbBrandImg.src = e.target.result;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function lbRender() {
-            const canvas = document.getElementById('lb-canvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const sz = canvas.width;
-            ctx.clearRect(0, 0, sz, sz);
-            const scalePct = parseInt(document.getElementById('lb-size').value) / 100;
-            const offX = parseFloat(document.getElementById('lb-x').value) / 30 * sz * 0.22;
-            const offY = parseFloat(document.getElementById('lb-y').value) / 30 * sz * 0.15;
-
-            // Draw lock contain-fit (preserve aspect ratio, centered)
-            let lockX = 0, lockY = 0, lockW = sz, lockH = sz;
-            if (_lbLockImg) {
-                const r = _lbLockImg.width / _lbLockImg.height;
-                if (r < 1) { lockW = sz * r; lockX = (sz - lockW) / 2; }
-                else        { lockH = sz / r; lockY = (sz - lockH) / 2; }
-                ctx.drawImage(_lbLockImg, lockX, lockY, lockW, lockH);
-            }
-
-            // Brand logo on top, centered in the lock body (~71% down the lock height)
-            if (_lbBrandImg) {
-                const maxW = lockW * scalePct * 1.6;
-                const maxH = lockH * scalePct;
-                const ratio = _lbBrandImg.width / _lbBrandImg.height;
-                const bh = Math.min(maxH, maxW / ratio);
-                const bw = bh * ratio;
-                const bodyCY = lockY + lockH * 0.71;
-                ctx.drawImage(_lbBrandImg, lockX + (lockW - bw) / 2 + offX, bodyCY - bh / 2 + offY, bw, bh);
-            }
-        }
-
-        function lbGetDataUrl() { lbRender(); return document.getElementById('lb-canvas').toDataURL('image/png'); }
-
-        function lbDownload() {
-            const a = document.createElement('a');
-            a.href = lbGetDataUrl();
-            a.download = 'si-lock-custom.png';
-            a.click();
-        }
-
-        function lbApply() {
-            const dataUrl = lbGetDataUrl();
-            _dualLogoSrc = _toggleLogoSrc = _extLogoSrc = dataUrl;
-            saveLogo(dataUrl);
-            showLogoActive(true);
-            updateWidgetPreview();
-            closeLockBuilder();
-        }
     </script>
 
-<!-- Lock Logo Builder Modal -->
-<div id="lockBuilderOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:10001;align-items:center;justify-content:center;" onclick="if(event.target===this)closeLockBuilder()">
-    <div style="background:white;border-radius:16px;padding:24px;max-width:480px;width:92%;box-shadow:0 8px 48px rgba(0,0,0,0.28);max-height:90vh;overflow-y:auto;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-            <div>
-                <div style="font-size:1em;font-weight:800;color:#1a1a1a;">🔒 Lock Logo Builder</div>
-                <div style="font-size:0.76em;color:#999;margin-top:2px;">Place your brand logo inside the SI lock</div>
-            </div>
-            <button onclick="closeLockBuilder()" style="background:none;border:none;cursor:pointer;font-size:1.4em;color:#bbb;line-height:1;padding:0 0 0 12px;flex-shrink:0;">✕</button>
-        </div>
-        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
-                <canvas id="lb-canvas" width="160" height="160" style="border-radius:10px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#f8f8f8 0% 50%) 0 0/12px 12px;width:160px;height:160px;display:block;"></canvas>
-                <div style="font-size:0.68em;color:#bbb;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Preview</div>
-            </div>
-            <div style="flex:1;min-width:160px;">
-                <div style="margin-bottom:12px;">
-                    <label style="display:block;font-size:0.72em;font-weight:700;color:#666;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em;">Brand Logo</label>
-                    <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82em;color:#6675ff;background:#f4f5ff;border:1px solid #c8ccff;border-radius:7px;padding:7px 13px;font-weight:700;">
-                        ↑ Upload logo
-                        <input type="file" id="lb-logo-input" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" style="display:none;" onchange="lbLoadLogo(this)">
-                    </label>
-                </div>
-                <div style="margin-bottom:9px;">
-                    <label style="display:flex;justify-content:space-between;font-size:0.72em;font-weight:700;color:#666;margin-bottom:4px;"><span>Logo Size</span><span id="lb-size-val" style="color:#6675ff;">28%</span></label>
-                    <input type="range" id="lb-size" min="8" max="60" value="28" style="width:100%;accent-color:#6675ff;" oninput="document.getElementById('lb-size-val').textContent=this.value+'%';lbRender()">
-                </div>
-                <div style="margin-bottom:9px;">
-                    <label style="display:flex;justify-content:space-between;font-size:0.72em;font-weight:700;color:#666;margin-bottom:4px;"><span>Up / Down</span><span id="lb-y-val" style="color:#6675ff;">0</span></label>
-                    <input type="range" id="lb-y" min="-30" max="30" value="0" style="width:100%;accent-color:#6675ff;" oninput="document.getElementById('lb-y-val').textContent=this.value;lbRender()">
-                </div>
-                <div>
-                    <label style="display:flex;justify-content:space-between;font-size:0.72em;font-weight:700;color:#666;margin-bottom:4px;"><span>Left / Right</span><span id="lb-x-val" style="color:#6675ff;">0</span></label>
-                    <input type="range" id="lb-x" min="-30" max="30" value="0" style="width:100%;accent-color:#6675ff;" oninput="document.getElementById('lb-x-val').textContent=this.value;lbRender()">
-                </div>
-            </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:18px;">
-            <button onclick="lbApply()" style="flex:1;padding:11px;background:linear-gradient(135deg,#6675ff,#764ba2);color:white;border:none;border-radius:9px;cursor:pointer;font-weight:800;font-size:0.88em;">✓ Use as Logo</button>
-            <button onclick="lbDownload()" title="Download PNG" style="padding:11px 16px;background:#f4f5ff;color:#6675ff;border:1px solid #c8ccff;border-radius:9px;cursor:pointer;font-weight:800;font-size:0.88em;">⬇ Download</button>
-        </div>
-    </div>
-</div>
 </body>
 </html>
