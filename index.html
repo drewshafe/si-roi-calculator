@@ -1213,12 +1213,8 @@
                     <input type="checkbox" id="lockInputsCheck">
                     Lock Inputs
                 </label>
-                <label class="view-inputs-label">
-                    <input type="checkbox" id="viewInputsCheck">
-                    View Inputs
-                </label>
             </div>
-            <div class="si-inputs-body hidden" id="siInputsBody">
+            <div class="si-inputs-body" id="siInputsBody">
                 <button id="returnsOffsetModeToggle" class="returns-offset-toggle-btn">
                     <span>＋</span> Returns Offset
                 </button>
@@ -2514,9 +2510,6 @@
             if (cashbackEnabled) toggleCashback();
             if (guaranteeEnabled) toggleGuarantee();
             if (_grossRevShare) toggleGrossRevShare();
-            // Reset ShipInsure Inputs to hidden
-            document.getElementById('viewInputsCheck').checked = false;
-            document.getElementById('siInputsBody').classList.add('hidden');
             toggleProtectionPremiumVisibility();
             calculate();
         }
@@ -2561,9 +2554,6 @@
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
         document.getElementById('cashbackToggle').addEventListener('click', toggleCashback);
         document.getElementById('guaranteeToggle').addEventListener('click', toggleGuarantee);
-        document.getElementById('viewInputsCheck').addEventListener('change', function() {
-            document.getElementById('siInputsBody').classList.toggle('hidden', !this.checked);
-        });
         document.getElementById('claimResolution').addEventListener('change', function() {
             setClaimResolution(this.value);
         });
@@ -2665,6 +2655,65 @@
                     </div>
                 </div>`).join('');
         }
+
+        // ── Rep Hub sidebar integration (postMessage live-sync) ─────────────
+        // When embedded in the Rep Hub, the ShipInsure Inputs are surfaced in the
+        // hub sidebar's "REP Inputs" panel, so hide the in-calc copy and let the
+        // sidebar drive features/pricing via messages. Standalone use is unchanged.
+        const _inHub = window.self !== window.top;
+        if (_inHub) {
+            const sec = document.querySelector('.si-inputs-section');
+            if (sec) sec.style.display = 'none';
+        }
+        function _siGetState() {
+            return {
+                siHub: 'state',
+                returns:         returnsEnabled,
+                cashback:        cashbackEnabled,
+                guarantee:       guaranteeEnabled,
+                returnsOffset:   returnsOffsetMode,
+                grossRevShare:   _grossRevShare,
+                hideCurrentCost: _hideCurrentCost,
+                pricing:         document.getElementById('pricingTemplate').value,
+                claimResolution: document.getElementById('claimResolution').value,
+                merchantName:    document.getElementById('merchantName').value,
+                lockInputs:      document.getElementById('lockInputsCheck').checked,
+                savedCount:      (document.getElementById('savedCount') || {}).textContent || '0',
+                pricingOptions:  Array.from(document.getElementById('pricingTemplate').options).map(o => ({ v: o.value, t: o.textContent })),
+                claimResOptions: Array.from(document.getElementById('claimResolution').options).map(o => ({ v: o.value, t: o.textContent }))
+            };
+        }
+        function _siEmitState() {
+            if (window.parent && window.parent !== window) window.parent.postMessage(_siGetState(), '*');
+        }
+        window.addEventListener('message', function(e) {
+            const d = e.data;
+            if (!d || d.siHub !== 'apply') return;
+            // Hub can pull current state without changing anything (e.g. right after
+            // the iframe finishes loading, in case it missed the initial broadcast).
+            if (d.command === 'requestState') { _siEmitState(); return; }
+            // Returns Offset is mutually exclusive with the other features (it forces
+            // returns on and cashback/guarantee off), so apply it first and skip the
+            // others when it is active — mirrors the calculator's own UI rules.
+            if (typeof d.returnsOffset === 'boolean' && d.returnsOffset !== returnsOffsetMode) toggleReturnsOffsetMode();
+            if (!d.returnsOffset) {
+                if (typeof d.returns   === 'boolean' && d.returns   !== returnsEnabled)   toggleReturns();
+                if (typeof d.cashback  === 'boolean' && d.cashback  !== cashbackEnabled)  toggleCashback();
+                if (typeof d.guarantee === 'boolean' && d.guarantee !== guaranteeEnabled) toggleGuarantee();
+            }
+            if (typeof d.grossRevShare   === 'boolean' && d.grossRevShare   !== _grossRevShare)   toggleGrossRevShare();
+            if (typeof d.hideCurrentCost === 'boolean' && d.hideCurrentCost !== _hideCurrentCost) toggleCurrentCost();
+            if (typeof d.pricing === 'string') { document.getElementById('pricingTemplate').value = d.pricing; toggleProtectionPremiumVisibility(); }
+            if (typeof d.claimResolution === 'string') { document.getElementById('claimResolution').value = d.claimResolution; setClaimResolution(d.claimResolution); }
+            if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
+            if (typeof d.lockInputs === 'boolean') document.getElementById('lockInputsCheck').checked = d.lockInputs;
+            if (d.command === 'save')      saveConfig();
+            if (d.command === 'openSaved') toggleSavedConfigs(new Event('click'));
+            calculate();
+            _siEmitState();
+        });
+        // Announce initial state so the hub can sync its sidebar controls.
+        _siEmitState();
 
     </script>
 
