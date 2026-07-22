@@ -1363,24 +1363,34 @@
             if (p_returnsEnabled) {
                 totalReturns          = periodOrders * returnsRate;
                 const protectedReturns = protectedOrders * returnsRate;
-                returnLabelsCostTotal  = totalReturns * returnLabelCost;
-                totalReturnsCost       = returnLabelsCostTotal + periodPlatformCost;
+                // Coverage mode scopes BOTH what SI covers and the merchant's baseline
+                // returns cost — mirrors the main ROI calculator exactly.
                 const rc = p_returnsCoverage;
                 if (rc === 'platform_only') {
                     siCoveredLabels   = 0;
                     siCoveredPlatform = periodPlatformCost;
+                    returnLabelsCostTotal = 0;
+                    totalReturnsCost  = periodPlatformCost;
                 } else if (rc === 'labels_protected') {
                     siCoveredLabels   = protectedReturns * returnLabelCost;
                     siCoveredPlatform = 0;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal;
                 } else if (rc === 'all_labels_platform') {
                     siCoveredLabels   = totalReturns * returnLabelCost;
                     siCoveredPlatform = periodPlatformCost;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal + periodPlatformCost;
                 } else if (rc === 'all_labels') {
                     siCoveredLabels   = totalReturns * returnLabelCost;
                     siCoveredPlatform = 0;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal;
                 } else {
                     siCoveredLabels   = protectedReturns * returnLabelCost;
                     siCoveredPlatform = periodPlatformCost;
+                    returnLabelsCostTotal = totalReturns * returnLabelCost;
+                    totalReturnsCost  = returnLabelsCostTotal + periodPlatformCost;
                 }
                 totalReturnsOffset = siCoveredLabels + siCoveredPlatform;
             }
@@ -1411,15 +1421,26 @@
                 - (p_guaranteeEnabled ? gSiFundedClaims : 0)
                 - (p_returnsEnabled   ? siCoveredLabels + siCoveredPlatform : 0)
                 - (p_cashbackEnabled  ? cashbackRedeemed : 0);
-            const revenueShareAmount = p_grossRevShare ? premiumPool * revenueShare : Math.max(0, postClaimBalance) * revenueShare;
+            let revenueShareAmount = p_grossRevShare ? premiumPool * revenueShare : Math.max(0, postClaimBalance) * revenueShare;
 
-            const totalLost     = lostRevenue + (p_returnsEnabled ? totalReturnsCost : 0);
-            const extraRevenue  = siFundedReships + revenueShareAmount
+            let totalLost     = lostRevenue + (p_returnsEnabled ? totalReturnsCost : 0);
+            let extraRevenue  = siFundedReships + revenueShareAmount
                 + (p_guaranteeEnabled ? gSiFundedClaims   : 0)
                 + (p_returnsEnabled   ? totalReturnsOffset : 0)
                 + (p_cashbackEnabled  ? cashbackRedeemed   : 0);
 
-            const percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
+            let percentOfPremiums = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
+
+            // Returns Offset Mode — override accounting to match the main ROI calculator:
+            // balance/rev-share are based on returns only (no claims deduction), cost
+            // without SI is the returns cost alone, and extra revenue = offset + rev share.
+            if (p_returnsOffsetMode) {
+                const roBalance = premiumPool - siCoveredLabels - siCoveredPlatform;
+                revenueShareAmount = p_grossRevShare ? premiumPool * revenueShare : Math.max(0, roBalance) * revenueShare;
+                totalLost          = totalReturnsCost;
+                extraRevenue       = totalReturnsOffset + revenueShareAmount;
+                percentOfPremiums  = premiumPool > 0 ? (extraRevenue / premiumPool) * 100 : 0;
+            }
 
             // ── Populate Results ───────────────────────────────────────────────
             const heroEl = document.getElementById('heroValue');
