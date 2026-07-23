@@ -27,6 +27,16 @@
             overflow: hidden;
         }
 
+        /* ── Two-column layout: merchant inputs left, outputs right (mirrors merchant view) ── */
+        .calc-body { display: flex; align-items: stretch; }
+        .calc-left { width: 320px; flex-shrink: 0; background: #f4f5fb; border-right: 2px solid #e0e3f5; }
+        .calc-left .inputs-strip { border-top: none; height: 100%; }
+        .calc-right { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        @media (max-width: 900px) {
+            .calc-body { flex-direction: column; }
+            .calc-left { width: 100%; border-right: none; border-bottom: 2px solid #e0e3f5; }
+        }
+
         /* ── Top strip: logo left, controls right ── */
         .top-strip {
             background: linear-gradient(135deg, #4a5fc1 0%, #6b7fd7 100%);
@@ -847,7 +857,6 @@
                 <div class="badge-pill" id="gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png" alt="Guarantee" onerror="this.closest('.badge-pill').style.display='none'"></div>
             </div>
             <div class="controls-area">
-                <button id="generateProposalLink" class="generate-link-btn">🔗 Copy Link</button>
                 <div class="view-selector">
                     <label for="timeframe">View:</label>
                     <select id="timeframe">
@@ -857,6 +866,134 @@
                 </div>
             </div>
         </div>
+        <div class="calc-body">
+        <div class="calc-left">
+
+        <!-- Bottom: Merchant Inputs strip -->
+        <div class="inputs-strip">
+            <div class="inputs-strip-header">
+                <span class="inputs-strip-title">Merchant Inputs</span>
+                <div class="inputs-strip-actions"></div>
+            </div>
+
+            <!-- Core Merchant Inputs -->
+            <div class="inputs-row" id="coreInputsRow">
+                <div class="input-group">
+                    <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
+                    <input type="text" id="annualOrders" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label for="avgOrderValue">AOV</label>
+                    <input type="text" id="avgOrderValue" placeholder="$">
+                </div>
+                <div class="input-group" id="claimsRateGroup">
+                    <label id="claimsRateLabel" for="claimsRate">Claims Rate %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="claimsRate" placeholder="0">
+                        <button class="itype-btn active" id="claimsPctBtn" onclick="setClaimsType('pct')">%</button>
+                        <button class="itype-btn" id="claimsCountBtn" onclick="setClaimsType('count')">#</button>
+                    </div>
+                </div>
+                <div class="input-group" id="protectionPremiumGroup">
+                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
+                    <input type="text" id="protectionPremium" placeholder="0">
+                </div>
+            </div>
+
+            <!-- Additional Merchant Inputs (collapsible) -->
+            <button class="additional-inputs-toggle" id="additionalInputsToggle" onclick="toggleAdditionalInputs()">
+                <span class="add-inputs-arrow" id="addInputsArrow">▶</span> Additional Inputs
+            </button>
+            <div class="additional-inputs-body" id="additionalInputsBody">
+                <div class="input-group" id="cogsGroup">
+                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
+                    <div class="input-with-type">
+                        <input type="text" id="cogsPercent" placeholder="0" value="38">
+                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
+                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
+                    </div>
+                </div>
+                <div class="input-group" id="avgShippingGroup">
+                    <label for="avgShipping">Avg Shipping</label>
+                    <input type="text" id="avgShipping" placeholder="$" value="8">
+                </div>
+                <div class="input-group" id="csCostGroup">
+                    <label for="csCostPerClaim">Avg Ticket Cost</label>
+                    <input type="text" id="csCostPerClaim" placeholder="$" value="5">
+                </div>
+                <div class="input-group" id="attachRateGroup">
+                    <label for="attachRate">Attach Rate %</label>
+                    <input type="text" id="attachRate" placeholder="0" value="68">
+                </div>
+                <div class="input-group">
+                    <label for="revenueShare" id="revShareLabel">Rev Share % (net claims)</label>
+                    <input type="text" id="revenueShare" placeholder="0">
+                </div>
+            </div>
+
+            <div id="returnsInputs" class="returns-section">
+                <div id="returnsRateGroup" class="input-group returns">
+                    <label id="returnsRateLabel" for="returnsRate">Returns Rate %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="returnsRate" placeholder="0">
+                        <button class="itype-btn active" id="retPctBtn" onclick="setReturnsType('pct')">%</button>
+                        <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
+                    </div>
+                </div>
+                <div id="avgReturnCostGroup" class="input-group returns">
+                    <label for="avgReturnCost">Avg Return Cost ($)</label>
+                    <input type="text" id="avgReturnCost" placeholder="$">
+                </div>
+                <div id="returnsPlatformGroup" class="input-group returns">
+                    <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
+                    <input type="text" id="returnsPlatformCost" placeholder="$">
+                </div>
+                <div class="returns-coverage-bar" id="returnsCoverageBar">
+                    <div class="rc-divider">Coverage Mode</div>
+                    <div class="rc-buttons">
+                        <button class="rc-btn active" data-rc="default" onclick="setReturnsCoverage('default')">Protected + Platform</button>
+                        <button class="rc-btn" data-rc="platform_only" onclick="setReturnsCoverage('platform_only')">Platform Only</button>
+                        <button class="rc-btn" data-rc="labels_protected" onclick="setReturnsCoverage('labels_protected')">Protected Labels</button>
+                        <button class="rc-btn" data-rc="all_labels_platform" onclick="setReturnsCoverage('all_labels_platform')">All + Platform</button>
+                        <button class="rc-btn" data-rc="all_labels" onclick="setReturnsCoverage('all_labels')">All Labels</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cashbackInputs" class="cashback-section">
+                <div class="input-group cashback">
+                    <label for="cashbackRate">Customer Cashback %</label>
+                    <input type="text" id="cashbackRate" placeholder="5" value="5">
+                </div>
+                <div class="input-group cashback">
+                    <label for="minCashback">Min Cashback Amount ($)</label>
+                    <input type="text" id="minCashback" placeholder="5" value="5">
+                </div>
+                <div class="input-group cashback">
+                    <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
+                    <input type="text" id="cashbackRedemptionRate" placeholder="10" value="10">
+                </div>
+            </div>
+
+            <!-- Guarantee inputs (visible when guarantee enabled) -->
+            <div id="guaranteeInputs" style="display:none; width:100%;">
+                <div class="input-group" style="background: linear-gradient(135deg, #764ba2 0%, #9b59b6 100%); max-width: 320px;">
+                    <label for="guaranteeClaimRateInput">Increased Claim Rate with Guarantee %</label>
+                    <input type="text" id="guaranteeClaimRateInput" placeholder="auto (1.5× claims rate)">
+                </div>
+            </div>
+
+            <button id="generateProposalLink" class="generate-link-btn" style="width:100%;margin-top:6px;">🔗 Copy Link</button>
+            <div id="linkDisplay" class="link-display" style="margin-top:6px;">
+                <p>Share this link:</p>
+                <div class="link-row">
+                    <input type="text" id="shareableLink" readonly>
+                    <button id="copyLink" class="copy-btn">Copy</button>
+                </div>
+            </div>
+        </div><!-- /inputs-strip -->
+        </div><!-- /calc-left -->
+        <div class="calc-right">
 
         <!-- Outputs strip: gray metric boxes across the top -->
         <div class="outputs-strip">
@@ -1049,129 +1186,6 @@
 
         </div><!-- /widgetMiddleWrapper -->
 
-        <!-- Bottom: Merchant Inputs strip -->
-        <div class="inputs-strip">
-            <div class="inputs-strip-header">
-                <span class="inputs-strip-title">Merchant Inputs</span>
-                <div class="inputs-strip-actions"></div>
-            </div>
-
-            <!-- Core Merchant Inputs -->
-            <div class="inputs-row" id="coreInputsRow">
-                <div class="input-group">
-                    <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
-                    <input type="text" id="annualOrders" placeholder="0">
-                </div>
-                <div class="input-group">
-                    <label for="avgOrderValue">AOV</label>
-                    <input type="text" id="avgOrderValue" placeholder="$">
-                </div>
-                <div class="input-group" id="claimsRateGroup">
-                    <label id="claimsRateLabel" for="claimsRate">Claims Rate %</label>
-                    <div class="input-with-type">
-                        <input type="text" id="claimsRate" placeholder="0">
-                        <button class="itype-btn active" id="claimsPctBtn" onclick="setClaimsType('pct')">%</button>
-                        <button class="itype-btn" id="claimsCountBtn" onclick="setClaimsType('count')">#</button>
-                    </div>
-                </div>
-                <div class="input-group" id="protectionPremiumGroup">
-                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
-                    <input type="text" id="protectionPremium" placeholder="0">
-                </div>
-            </div>
-
-            <!-- Additional Merchant Inputs (collapsible) -->
-            <button class="additional-inputs-toggle" id="additionalInputsToggle" onclick="toggleAdditionalInputs()">
-                <span class="add-inputs-arrow" id="addInputsArrow">▶</span> Additional Inputs
-            </button>
-            <div class="additional-inputs-body" id="additionalInputsBody">
-                <div class="input-group" id="cogsGroup">
-                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
-                    <div class="input-with-type">
-                        <input type="text" id="cogsPercent" placeholder="0" value="38">
-                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
-                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
-                    </div>
-                </div>
-                <div class="input-group" id="avgShippingGroup">
-                    <label for="avgShipping">Avg Shipping</label>
-                    <input type="text" id="avgShipping" placeholder="$" value="8">
-                </div>
-                <div class="input-group" id="csCostGroup">
-                    <label for="csCostPerClaim">Avg Ticket Cost</label>
-                    <input type="text" id="csCostPerClaim" placeholder="$" value="5">
-                </div>
-                <div class="input-group" id="attachRateGroup">
-                    <label for="attachRate">Attach Rate %</label>
-                    <input type="text" id="attachRate" placeholder="0" value="68">
-                </div>
-                <div class="input-group">
-                    <label for="revenueShare" id="revShareLabel">Rev Share % (net claims)</label>
-                    <input type="text" id="revenueShare" placeholder="0">
-                </div>
-            </div>
-
-            <div id="returnsInputs" class="returns-section">
-                <div id="returnsRateGroup" class="input-group returns">
-                    <label id="returnsRateLabel" for="returnsRate">Returns Rate %</label>
-                    <div class="input-with-type">
-                        <input type="text" id="returnsRate" placeholder="0">
-                        <button class="itype-btn active" id="retPctBtn" onclick="setReturnsType('pct')">%</button>
-                        <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
-                    </div>
-                </div>
-                <div id="avgReturnCostGroup" class="input-group returns">
-                    <label for="avgReturnCost">Avg Return Cost ($)</label>
-                    <input type="text" id="avgReturnCost" placeholder="$">
-                </div>
-                <div id="returnsPlatformGroup" class="input-group returns">
-                    <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
-                    <input type="text" id="returnsPlatformCost" placeholder="$">
-                </div>
-                <div class="returns-coverage-bar" id="returnsCoverageBar">
-                    <div class="rc-divider">Coverage Mode</div>
-                    <div class="rc-buttons">
-                        <button class="rc-btn active" data-rc="default" onclick="setReturnsCoverage('default')">Protected + Platform</button>
-                        <button class="rc-btn" data-rc="platform_only" onclick="setReturnsCoverage('platform_only')">Platform Only</button>
-                        <button class="rc-btn" data-rc="labels_protected" onclick="setReturnsCoverage('labels_protected')">Protected Labels</button>
-                        <button class="rc-btn" data-rc="all_labels_platform" onclick="setReturnsCoverage('all_labels_platform')">All + Platform</button>
-                        <button class="rc-btn" data-rc="all_labels" onclick="setReturnsCoverage('all_labels')">All Labels</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="cashbackInputs" class="cashback-section">
-                <div class="input-group cashback">
-                    <label for="cashbackRate">Customer Cashback %</label>
-                    <input type="text" id="cashbackRate" placeholder="5" value="5">
-                </div>
-                <div class="input-group cashback">
-                    <label for="minCashback">Min Cashback Amount ($)</label>
-                    <input type="text" id="minCashback" placeholder="5" value="5">
-                </div>
-                <div class="input-group cashback">
-                    <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
-                    <input type="text" id="cashbackRedemptionRate" placeholder="10" value="10">
-                </div>
-            </div>
-
-            <!-- Guarantee inputs (visible when guarantee enabled) -->
-            <div id="guaranteeInputs" style="display:none; width:100%;">
-                <div class="input-group" style="background: linear-gradient(135deg, #764ba2 0%, #9b59b6 100%); max-width: 320px;">
-                    <label for="guaranteeClaimRateInput">Increased Claim Rate with Guarantee %</label>
-                    <input type="text" id="guaranteeClaimRateInput" placeholder="auto (1.5× claims rate)">
-                </div>
-            </div>
-
-            <div id="linkDisplay" class="link-display">
-                <p>Share this link:</p>
-                <div class="link-row">
-                    <input type="text" id="shareableLink" readonly>
-                    <button id="copyLink" class="copy-btn">Copy</button>
-                </div>
-            </div>
-        </div><!-- /inputs-strip -->
-
         <!-- Calculation Breakdown dropdown -->
         <div class="calc-breakdown">
             <button class="calc-toggle" onclick="toggleBreakdown(this)">
@@ -1196,6 +1210,8 @@
             </div>
         </div>
 
+        </div><!-- /calc-right -->
+        </div><!-- /calc-body -->
         <!-- ShipInsure Inputs section -->
         <div class="si-inputs-section">
             <div class="si-inputs-header">
@@ -2087,9 +2103,17 @@
                 document.getElementById('guaranteeSiFundedClaims').textContent = formatCurrency(gSiFundedClaims);
             }
 
+            // ShipInsure's retained cut = the (post-claim / post-returns) balance
+            // minus the merchant's revenue share, in the selected period.
+            const _siNetBalance  = returnsOffsetMode ? (premiumPool - siCoveredLabels - siCoveredPlatform) : postClaimBalance;
+            const _siNetRevShare = _grossRevShare ? (premiumPool * revenueShare) : (Math.max(0, _siNetBalance) * revenueShare);
+            const siNetRetained  = Math.max(0, _siNetBalance) - _siNetRevShare;
+            const siNetMarginPct = premiumPool > 0 ? (siNetRetained / premiumPool) * 100 : 0;
+
             // Store breakdown data
             _bd = {
                 ready: true,
+                siNetRetained, siNetMarginPct,
                 orders: periodOrders, aov: avgOrderValue, cogsP: cogsPercent, claimsP: claimsRate,
                 csPerClaim: csCostPerClaim, attachP: attachRate, avgPremium, revShareP: revenueShare,
                 protectedOrders, totalClaims, protectedClaims: claimsOffset,
@@ -2109,6 +2133,8 @@
                 grossRevShare: _grossRevShare
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
+            // Keep the Rep Hub sidebar (SI Net, etc.) in sync after every recalc.
+            if (typeof _siEmitState === 'function') _siEmitState();
         }
 
         function loadSavedValues() {
@@ -2680,6 +2706,9 @@
                 merchantName:    document.getElementById('merchantName').value,
                 lockInputs:      document.getElementById('lockInputsCheck').checked,
                 coverage:        _returnsCoverage,
+                viewMode:        (document.getElementById('timeframe') || {}).value || 'monthly',
+                siNet:           (typeof _bd === 'object' && _bd) ? (_bd.siNetRetained || 0) : 0,
+                siNetMargin:     (typeof _bd === 'object' && _bd) ? (_bd.siNetMarginPct || 0) : 0,
                 savedCount:      (document.getElementById('savedCount') || {}).textContent || '0',
                 savedConfigs:    Object.entries(JSON.parse(localStorage.getItem('si_saved_configs') || '{}')).map(([name, c]) => ({ name: name, date: (c && c.saved) || '' })),
                 pricingOptions:  Array.from(document.getElementById('pricingTemplate').options).map(o => ({ v: o.value, t: o.textContent })),
