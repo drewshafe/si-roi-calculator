@@ -876,7 +876,7 @@
                 <div class="inputs-strip-actions"></div>
             </div>
 
-            <!-- Core Merchant Inputs -->
+            <!-- Merchant Inputs — Group 1: order economics -->
             <div class="inputs-row" id="coreInputsRow">
                 <div class="input-group">
                     <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
@@ -894,17 +894,6 @@
                         <button class="itype-btn" id="claimsCountBtn" onclick="setClaimsType('count')">#</button>
                     </div>
                 </div>
-                <div class="input-group" id="protectionPremiumGroup">
-                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
-                    <input type="text" id="protectionPremium" placeholder="0">
-                </div>
-            </div>
-
-            <!-- Additional Merchant Inputs (collapsible) -->
-            <button class="additional-inputs-toggle" id="additionalInputsToggle" onclick="toggleAdditionalInputs()">
-                <span class="add-inputs-arrow" id="addInputsArrow">▶</span> Additional Inputs
-            </button>
-            <div class="additional-inputs-body" id="additionalInputsBody">
                 <div class="input-group" id="cogsGroup">
                     <label id="cogsLabel" for="cogsPercent">Product Cost</label>
                     <div class="input-with-type">
@@ -920,6 +909,14 @@
                 <div class="input-group" id="csCostGroup">
                     <label for="csCostPerClaim">Avg Ticket Cost</label>
                     <input type="text" id="csCostPerClaim" placeholder="$" value="5">
+                </div>
+            </div>
+
+            <!-- Merchant Inputs — Group 2: ShipInsure terms -->
+            <div class="inputs-row" id="secondaryInputsRow">
+                <div class="input-group" id="protectionPremiumGroup">
+                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
+                    <input type="text" id="protectionPremium" placeholder="0">
                 </div>
                 <div class="input-group" id="attachRateGroup">
                     <label for="attachRate">Attach Rate %</label>
@@ -1291,6 +1288,10 @@
                         <option value="og_6.5_19.99_3">OG 6.5%/$19.99/3%</option>
                     </select>
                 </div>
+                <div class="si-selector" id="minPremiumWrapper">
+                    <label for="minPremium">Min $:</label>
+                    <input type="text" id="minPremium" value="0.98" placeholder="0.00" style="width:60px;" oninput="calculate()">
+                </div>
                 <div class="si-selector" id="claimResSelectorWrapper">
                     <label for="claimResolution">Claim Resolution:</label>
                     <select id="claimResolution">
@@ -1577,6 +1578,9 @@
             } else {
                 premiumGroup.style.display = 'none';
             }
+            // Min $ floor only applies to %-based pricing.
+            const minWrap = document.getElementById('minPremiumWrapper');
+            if (minWrap) minWrap.style.display = (template === 'percentage') ? '' : 'none';
         }
 
         function formatCurrency(value) {
@@ -1901,9 +1905,11 @@
                 : returnsRaw / 100;
 
             const protectedOrders = periodOrders * attachRate;
+            // Optional $ floor on %-based pricing (blank = premium is true to the %).
+            const minPremiumFloor = parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0;
             let avgPremium;
             if (pricingTemplate === 'percentage') {
-                avgPremium = avgOrderValue * protectionPremium;
+                avgPremium = Math.max(avgOrderValue * protectionPremium, minPremiumFloor);
             } else if (pricingTemplate === 'flat_dollar') {
                 avgPremium = protectionPremium;
             } else {
@@ -2154,6 +2160,7 @@
                 document.getElementById('revenueShare').value = urlParams.get('share') || '25';
                 document.getElementById('attachRate').value = urlParams.get('attach') || '68';
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
+                if (urlParams.get('minp') !== null) document.getElementById('minPremium').value = urlParams.get('minp');
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
                 document.getElementById('pricingTemplate').value = urlParams.get('template') || 'percentage';
                 if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
@@ -2242,7 +2249,7 @@
             let avgPremiumValue = 0;
             if (pricingTemplate === 'percentage') {
                 const pp = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
-                avgPremiumValue = avgOrderValue * pp;
+                avgPremiumValue = Math.max(avgOrderValue * pp, parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0);
             } else if (pricingTemplate === 'flat_dollar') {
                 avgPremiumValue = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
             } else {
@@ -2264,6 +2271,7 @@
                 share: removeCommas(document.getElementById('revenueShare').value) || '25',
                 attach: removeCommas(document.getElementById('attachRate').value) || '68',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
+                minp: removeCommas((document.getElementById('minPremium') || {}).value || ''),
                 avg_premium: avgPremiumValue.toFixed(2),
                 view: document.getElementById('timeframe').value || 'monthly',
                 template: document.getElementById('pricingTemplate').value || 'percentage',
@@ -2313,7 +2321,7 @@
             let avgPremiumValue = 0;
             if (pricingTemplate === 'percentage') {
                 const pp = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
-                avgPremiumValue = avgOrderValue * pp;
+                avgPremiumValue = Math.max(avgOrderValue * pp, parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0);
             } else if (pricingTemplate === 'flat_dollar') {
                 avgPremiumValue = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
             } else {
@@ -2335,6 +2343,7 @@
                 share: removeCommas(document.getElementById('revenueShare').value) || '25',
                 attach: removeCommas(document.getElementById('attachRate').value) || '68',
                 premium: removeCommas(document.getElementById('protectionPremium').value) || '3.00',
+                minp: removeCommas((document.getElementById('minPremium') || {}).value || ''),
                 avg_premium: avgPremiumValue.toFixed(2),
                 view: document.getElementById('timeframe').value || 'monthly',
                 template: document.getElementById('pricingTemplate').value || 'percentage',
@@ -2516,9 +2525,6 @@
             document.getElementById('cashbackRedemptionRate').value = '10';
             document.getElementById('timeframe').value = 'monthly';
             document.getElementById('pricingTemplate').value = 'percentage';
-            // Close additional inputs drawer
-            document.getElementById('additionalInputsBody').classList.remove('open');
-            document.getElementById('addInputsArrow').classList.remove('open');
             setCogsType('pct');
             setClaimsType('pct');
             setReturnsType('pct');
@@ -2702,6 +2708,7 @@
                 grossRevShare:   _grossRevShare,
                 hideCurrentCost: _hideCurrentCost,
                 pricing:         document.getElementById('pricingTemplate').value,
+                minPremium:      (document.getElementById('minPremium') || {}).value || '',
                 claimResolution: document.getElementById('claimResolution').value,
                 merchantName:    document.getElementById('merchantName').value,
                 lockInputs:      document.getElementById('lockInputsCheck').checked,
@@ -2736,6 +2743,7 @@
             if (typeof d.grossRevShare   === 'boolean' && d.grossRevShare   !== _grossRevShare)   toggleGrossRevShare();
             if (typeof d.hideCurrentCost === 'boolean' && d.hideCurrentCost !== _hideCurrentCost) toggleCurrentCost();
             if (typeof d.pricing === 'string') { document.getElementById('pricingTemplate').value = d.pricing; toggleProtectionPremiumVisibility(); }
+            if (typeof d.minPremium === 'string') { const mp = document.getElementById('minPremium'); if (mp) mp.value = d.minPremium; }
             if (typeof d.claimResolution === 'string') { document.getElementById('claimResolution').value = d.claimResolution; setClaimResolution(d.claimResolution); }
             if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
             if (typeof d.lockInputs === 'boolean') document.getElementById('lockInputsCheck').checked = d.lockInputs;

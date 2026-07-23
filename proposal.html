@@ -1334,10 +1334,11 @@
             const minCashback         = parseFloat(removeCommas(document.getElementById('p-mincb').value)) || 5;
             const cashbackRedemptionRate = (parseFloat(removeCommas(document.getElementById('p-cbrr').value)) || 10) / 100;
 
-            // Premium per order
+            // Premium per order (%-based pricing can carry a $ floor via the minp param)
+            const _minPremiumFloor = parseFloat((new URLSearchParams(window.location.search).get('minp')) || '') || 0;
             let avgPremium = 0;
             if (template === 'percentage') {
-                avgPremium = avgOrderValue * (premiumRaw / 100);
+                avgPremium = Math.max(avgOrderValue * (premiumRaw / 100), _minPremiumFloor);
             } else if (template === 'flat_dollar') {
                 avgPremium = premiumRaw;
             } else {
