@@ -847,8 +847,7 @@
                 <div class="badge-pill" id="gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png" alt="Guarantee" onerror="this.closest('.badge-pill').style.display='none'"></div>
             </div>
             <div class="controls-area">
-                <button id="generateLink" class="generate-link-btn">📋 Generate Link</button>
-                <button id="generateProposalLink" class="generate-link-btn" style="border-color:#28a745;background:#28a745;">📄 Merchant View Link</button>
+                <button id="generateProposalLink" class="generate-link-btn">🔗 Copy Link</button>
                 <div class="view-selector">
                     <label for="timeframe">View:</label>
                     <select id="timeframe">
@@ -1858,7 +1857,7 @@
             }
 
             if (document.getElementById('linkDisplay').style.display === 'flex') {
-                generateShareableLink();
+                document.getElementById('shareableLink').value = buildMerchantLink();
             }
 
             updateDynamicLabels();
@@ -2209,7 +2208,8 @@
             }
         }
 
-        function generateShareableLink() {
+        // Builds the full rep-state calc link (used to store/reload saved configs).
+        function buildRepLink() {
             const baseUrl = 'https://drewshafe.github.io/si-roi-calculator';
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
@@ -2276,12 +2276,11 @@
             if (_grossRevShare)   params.set('grs', '1');
 
 
-            const shareableUrl = `${baseUrl}?${params.toString()}`;
-            document.getElementById('shareableLink').value = shareableUrl;
-            document.getElementById('linkDisplay').style.display = 'flex';
+            return `${baseUrl}?${params.toString()}`;
         }
 
-        function generateProposalLink() {
+        // Builds the clean merchant-facing view link — the one reps share.
+        function buildMerchantLink() {
             const baseUrl = 'https://drewshafe.github.io/si-roi-calculator/proposal.html';
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
@@ -2351,20 +2350,20 @@
             const lockInputs = document.getElementById('lockInputsCheck');
             if (lockInputs && lockInputs.checked) params.set('linputs', '1');
 
-            const shareableUrl = `${baseUrl}?${params.toString()}`;
-            document.getElementById('shareableLink').value = shareableUrl;
-            document.getElementById('linkDisplay').style.display = 'flex';
+            return `${baseUrl}?${params.toString()}`;
+        }
 
-            // Copy to clipboard and flash button
-            navigator.clipboard.writeText(shareableUrl).then(() => {
+        // One shareable link = the merchant view. Builds it, shows it in the
+        // "Share this link" field, and copies it to the clipboard.
+        function generateProposalLink() {
+            const url = buildMerchantLink();
+            document.getElementById('shareableLink').value = url;
+            document.getElementById('linkDisplay').style.display = 'flex';
+            navigator.clipboard.writeText(url).then(() => {
                 const btn = document.getElementById('generateProposalLink');
                 const orig = btn.innerHTML;
                 btn.innerHTML = '✓ Copied!';
-                btn.style.background = '#218838';
-                setTimeout(() => {
-                    btn.innerHTML = orig;
-                    btn.style.background = '#28a745';
-                }, 2000);
+                setTimeout(() => { btn.innerHTML = orig; }, 2000);
             }).catch(() => {});
         }
 
@@ -2547,7 +2546,6 @@
             toggleProtectionPremiumVisibility();
             calculate();
         });
-        document.getElementById('generateLink').addEventListener('click', generateShareableLink);
         document.getElementById('generateProposalLink').addEventListener('click', generateProposalLink);
         document.getElementById('copyLink').addEventListener('click', copyToClipboard);
         document.getElementById('returnsOffsetModeToggle').addEventListener('click', toggleReturnsOffsetMode);
@@ -2579,9 +2577,8 @@
             const nameEl = document.getElementById('merchantName');
             const name = nameEl ? nameEl.value.trim() : '';
             if (!name) { alert('Enter a merchant name before saving.'); nameEl && nameEl.focus(); return; }
-            // Generate (or refresh) the shareable link first
-            generateShareableLink();
-            const link = document.getElementById('shareableLink').value;
+            // Store the full rep-state link so the config reloads exactly (rep-only).
+            const link = buildRepLink();
             const configs = JSON.parse(localStorage.getItem('si_saved_configs') || '{}');
             configs[name] = { url: link, saved: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) };
             localStorage.setItem('si_saved_configs', JSON.stringify(configs));
@@ -2664,6 +2661,10 @@
         if (_inHub) {
             const sec = document.querySelector('.si-inputs-section');
             if (sec) sec.style.display = 'none';
+            // Coverage Mode is surfaced (and kept off merchant view) in the hub's
+            // REP Inputs panel, so hide the in-calc bar when embedded.
+            const cvBar = document.getElementById('returnsCoverageBar');
+            if (cvBar) cvBar.style.display = 'none';
         }
         function _siGetState() {
             return {
@@ -2678,7 +2679,9 @@
                 claimResolution: document.getElementById('claimResolution').value,
                 merchantName:    document.getElementById('merchantName').value,
                 lockInputs:      document.getElementById('lockInputsCheck').checked,
+                coverage:        _returnsCoverage,
                 savedCount:      (document.getElementById('savedCount') || {}).textContent || '0',
+                savedConfigs:    Object.entries(JSON.parse(localStorage.getItem('si_saved_configs') || '{}')).map(([name, c]) => ({ name: name, date: (c && c.saved) || '' })),
                 pricingOptions:  Array.from(document.getElementById('pricingTemplate').options).map(o => ({ v: o.value, t: o.textContent })),
                 claimResOptions: Array.from(document.getElementById('claimResolution').options).map(o => ({ v: o.value, t: o.textContent }))
             };
@@ -2707,8 +2710,9 @@
             if (typeof d.claimResolution === 'string') { document.getElementById('claimResolution').value = d.claimResolution; setClaimResolution(d.claimResolution); }
             if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
             if (typeof d.lockInputs === 'boolean') document.getElementById('lockInputsCheck').checked = d.lockInputs;
-            if (d.command === 'save')      saveConfig();
-            if (d.command === 'openSaved') toggleSavedConfigs(new Event('click'));
+            if (typeof d.coverage === 'string') setReturnsCoverage(d.coverage);
+            if (d.command === 'save') saveConfig();
+            if (d.command === 'loadConfig' && d.name) loadSavedConfig(d.name);
             calculate();
             _siEmitState();
         });
