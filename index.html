@@ -37,6 +37,20 @@
             .calc-left { width: 100%; border-right: none; border-bottom: 2px solid #e0e3f5; }
         }
 
+        /* ── Rep display controls (driven from the Rep Hub sidebar) ── */
+        /* Layout override: force split / stacked regardless of width */
+        .container.force-split  .calc-body { flex-direction: row; }
+        .container.force-split  .calc-left { width: 320px; border-right: 2px solid #e0e3f5; border-bottom: none; }
+        .container.force-stacked .calc-body { flex-direction: column; }
+        .container.force-stacked .calc-left { width: 100%; border-right: none; border-bottom: 2px solid #e0e3f5; }
+        /* Density: compact tightens padding/gaps */
+        .container.density-compact .inputs-row { gap: 5px; }
+        .container.density-compact .input-group { padding: 5px 8px; }
+        .container.density-compact .outputs-strip { padding: 6px 10px; }
+        .container.density-compact .result-card { padding: 10px 12px; }
+        .container.density-compact .middle-section { gap: 8px; }
+        .container.density-compact .output-metric { padding: 6px 8px; }
+
         /* ── Top strip: logo left, controls right ── */
         .top-strip {
             background: linear-gradient(135deg, #4a5fc1 0%, #6b7fd7 100%);
@@ -2733,12 +2747,25 @@
         function _siEmitState() {
             if (window.parent && window.parent !== window) window.parent.postMessage(_siGetState(), '*');
         }
+        function applyDisplaySettings(d) {
+            const c = document.querySelector('.container');
+            if (!c) return;
+            if (d.zoom != null)      c.style.zoom = d.zoom;
+            if (d.textScale != null) c.style.fontSize = (16 * d.textScale) + 'px';
+            if (typeof d.density === 'string') c.classList.toggle('density-compact', d.density === 'compact');
+            if (typeof d.layout === 'string') {
+                c.classList.toggle('force-split',   d.layout === 'split');
+                c.classList.toggle('force-stacked', d.layout === 'stacked');
+            }
+        }
         window.addEventListener('message', function(e) {
             const d = e.data;
             if (!d || d.siHub !== 'apply') return;
             // Hub can pull current state without changing anything (e.g. right after
             // the iframe finishes loading, in case it missed the initial broadcast).
             if (d.command === 'requestState') { _siEmitState(); return; }
+            // Rep display controls (size / text / density / layout) — display-only message.
+            if (d.display) { applyDisplaySettings(d.display); return; }
             // Returns Offset is mutually exclusive with the other features (it forces
             // returns on and cashback/guarantee off), so apply it first and skip the
             // others when it is active — mirrors the calculator's own UI rules.
