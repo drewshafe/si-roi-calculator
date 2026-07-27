@@ -1348,10 +1348,15 @@
 
         function applyReturnsCoverageVisibility() {
             const m = _returnsCoverage;
+            // Rate/return-cost inputs hidden for platform_only.
             const showRateInputs   = m !== 'platform_only';
-            const showPlatformInput = (m === 'default' || m === 'platform_only' || m === 'all_labels_platform');
+            // Platform cost is *covered* (metric shown) for default / platform_only / all_labels_platform,
+            // but the platform-cost INPUT is only surfaced for default + platform_only (rep spec:
+            // hide it for labels_protected, all_labels_platform, all_labels).
+            const platformCovered  = (m === 'default' || m === 'platform_only' || m === 'all_labels_platform');
+            const showPlatformInput = (m === 'default' || m === 'platform_only');
             const showLabelsMetric  = m !== 'platform_only';
-            const showPlatformMetric = showPlatformInput;
+            const showPlatformMetric = platformCovered;
 
             const showBothCosts = showLabelsMetric && showPlatformMetric;
 
@@ -2184,6 +2189,9 @@
                     if (urlParams.get('rc')) _returnsCoverage = urlParams.get('rc');
                     if (!returnsEnabled) toggleReturns();
                 }
+                // Apply coverage-mode input visibility for the loaded link (covers the
+                // Returns Offset case where returns was already force-enabled above).
+                applyReturnsCoverageVisibility();
                 if (urlParams.get('cbe') === '1' || urlParams.get('cb') || urlParams.get('cbpc')) {
                     if (urlParams.get('cb'))   document.getElementById('cashbackRate').value = urlParams.get('cb');
                     if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
