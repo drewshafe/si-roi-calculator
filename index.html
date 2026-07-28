@@ -112,6 +112,53 @@
             cursor: pointer;
         }
 
+        /* ── Standalone Display controls (Size/Text/Density/Layout) ── */
+        .display-ctrl-wrap { position: relative; }
+        .display-ctrl-btn {
+            padding: 5px 10px;
+            font-size: 0.82em;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            cursor: pointer;
+        }
+        .display-ctrl-btn:hover, .display-ctrl-btn.open { background: rgba(255,255,255,0.28); }
+        .display-ctrl-panel {
+            display: none;
+            flex-direction: column;
+            gap: 7px;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            z-index: 50;
+            width: 230px;
+            background: white;
+            border: 1px solid #d5d9f0;
+            border-radius: 10px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+            padding: 10px;
+        }
+        .display-ctrl-panel.show { display: flex; }
+        .dc-row { display: flex; align-items: center; gap: 6px; }
+        .dc-lbl { font-size: 0.68em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #6c757d; flex: 0 0 52px; }
+        .dc-btns { display: flex; align-items: center; gap: 4px; flex: 1; }
+        .dc-btns button {
+            flex: 1;
+            padding: 4px 6px;
+            font-size: 0.72em;
+            font-weight: 700;
+            border-radius: 5px;
+            border: 1px solid #d5d9f0;
+            background: #f4f5fb;
+            color: #3a3a5a;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .dc-btns button.active { background: #4a5fc1; color: #fff; border-color: #4a5fc1; }
+        .dc-val { flex: 0 0 auto; font-size: 0.75em; font-weight: 800; color: #3a3a5a; min-width: 34px; text-align: center; }
+
         /* ── Outputs strip: gray metric boxes across top ── */
         .outputs-strip {
             background: #f4f5fb;
@@ -878,6 +925,15 @@
                         <option value="annual">Annual</option>
                     </select>
                 </div>
+                <div class="display-ctrl-wrap" id="displayCtrlWrap">
+                    <button type="button" class="display-ctrl-btn" id="displayCtrlBtn">🖥️ Display ▾</button>
+                    <div class="display-ctrl-panel" id="displayCtrlPanel">
+                        <div class="dc-row"><span class="dc-lbl">Size</span><div class="dc-btns"><button data-disp="zoom" data-val="dec">−</button><span id="dcZoomVal" class="dc-val">100%</span><button data-disp="zoom" data-val="inc">+</button></div></div>
+                        <div class="dc-row"><span class="dc-lbl">Text</span><div class="dc-btns"><button data-disp="text" data-val="0.9">S</button><button data-disp="text" data-val="1">M</button><button data-disp="text" data-val="1.15">L</button></div></div>
+                        <div class="dc-row"><span class="dc-lbl">Density</span><div class="dc-btns"><button data-disp="density" data-val="comfortable">Comfort</button><button data-disp="density" data-val="compact">Compact</button></div></div>
+                        <div class="dc-row"><span class="dc-lbl">Layout</span><div class="dc-btns"><button data-disp="layout" data-val="auto">Auto</button><button data-disp="layout" data-val="split">Split</button><button data-disp="layout" data-val="stacked">Stacked</button></div></div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="calc-body">
@@ -1236,8 +1292,8 @@
                     </div>
                 </div>
                 <label class="view-inputs-label" style="margin-right:4px;">
-                    <input type="checkbox" id="lockInputsCheck">
-                    Lock Inputs
+                    <input type="checkbox" id="siInputsCheck" checked onchange="toggleSiInputsVisibility()">
+                    SI Inputs
                 </label>
             </div>
             <div class="si-inputs-body" id="siInputsBody">
@@ -1739,6 +1795,13 @@
             calculate();
         }
 
+        // Shows/hides the whole ShipInsure Inputs body — lets a rep hide the pricing
+        // machinery while screen-sharing without leaving the standalone calc.
+        function toggleSiInputsVisibility() {
+            const checked = document.getElementById('siInputsCheck').checked;
+            document.getElementById('siInputsBody').classList.toggle('hidden', !checked);
+        }
+
         function toggleAdditionalInputs() {
             const body  = document.getElementById('additionalInputsBody');
             const arrow = document.getElementById('addInputsArrow');
@@ -2186,12 +2249,12 @@
                 if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 if (urlParams.get('cr')) setClaimResolution(urlParams.get('cr'));
 
-                // View inputs checkbox
-                const viEl = document.getElementById('viewInputsCheck');
-                if (urlParams.get('vi') === '1' && viEl) {
-                    viEl.checked = true;
-                    document.getElementById('siInputsBody').classList.remove('hidden');
+                // SI Inputs visibility checkbox — defaults to visible; only an
+                // explicit vi=0 (from a saved rep link) hides it.
+                if (urlParams.get('vi') === '0') {
+                    document.getElementById('siInputsCheck').checked = false;
                 }
+                toggleSiInputsVisibility();
 
                 // Feature toggles — order matters: offset before returns
                 if (urlParams.get('rom') === '1') toggleReturnsOffsetMode();
@@ -2300,7 +2363,7 @@
                 cogstype: _cogsType,
                 claimstype: _claimsType,
                 cr: _claimResolution,
-                vi: gc('viewInputsCheck'),
+                vi: document.getElementById('siInputsCheck').checked ? '1' : '0',
             });
 
             // Feature toggles
@@ -2402,10 +2465,6 @@
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
 
-
-            // Lock inputs flag
-            const lockInputs = document.getElementById('lockInputsCheck');
-            if (lockInputs && lockInputs.checked) params.set('linputs', '1');
 
             return `${baseUrl}?${params.toString()}`;
         }
@@ -2733,7 +2792,7 @@
                 minPremium:      (document.getElementById('minPremium') || {}).value || '',
                 claimResolution: document.getElementById('claimResolution').value,
                 merchantName:    document.getElementById('merchantName').value,
-                lockInputs:      document.getElementById('lockInputsCheck').checked,
+                siInputsVisible: document.getElementById('siInputsCheck').checked,
                 coverage:        _returnsCoverage,
                 viewMode:        (document.getElementById('timeframe') || {}).value || 'monthly',
                 siNet:           (typeof _bd === 'object' && _bd) ? (_bd.siNetRetained || 0) : 0,
@@ -2758,6 +2817,57 @@
                 c.classList.toggle('force-stacked', d.layout === 'stacked');
             }
         }
+
+        // ── Standalone Display controls — same Size/Text/Density/Layout controls
+        // the Rep Hub sidebar drives via postMessage, exposed directly in the
+        // header for reps using the calc outside the hub. Hidden when embedded,
+        // since the hub sidebar already covers this.
+        (function initStandaloneDisplayControls() {
+            const dcWrap = document.getElementById('displayCtrlWrap');
+            if (!dcWrap) return;
+            if (_inHub) { dcWrap.style.display = 'none'; return; }
+
+            const loadPrefs = () => {
+                const def = { zoom: 1, textScale: 1, density: 'comfortable', layout: 'auto' };
+                try { return Object.assign(def, JSON.parse(localStorage.getItem('si_calc_display') || '{}')); }
+                catch (e) { return def; }
+            };
+            let calcDisplay = loadPrefs();
+            const savePrefs = () => { try { localStorage.setItem('si_calc_display', JSON.stringify(calcDisplay)); } catch (e) {} };
+            const syncUI = () => {
+                const zv = document.getElementById('dcZoomVal');
+                if (zv) zv.textContent = Math.round(calcDisplay.zoom * 100) + '%';
+                dcWrap.querySelectorAll('.dc-btns button[data-disp="text"]').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.val) === calcDisplay.textScale));
+                dcWrap.querySelectorAll('.dc-btns button[data-disp="density"]').forEach(b => b.classList.toggle('active', b.dataset.val === calcDisplay.density));
+                dcWrap.querySelectorAll('.dc-btns button[data-disp="layout"]').forEach(b => b.classList.toggle('active', b.dataset.val === calcDisplay.layout));
+            };
+
+            dcWrap.querySelectorAll('.dc-btns button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const t = btn.dataset.disp, v = btn.dataset.val;
+                    if (t === 'zoom') calcDisplay.zoom = Math.round(Math.min(1.5, Math.max(0.7, calcDisplay.zoom + (v === 'inc' ? 0.1 : -0.1))) * 100) / 100;
+                    else if (t === 'text') calcDisplay.textScale = parseFloat(v);
+                    else if (t === 'density') calcDisplay.density = v;
+                    else if (t === 'layout') calcDisplay.layout = v;
+                    savePrefs(); syncUI(); applyDisplaySettings(calcDisplay);
+                });
+            });
+
+            const panel = document.getElementById('displayCtrlPanel');
+            const btn = document.getElementById('displayCtrlBtn');
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                panel.classList.toggle('show');
+                btn.classList.toggle('open');
+            });
+            document.addEventListener('click', e => {
+                if (!dcWrap.contains(e.target)) { panel.classList.remove('show'); btn.classList.remove('open'); }
+            });
+
+            syncUI();
+            applyDisplaySettings(calcDisplay);
+        })();
+
         window.addEventListener('message', function(e) {
             const d = e.data;
             if (!d || d.siHub !== 'apply') return;
@@ -2781,7 +2891,7 @@
             if (typeof d.minPremium === 'string') { const mp = document.getElementById('minPremium'); if (mp) mp.value = d.minPremium; }
             if (typeof d.claimResolution === 'string') { document.getElementById('claimResolution').value = d.claimResolution; setClaimResolution(d.claimResolution); }
             if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
-            if (typeof d.lockInputs === 'boolean') document.getElementById('lockInputsCheck').checked = d.lockInputs;
+            if (typeof d.siInputsVisible === 'boolean') { document.getElementById('siInputsCheck').checked = d.siInputsVisible; toggleSiInputsVisibility(); }
             if (typeof d.coverage === 'string') setReturnsCoverage(d.coverage);
             if (d.command === 'save') saveConfig();
             if (d.command === 'loadConfig' && d.name) loadSavedConfig(d.name);
