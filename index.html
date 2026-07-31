@@ -2644,15 +2644,19 @@
         });
 
         document.getElementById('timeframe').addEventListener('change', function() {
-            const ordersEl = document.getElementById('annualOrders');
-            const val = parseFloat(removeCommas(ordersEl.value)) || 0;
-            if (val > 0) {
-                if (this.value === 'annual') {
-                    ordersEl.value = formatNumberWithCommas(String(Math.round(val * 12)));
-                } else {
-                    ordersEl.value = formatNumberWithCommas(String(Math.round(val / 12)));
-                }
-            }
+            const scale = this.value === 'annual' ? 12 : (1 / 12);
+            // Order volume, and Claims/Returns when entered as a raw count (not a
+            // %), are period-denominated — rescale so the displayed value still
+            // reflects the same underlying business volume in the new period.
+            const rescale = (id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const val = parseFloat(removeCommas(el.value)) || 0;
+                if (val > 0) el.value = formatNumberWithCommas(String(Math.round(val * scale)));
+            };
+            rescale('annualOrders');
+            if (_claimsType === 'count') rescale('claimsRate');
+            if (_returnsType === 'count') rescale('returnsRate');
             calculate();
         });
         document.getElementById('pricingTemplate').addEventListener('change', function() {

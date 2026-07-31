@@ -1291,10 +1291,29 @@
         // ── View toggle: lets the merchant flip Monthly/Annual on the page itself,
         // instead of being locked to whatever the rep's link set.
         function pSetView(mode) {
+            const prevMode = window._urlView || 'monthly';
+            if (prevMode === mode) return;
+            const scale = mode === 'annual' ? 12 : (1 / 12);
+
             window._urlView = mode;
             const params = new URLSearchParams(window.location.search);
             params.set('view', mode);
             history.replaceState(null, '', '?' + params.toString());
+
+            // Order volume, and Claims/Returns when entered as a raw count (not a
+            // %), are period-denominated — rescale the displayed value so it still
+            // reflects the same underlying business volume in the new period.
+            // Rate/percentage fields are period-invariant and are left alone.
+            const rescale = (id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const raw = parseFloat(removeCommas(el.value));
+                if (!raw) return;
+                el.value = formatNumberWithCommas(String(Math.round(raw * scale)));
+            };
+            rescale('p-orders');
+            if (p_claimsType === 'count') rescale('p-claims');
+            if (p_returnsType === 'count') rescale('p-rr');
 
             const ordLbl = document.getElementById('p-orders-label');
             if (ordLbl) ordLbl.textContent = mode === 'annual' ? 'Annual Orders' : 'Monthly Orders';
