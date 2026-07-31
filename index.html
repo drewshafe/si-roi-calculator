@@ -433,6 +433,17 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+        .load-link-row { display: flex; gap: 6px; }
+        .load-link-row input {
+            flex: 1; min-width: 0; padding: 7px 9px; font-size: 0.78em;
+            border: 1.5px solid #d5d9f0; border-radius: 6px; background: #f8f9fd; font-family: inherit;
+        }
+        .load-link-row input:focus { outline: none; border-color: #4a5fc1; background: #fff; }
+        .load-link-row button {
+            flex-shrink: 0; padding: 7px 12px; font-size: 0.78em; font-weight: 700;
+            border-radius: 6px; border: 1.5px solid #d5d9f0; background: #f4f5fb; color: #4a5fc1; cursor: pointer;
+        }
+        .load-link-row button:hover { background: #eef0fa; }
 
         .inputs-strip-actions {
             display: flex;
@@ -941,6 +952,11 @@
 
         <!-- Bottom: Merchant Inputs strip -->
         <div class="inputs-strip">
+            <div class="load-link-row">
+                <input type="text" id="loadLinkInput" placeholder="Paste a calculator link…">
+                <button type="button" id="loadLinkBtn" onclick="loadFromPastedLink()">Load</button>
+            </div>
+
             <div class="inputs-strip-header">
                 <span class="inputs-strip-title">Merchant Inputs</span>
                 <div class="inputs-strip-actions"></div>
@@ -2688,6 +2704,25 @@
         updateBadges();
         calculate();
         updateSavedConfigsUI();
+
+        // Paste a calculator link (index.html or proposal.html) and load its
+        // params into this page's own Master Calculator view — reloads with
+        // the pasted link's query string so the existing param-restore logic
+        // in loadSavedValues() picks it up, same as a normal deep link.
+        function loadFromPastedLink() {
+            const inp = document.getElementById('loadLinkInput');
+            const raw = (inp.value || '').trim();
+            if (!raw) return;
+            if (!/^https?:\/\/[^ ]*si-roi-calculator/i.test(raw)) {
+                inp.style.borderColor = '#ff6b6b';
+                setTimeout(() => { inp.style.borderColor = ''; }, 1500);
+                return;
+            }
+            let search = '';
+            try { search = new URL(raw).search; } catch (e) { /* no query string */ }
+            location.href = location.pathname + search;
+        }
+        document.getElementById('loadLinkInput').addEventListener('keydown', e => { if (e.key === 'Enter') loadFromPastedLink(); });
 
         // ── Saved Configs ─────────────────────────────────────────────────
         function saveConfig() {

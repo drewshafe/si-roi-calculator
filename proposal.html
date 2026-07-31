@@ -77,16 +77,9 @@
             gap: 12px;
         }
 
-        .header-logo {
-            height: 36px;
+        .header-logo-new {
+            height: 56px;
             flex-shrink: 0;
-        }
-
-        .header-text h1 {
-            font-size: 1.05em;
-            font-weight: 800;
-            color: white;
-            line-height: 1.2;
         }
 
         .header-text .merchant-subtitle {
@@ -103,6 +96,9 @@
             min-width: 0;
         }
 
+        .proposal-header.has-merchant { align-items: flex-start; }
+        .proposal-header.has-merchant .header-left { align-items: flex-start; padding-top: 2px; }
+
         .header-view-selector {
             display: flex;
             align-items: center;
@@ -112,6 +108,9 @@
             border-radius: 6px;
             flex-shrink: 0;
         }
+
+        /* Moved below the merchant name instead of beside the logo */
+        #headerTextCol .header-view-selector { margin-top: 8px; }
 
         .header-view-selector label {
             font-size: 0.78em;
@@ -720,16 +719,15 @@
         <div class="left-panel">
 
         <!-- ── Header ── -->
-        <div class="proposal-header">
+        <div class="proposal-header" id="proposalHeader">
             <div class="header-left">
-                <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/impactlogo.png"
-                     alt="ShipInsure" class="header-logo" onerror="this.style.display='none'">
-                <div class="header-text">
-                    <h1>ShipInsure Impact Calculator</h1>
+                <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/proposalview_logo.png"
+                     alt="ShipInsure ROI Impact Calculator" class="header-logo-new" onerror="this.style.display='none'">
+                <div class="header-text" id="headerTextCol">
                     <div class="merchant-subtitle" id="merchantSubtitle" style="display:none;"></div>
                 </div>
             </div>
-            <div class="header-view-selector">
+            <div class="header-view-selector" id="headerViewSelector">
                 <label for="p-view">View:</label>
                 <select id="p-view" onchange="pSetView(this.value)">
                     <option value="monthly">Monthly</option>
@@ -1772,11 +1770,14 @@
                 if (el && v !== null) el.value = fmt ? fmt(v) : v;
             };
 
-            // Merchant name
+            // Merchant name — when present, the view selector moves below it
+            // instead of sitting to the right of the logo.
             if (urlPs.get('mname')) {
                 const sub = document.getElementById('merchantSubtitle');
                 sub.textContent = urlPs.get('mname');
                 sub.style.display = '';
+                document.getElementById('headerTextCol').appendChild(document.getElementById('headerViewSelector'));
+                document.getElementById('proposalHeader').classList.add('has-merchant');
             }
 
             // View mode
