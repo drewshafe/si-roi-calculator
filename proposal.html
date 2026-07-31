@@ -73,6 +73,7 @@
             border-bottom: 3px solid #6675ff;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
         }
 
@@ -93,6 +94,41 @@
             color: rgba(255,255,255,0.65);
             margin-top: 2px;
             font-weight: 500;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .header-view-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.12);
+            padding: 5px 10px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .header-view-selector label {
+            font-size: 0.78em;
+            font-weight: 600;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .header-view-selector select {
+            padding: 4px 8px;
+            font-size: 0.82em;
+            border-radius: 5px;
+            border: none;
+            background: white;
+            color: #2a2f45;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         /* ── Cards / Sections ── */
@@ -685,11 +721,20 @@
 
         <!-- ── Header ── -->
         <div class="proposal-header">
-            <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/impactlogo.png"
-                 alt="ShipInsure" class="header-logo" onerror="this.style.display='none'">
-            <div class="header-text">
-                <h1>ShipInsure Impact Calculator</h1>
-                <div class="merchant-subtitle" id="merchantSubtitle" style="display:none;"></div>
+            <div class="header-left">
+                <img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/impactlogo.png"
+                     alt="ShipInsure" class="header-logo" onerror="this.style.display='none'">
+                <div class="header-text">
+                    <h1>ShipInsure Impact Calculator</h1>
+                    <div class="merchant-subtitle" id="merchantSubtitle" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="header-view-selector">
+                <label for="p-view">View:</label>
+                <select id="p-view" onchange="pSetView(this.value)">
+                    <option value="monthly">Monthly</option>
+                    <option value="annual">Annual</option>
+                </select>
             </div>
         </div>
 
@@ -1243,6 +1288,21 @@
             return (window._urlView || 'monthly') === 'annual';
         }
 
+        // ── View toggle: lets the merchant flip Monthly/Annual on the page itself,
+        // instead of being locked to whatever the rep's link set.
+        function pSetView(mode) {
+            window._urlView = mode;
+            const params = new URLSearchParams(window.location.search);
+            params.set('view', mode);
+            history.replaceState(null, '', '?' + params.toString());
+
+            const ordLbl = document.getElementById('p-orders-label');
+            if (ordLbl) ordLbl.textContent = mode === 'annual' ? 'Annual Orders' : 'Monthly Orders';
+            pSetClaimsType(p_claimsType);
+            if (p_returnsEnabled) pSetReturnsType(p_returnsType);
+            calculateProposal();
+        }
+
         // ── Template visibility ────────────────────────────────────────────────
         function updatePremiumVisibility() {
             const template = document.getElementById('p-template').value;
@@ -1702,6 +1762,8 @@
 
             // View mode
             window._urlView = urlPs.get('view') || 'monthly';
+            const viewSel = document.getElementById('p-view');
+            if (viewSel) viewSel.value = window._urlView;
 
             // Primary inputs
             up('p-orders', 'orders', formatNumberWithCommas);
