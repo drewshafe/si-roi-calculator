@@ -2836,6 +2836,11 @@
                 viewMode:        (document.getElementById('timeframe') || {}).value || 'monthly',
                 siNet:           (typeof _bd === 'object' && _bd) ? (_bd.siNetRetained || 0) : 0,
                 siNetMargin:     (typeof _bd === 'object' && _bd) ? (_bd.siNetMarginPct || 0) : 0,
+                // "Net Revenue" (MSA defined term) for the current view period, and
+                // the deal's Rev Share % as a decimal fraction — feeds the hub's
+                // Upfront Rev Share calculator.
+                netRevenue:      (typeof _bd === 'object' && _bd) ? (_bd.postClaimBalance || 0) : 0,
+                revSharePct:     (typeof _bd === 'object' && _bd) ? (_bd.revShareP || 0) : 0,
                 savedCount:      (document.getElementById('savedCount') || {}).textContent || '0',
                 savedConfigs:    Object.entries(JSON.parse(localStorage.getItem('si_saved_configs') || '{}')).map(([name, c]) => ({ name: name, date: (c && c.saved) || '' })),
                 pricingOptions:  Array.from(document.getElementById('pricingTemplate').options).map(o => ({ v: o.value, t: o.textContent })),
