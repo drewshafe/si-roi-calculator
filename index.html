@@ -910,6 +910,41 @@
         .saved-config-actions button.del-btn:hover { background: #dc3545; color: white; }
         .saved-configs-empty { padding: 16px 14px; font-size: 0.78em; color: #adb5bd; text-align: center; }
 
+        /* ═══════════ PROJECT MIDNIGHT (?theme=midnight / hub postMessage) ═══════════ */
+        body.theme-midnight { background:#040406; }
+        .theme-midnight .container { background:#07070d; color:#e8e8ee; box-shadow:0 20px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(212,175,55,.22); }
+        .theme-midnight .top-strip { background:#05050b; border-bottom:1px solid rgba(212,175,55,.25); }
+        .theme-midnight .calc-left { background:#0a0a12; border-right-color:rgba(212,175,55,.2); }
+        .theme-midnight .inputs-strip, .theme-midnight .outputs-strip, .theme-midnight .si-inputs-section { background:#0a0a12; border-color:rgba(212,175,55,.2); }
+        .theme-midnight .inputs-strip-title, .theme-midnight .si-inputs-title { color:#e9c46a; }
+        .theme-midnight .view-selector label, .theme-midnight .view-inputs-label, .theme-midnight .om-label { color:#9a9ab0; }
+        /* input modules → black-platinum */
+        .theme-midnight .input-group { background:linear-gradient(150deg,#1b1c24,#0c0d13); border:1px solid rgba(212,175,55,.18); }
+        .theme-midnight .input-group.returns { background:linear-gradient(150deg,#2a1e12,#140d07); }
+        .theme-midnight .input-group.cashback { background:linear-gradient(150deg,#1f1830,#0e0a18); }
+        .theme-midnight .input-group label { color:#d9d9e6; }
+        /* kintsugi-lightning fields (molten-gold seam) — broad override */
+        .theme-midnight input[type="text"], .theme-midnight input[type="number"], .theme-midnight select {
+            background:linear-gradient(#0a0a12,#0a0a12) padding-box, linear-gradient(120deg,#3a2f10,#e9c46a 48%,#fff3c4 50%,#e9c46a 52%,#3a2f10) border-box !important;
+            border:1px solid transparent !important; color:#efe7cf !important; }
+        .theme-midnight input::placeholder { color:#7c7660 !important; }
+        .theme-midnight input:focus, .theme-midnight select:focus { box-shadow:0 0 0 2px rgba(233,196,106,.5) !important; }
+        .theme-midnight .itype-btn { background:#14141c; color:#c9cbe0; }
+        /* output metrics */
+        .theme-midnight .output-metric { background:linear-gradient(150deg,#14141c,#0b0b12); border:1px solid rgba(212,175,55,.16); }
+        .theme-midnight .output-metric.primary-metric { background:linear-gradient(150deg,#12211a,#0a0f0c); border-color:rgba(40,167,69,.4); }
+        .theme-midnight .om-value { color:#f2eede; }
+        /* result cards */
+        .theme-midnight .result-card.positive { background:linear-gradient(150deg,#0e1a12,#081109); }
+        .theme-midnight .result-card.negative { background:linear-gradient(150deg,#1e0f10,#120809); }
+        .theme-midnight .card-header h3 { color:#c9cbe0; }
+        .theme-midnight .result-card .value, .theme-midnight .card-total { color:#e8e8ee; }
+        .theme-midnight .card-total.positive { color:#2ee6a0; }
+        .theme-midnight .card-total.negative { color:#ff6b6b; }
+        .theme-midnight .value .sub, .theme-midnight .value small { color:#9a9ab0; }
+        /* breakdown + saved list */
+        .theme-midnight .bd-body, .theme-midnight .bd-row { color:#d9d9e6; }
+        .theme-midnight .load-link-row input { color:#efe7cf; }
     </style>
 </head>
 <body>
@@ -1732,6 +1767,11 @@
             if (!opts.silent) { calculate(); _siEmitState(); }
         }
 
+        // Project Midnight theme — applied via ?theme=midnight or a hub postMessage.
+        function applyTheme(name) {
+            document.body.classList.toggle('theme-midnight', name === 'midnight');
+        }
+
         function formatNumber(value) {
             return new Intl.NumberFormat('en-US', {
                 minimumFractionDigits: 0, maximumFractionDigits: 0
@@ -2288,6 +2328,7 @@
         function loadSavedValues() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('cur')) setCurrency(urlParams.get('cur'), { silent: true });
+            if (urlParams.get('theme')) applyTheme(urlParams.get('theme'));
             if (urlParams.toString()) {
                 const up = (id, key, fmt) => {
                     const v = urlParams.get(key);
@@ -2986,6 +3027,7 @@
             if (typeof d.siInputsVisible === 'boolean') { document.getElementById('siInputsCheck').checked = d.siInputsVisible; toggleSiInputsVisibility(); }
             if (typeof d.coverage === 'string') setReturnsCoverage(d.coverage);
             if (typeof d.currency === 'string') setCurrency(d.currency, { silent: true });
+            if (typeof d.theme === 'string') applyTheme(d.theme);
             if (d.command === 'save') saveConfig();
             if (d.command === 'loadConfig' && d.name) loadSavedConfig(d.name);
             calculate();
