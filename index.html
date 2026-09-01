@@ -959,7 +959,18 @@
 
             <div class="inputs-strip-header">
                 <span class="inputs-strip-title">Merchant Inputs</span>
-                <div class="inputs-strip-actions"></div>
+                <div class="inputs-strip-actions">
+                    <label for="currencySelect" style="font-size:0.72em;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:0.3px;margin-right:6px;">Currency</label>
+                    <select id="currencySelect" onchange="setCurrency(this.value)" style="font-size:0.82em;font-weight:600;padding:4px 8px;border:1px solid #d5d9f0;border-radius:6px;background:#fff;color:#3a3a5a;cursor:pointer;">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="CAD">CAD (CA$)</option>
+                        <option value="AUD">AUD (A$)</option>
+                        <option value="NZD">NZD (NZ$)</option>
+                        <option value="JPY">JPY (¥)</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Merchant Inputs — Group 1: order economics -->
@@ -1412,7 +1423,7 @@
             document.getElementById('cogsPctBtn').classList.toggle('active', t === 'pct');
             document.getElementById('cogsFlatBtn').classList.toggle('active', t === 'flat');
             document.getElementById('cogsLabel').textContent = t === 'flat' ? 'Product Cost $' : 'Product Cost';
-            document.getElementById('cogsPercent').placeholder = t === 'flat' ? '$' : '0';
+            document.getElementById('cogsPercent').placeholder = t === 'flat' ? curSym() : '0';
             calculate();
         }
 
@@ -1674,18 +1685,51 @@
             if (minWrap) minWrap.style.display = (template === 'percentage') ? '' : 'none';
         }
 
+        // ── Currency ─────────────────────────────────────────────────────
+        // Amounts are entered/kept as-is; changing currency only relabels the
+        // symbol used everywhere. Carries through share links + the merchant view.
+        const CURRENCIES = ['USD','EUR','GBP','CAD','AUD','NZD','JPY'];
+        let SI_CURRENCY = 'USD';
+        function curSym() {
+            try { return (0).toLocaleString('en-US', { style:'currency', currency:SI_CURRENCY, minimumFractionDigits:0, maximumFractionDigits:0 }).replace(/[\d\s.,]/g, ''); }
+            catch (e) { return '$'; }
+        }
+        function _curDigits() { return SI_CURRENCY === 'JPY' ? 0 : 2; }
+
         function formatCurrency(value) {
             return new Intl.NumberFormat('en-US', {
-                style: 'currency', currency: 'USD',
+                style: 'currency', currency: SI_CURRENCY,
                 minimumFractionDigits: 0, maximumFractionDigits: 0
             }).format(value);
         }
 
         function formatCurrencyWithCents(value) {
+            const d = _curDigits();
             return new Intl.NumberFormat('en-US', {
-                style: 'currency', currency: 'USD',
-                minimumFractionDigits: 2, maximumFractionDigits: 2
+                style: 'currency', currency: SI_CURRENCY,
+                minimumFractionDigits: d, maximumFractionDigits: d
             }).format(value);
+        }
+
+        // Change the active currency and relabel symbols across the UI.
+        function setCurrency(code, opts) {
+            opts = opts || {};
+            if (CURRENCIES.indexOf(code) === -1) code = 'USD';
+            SI_CURRENCY = code;
+            const sel = document.getElementById('currencySelect');
+            if (sel && sel.value !== code) sel.value = code;
+            const sym = curSym();
+            ['avgOrderValue','avgShipping','csCostPerClaim','avgReturnCost','returnsPlatformCost'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && (el.placeholder || '').length <= 3) el.placeholder = sym;   // only replace the bare "$" hint
+            });
+            const cogsFlat = document.getElementById('cogsFlatBtn');
+            if (cogsFlat) cogsFlat.textContent = sym;
+            const flatOpt = Array.from(document.getElementById('pricingTemplate').options).find(o => o.value === 'flat_dollar');
+            if (flatOpt) flatOpt.textContent = sym + '-Based';
+            const cogsInput = document.getElementById('cogsPercent');
+            if (cogsInput && typeof _cogsType !== 'undefined' && _cogsType === 'flat') cogsInput.placeholder = sym;
+            if (!opts.silent) { calculate(); _siEmitState(); }
         }
 
         function formatNumber(value) {
@@ -2161,7 +2205,7 @@
             document.getElementById('siSponsoredCashback').textContent = formatCurrency(siSponsoredCashbackTotal);
             document.getElementById('cashbackSoftwareSavings').textContent = formatCurrency(cashbackRedeemed);
             document.getElementById('totalCashbackValue').textContent = formatCurrency(totalCashbackValueTotal);
-            document.getElementById('cashbackPerOrderDisplay').textContent = cashbackEnabled ? formatCurrencyWithCents(cashbackPerOrder) : '$0';
+            document.getElementById('cashbackPerOrderDisplay').textContent = cashbackEnabled ? formatCurrencyWithCents(cashbackPerOrder) : formatCurrency(0);
 
             // Revenue Impact box: % as main metric, breakdown by claims + rev share
             document.getElementById('percentOfPremiums').textContent = Math.round(percentOfPremiums) + '%';
@@ -2243,6 +2287,7 @@
 
         function loadSavedValues() {
             const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('cur')) setCurrency(urlParams.get('cur'), { silent: true });
             if (urlParams.toString()) {
                 const up = (id, key, fmt) => {
                     const v = urlParams.get(key);
@@ -2409,6 +2454,7 @@
             // Hide Current Cost / Gross Rev Share toggles
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
+            if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
 
 
             return `${baseUrl}?${params.toString()}`;
@@ -2480,6 +2526,7 @@
             // Hide Current Cost / Gross Rev Share toggles
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
+            if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
 
 
             return `${baseUrl}?${params.toString()}`;
@@ -2539,7 +2586,7 @@
             document.getElementById('bd-shared').innerHTML =
                 row('Orders (period)', '',            fn(d.orders)) +
                 row('AOV', '',                        fcc(d.aov)) +
-                row('Product Cost', '',               d.cogsP < 1 ? pct(d.cogsP) : '$' + d.aov.toFixed(2) + ' × ' + pct(d.cogsP)) +
+                row('Product Cost', '',               d.cogsP < 1 ? pct(d.cogsP) : curSym() + d.aov.toFixed(2) + ' × ' + pct(d.cogsP)) +
                 row('Claims Rate', '',                pct(d.claimsP)) +
                 row('Avg Shipping', '',               fc(d.avgShipping)) +
                 row('Avg Ticket Cost', '',            fc(d.csPerClaim)) +
@@ -2833,6 +2880,7 @@
                 merchantName:    document.getElementById('merchantName').value,
                 siInputsVisible: document.getElementById('siInputsCheck').checked,
                 coverage:        _returnsCoverage,
+                currency:        SI_CURRENCY,
                 viewMode:        (document.getElementById('timeframe') || {}).value || 'monthly',
                 siNet:           (typeof _bd === 'object' && _bd) ? (_bd.siNetRetained || 0) : 0,
                 siNetMargin:     (typeof _bd === 'object' && _bd) ? (_bd.siNetMarginPct || 0) : 0,
@@ -2937,6 +2985,7 @@
             if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
             if (typeof d.siInputsVisible === 'boolean') { document.getElementById('siInputsCheck').checked = d.siInputsVisible; toggleSiInputsVisibility(); }
             if (typeof d.coverage === 'string') setReturnsCoverage(d.coverage);
+            if (typeof d.currency === 'string') setCurrency(d.currency, { silent: true });
             if (d.command === 'save') saveConfig();
             if (d.command === 'loadConfig' && d.name) loadSavedConfig(d.name);
             calculate();

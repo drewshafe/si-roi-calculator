@@ -1099,12 +1099,18 @@
             return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
 
+        // Currency (read from the ?cur= link param; USD default). Symbol only — no conversion.
+        const SI_CURRENCIES = ['USD','EUR','GBP','CAD','AUD','NZD','JPY'];
+        let SI_CURRENCY = (function(){ try { const c = new URLSearchParams(window.location.search).get('cur'); return (c && SI_CURRENCIES.indexOf(c) !== -1) ? c : 'USD'; } catch(e){ return 'USD'; } })();
+        function curSym() { try { return (0).toLocaleString('en-US', { style:'currency', currency:SI_CURRENCY, minimumFractionDigits:0, maximumFractionDigits:0 }).replace(/[\d\s.,]/g, ''); } catch(e){ return '$'; } }
+
         function fmtDollar(n) {
-            return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:0, maximumFractionDigits:0 }).format(n);
+            return new Intl.NumberFormat('en-US', { style:'currency', currency:SI_CURRENCY, minimumFractionDigits:0, maximumFractionDigits:0 }).format(n);
         }
 
         function fmtDollarCents(n) {
-            return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n);
+            const d = SI_CURRENCY === 'JPY' ? 0 : 2;
+            return new Intl.NumberFormat('en-US', { style:'currency', currency:SI_CURRENCY, minimumFractionDigits:d, maximumFractionDigits:d }).format(n);
         }
 
         function fmtNum(n) {
@@ -1886,6 +1892,7 @@
             p.set('cogstype',   p_cogsType);
             p.set('claimstype', p_claimsType);
             p.set('cr',         p_claimResolution);
+            if (SI_CURRENCY !== 'USD') p.set('cur', SI_CURRENCY);
             const url = location.origin + location.pathname + '?' + p.toString();
             const btn = document.getElementById('p-save-link-btn');
             navigator.clipboard.writeText(url).then(() => {
