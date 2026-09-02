@@ -211,6 +211,18 @@
             font-weight: 700;
             color: #212529;
         }
+        .om-badge {
+            display: inline-block;
+            margin-top: 3px;
+            font-size: 0.58em;
+            font-weight: 800;
+            color: #6675FF;
+            background: rgba(102,117,255,0.12);
+            border-radius: 10px;
+            padding: 1px 8px;
+            letter-spacing: 0.2px;
+        }
+        .om-badge:empty { display: none; }
 
         .om-sub {
             margin-top: 4px;
@@ -999,22 +1011,19 @@
 
             <div class="inputs-strip-header">
                 <span class="inputs-strip-title">Merchant Inputs</span>
-                <div class="inputs-strip-actions">
-                    <label for="currencySelect" style="font-size:0.72em;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:0.3px;margin-right:6px;">Currency</label>
-                    <select id="currencySelect" onchange="setCurrency(this.value)" style="font-size:0.82em;font-weight:600;padding:4px 8px;border:1px solid #d5d9f0;border-radius:6px;background:#fff;color:#3a3a5a;cursor:pointer;">
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="CAD">CAD (CA$)</option>
-                        <option value="AUD">AUD (A$)</option>
-                        <option value="NZD">NZD (NZ$)</option>
-                        <option value="JPY">JPY (¥)</option>
-                    </select>
-                </div>
+                <div class="inputs-strip-actions"></div>
             </div>
 
             <!-- Merchant Inputs — Group 1: order economics -->
             <div class="inputs-row" id="coreInputsRow">
+                <div class="input-group" id="protectionPremiumGroup">
+                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
+                    <input type="text" id="protectionPremium" placeholder="0">
+                </div>
+                <div class="input-group" id="attachRateGroup">
+                    <label for="attachRate">Attach Rate %</label>
+                    <input type="text" id="attachRate" placeholder="0" value="68">
+                </div>
                 <div class="input-group">
                     <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
                     <input type="text" id="annualOrders" placeholder="0">
@@ -1051,14 +1060,6 @@
 
             <!-- Merchant Inputs — Group 2: ShipInsure terms -->
             <div class="inputs-row" id="secondaryInputsRow">
-                <div class="input-group" id="protectionPremiumGroup">
-                    <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
-                    <input type="text" id="protectionPremium" placeholder="0">
-                </div>
-                <div class="input-group" id="attachRateGroup">
-                    <label for="attachRate">Attach Rate %</label>
-                    <input type="text" id="attachRate" placeholder="0" value="68">
-                </div>
                 <div class="input-group">
                     <label for="revenueShare" id="revShareLabel">Rev Share % (net claims)</label>
                     <input type="text" id="revenueShare" placeholder="0">
@@ -1142,13 +1143,14 @@
                     </div>
                 </div>
 
+                <div class="output-metric" id="avgPremiumMetric">
+                    <div class="om-label" id="avgPremiumLabel" style="color:#6675FF;">SI Premium</div>
+                    <div class="om-value" id="avgPremium">$0</div>
+                    <div class="om-badge" id="avgPremiumBadge"></div>
+                </div>
                 <div class="output-metric" id="protectedOrdersMetric">
                     <div class="om-label" id="protectedOrdersLabel">Protected Orders</div>
                     <div class="om-value" id="protectedOrders">0</div>
-                </div>
-                <div class="output-metric" id="avgPremiumMetric">
-                    <div class="om-label" id="avgPremiumLabel">Avg Premium</div>
-                    <div class="om-value" id="avgPremium">$0</div>
                 </div>
                 <div class="output-metric" id="premiumsMetric">
                     <div class="om-label">Premiums</div>
@@ -1383,6 +1385,18 @@
                     <span>◌</span> Gross Rev Share
                 </button>
             <div class="si-selectors-row" style="width:100%; padding: 8px 0 0; border-top: 1px solid #e0e3f5; margin-top: 4px;">
+                <div class="si-selector">
+                    <label for="currencySelect">Currency:</label>
+                    <select id="currencySelect" onchange="setCurrency(this.value)">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="CAD">CAD (CA$)</option>
+                        <option value="AUD">AUD (A$)</option>
+                        <option value="NZD">NZD (NZ$)</option>
+                        <option value="JPY">JPY (¥)</option>
+                    </select>
+                </div>
                 <div class="si-selector">
                     <label for="pricingTemplate">Pricing:</label>
                     <select id="pricingTemplate">
@@ -2203,13 +2217,22 @@
                 document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
             }
             document.getElementById('protectedOrders').textContent = formatNumber(protectedOrders);
-            if (pricingTemplate === 'flat_dollar') {
-                const impliedPct = avgOrderValue > 0 ? (avgPremium / avgOrderValue * 100) : 0;
-                document.getElementById('avgPremiumLabel').textContent = 'SI Premium %';
-                document.getElementById('avgPremium').textContent = impliedPct.toFixed(2) + '%';
-            } else {
-                document.getElementById('avgPremiumLabel').textContent = 'Avg Premium';
-                document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
+            // SI Premium box: always the $ premium, with a badge describing the pricing basis.
+            document.getElementById('avgPremiumLabel').textContent = 'SI Premium';
+            document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
+            const _apBadge = document.getElementById('avgPremiumBadge');
+            if (_apBadge) {
+                let _bt = '';
+                if (pricingTemplate === 'percentage') {
+                    const _pp = removeCommas(document.getElementById('protectionPremium').value) || '';
+                    _bt = (_pp !== '' ? _pp : '') + '% of AOV';
+                } else if (pricingTemplate === 'flat_dollar') {
+                    _bt = 'Flat rate';
+                } else {
+                    const _opt = Array.from(document.getElementById('pricingTemplate').options).find(o => o.value === pricingTemplate);
+                    _bt = _opt ? _opt.textContent : '';
+                }
+                _apBadge.textContent = _bt;
             }
             document.getElementById('protectedClaims').textContent = formatNumber(claimsOffset);
             const pcOutputEl = document.getElementById('protectedClaimsOutput');
