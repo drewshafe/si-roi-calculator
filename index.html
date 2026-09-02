@@ -2435,7 +2435,7 @@
             const ordersBadge = (attach !== '' ? attach : '0') + '% of orders';
             const pctOf = id => premN > 0 ? Math.round(num(id) / premN * 100) + '% of premiums' : '';
             set('coBadge1', ordersBadge);
-            set('coBadge2', ordersBadge);
+            set('coBadge2', (attach !== '' ? attach : '0') + '% of claims');
             set('coCoveredAmountPct', pctOf('totalClaimsFunded'));
             set('coRevSharePct', pctOf('revenueShareAmount'));
             const rp = document.getElementById('coReturnsPair');
