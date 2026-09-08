@@ -349,6 +349,17 @@
             opacity: 0.8;
         }
 
+        /* Hero row — Net Benefit beside the (optional) Upfront Rev Share Payment. */
+        .hero-row { display: flex; gap: 14px; align-items: stretch; flex-wrap: wrap; margin-bottom: 10px; }
+        .hero-row .result-hero { flex: 1 1 260px; margin-bottom: 0; }
+        .result-hero.upfront-hero {
+            background: linear-gradient(135deg, #b7791f 0%, #e0b84c 100%);
+            box-shadow: 0 4px 20px rgba(183,121,31,0.3);
+            flex: 0 1 220px;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .kmp-sub { font-size: 0.62em; font-weight: 700; color: #8a93a5; margin-top: 2px; }
+
         .hero-badge-area {
             display: flex;
             align-items: center;
@@ -914,6 +925,7 @@
         <div id="resultsSection">
 
             <!-- Hero -->
+            <div class="hero-row">
             <div class="result-hero">
                 <div class="hero-label" id="heroLabel">Net Benefit With ShipInsure</div>
                 <div class="hero-value" id="heroValue">$0</div>
@@ -924,6 +936,13 @@
                     <div class="hero-badge-pill" id="p-cbBadge" style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cashbackbadges.png" alt="Cashback"   onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
                     <div class="hero-badge-pill" id="p-gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png"      alt="Guarantee"  onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
                 </div>
+            </div>
+            <!-- Upfront Rev Share Payment — shown only when the link carried ?upf=. Display-only. -->
+            <div class="result-hero upfront-hero" id="p-upfrontHero" style="display:none;">
+                <div class="hero-label">Upfront Rev Share Payment</div>
+                <div class="hero-value" id="p-upfrontValue">$0</div>
+                <div class="hero-sub" id="p-upfrontSub">(0.0mo)</div>
+            </div>
             </div>
 
             <!-- Two-column cards -->
@@ -979,8 +998,9 @@
                     <div class="kmp-value" id="r-protectedClaims">0</div>
                 </div>
                 <div class="key-metric-pill">
-                    <div class="kmp-label">Attach Rate</div>
-                    <div class="kmp-value" id="r-attachRate">0%</div>
+                    <div class="kmp-label">Protected Orders</div>
+                    <div class="kmp-value" id="r-protectedOrders">0</div>
+                    <div class="kmp-sub" id="r-attachRate">0% attach rate</div>
                 </div>
                 <div class="key-metric-pill">
                     <div class="kmp-label">Avg Premium</div>
@@ -1113,6 +1133,24 @@
             return new Intl.NumberFormat('en-US', { style:'currency', currency:SI_CURRENCY, minimumFractionDigits:d, maximumFractionDigits:d }).format(n);
         }
 
+        // Upfront Rev Share Payment hero — shown only when the link carried ?upf=.
+        // tier is a fraction of a year's rev share; amount = tier × annual rev share,
+        // months = tier × 12. Display-only; excluded from every total.
+        function pRenderUpfront() {
+            const hero = document.getElementById('p-upfrontHero');
+            if (!hero) return;
+            let tier = null;
+            try { const u = new URLSearchParams(window.location.search).get('upf'); if (u) { const t = parseFloat(u); if (!isNaN(t)) tier = t; } } catch (e) {}
+            if (tier == null || !_p_bd.ready) { hero.style.display = 'none'; return; }
+            const view = window._urlView || 'monthly';
+            const periodRevShare = _p_bd.revenueShareAmount || 0;
+            const annualRevShare = view === 'annual' ? periodRevShare : periodRevShare * 12;
+            const upfrontAmount = tier * annualRevShare;
+            const months = tier * 12;
+            document.getElementById('p-upfrontValue').textContent = curSym() + (upfrontAmount / 1000).toFixed(1) + 'K';
+            document.getElementById('p-upfrontSub').textContent = '(' + months.toFixed(1) + 'mo)';
+            hero.style.display = '';
+        }
         function fmtNum(n) {
             return new Intl.NumberFormat('en-US', { minimumFractionDigits:0, maximumFractionDigits:0 }).format(n);
         }
@@ -1573,7 +1611,8 @@
             // Key metrics
             document.getElementById('r-premiumsPct').textContent = percentOfPremiums.toFixed(1) + '%';
             document.getElementById('r-totalPremiums').textContent = fmtDollar(premiumPool);
-            document.getElementById('r-attachRate').textContent = (attachRate * 100).toFixed(0) + '%';
+            document.getElementById('r-protectedOrders').textContent = fmtNum(protectedOrders);
+            document.getElementById('r-attachRate').textContent = (attachRate * 100).toFixed(0) + '% attach rate';
             document.getElementById('r-avgPremium').textContent = fmtDollarCents(avgPremium);
 
             // Returns block
@@ -1658,6 +1697,7 @@
                 totalCashbackValueTotal: totalCashbackValue,
                 grossRevShare: p_grossRevShare,
             };
+            pRenderUpfront();
             // Re-render breakdown if it's open
             if (document.getElementById('p-bdBody').classList.contains('visible')) renderPBreakdown();
             // Show/hide cost column based on p_hideCurrentCost

@@ -244,7 +244,17 @@
         .revenue-impact-row {
             display: flex;
             justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
         }
+        /* Upfront Rev Share Payment — display-only bubble beside "Premiums You Keep".
+           Excluded from all calculator totals. */
+        .revenue-impact-box.upfront-box {
+            background: linear-gradient(135deg, #b7791f 0%, #e0b84c 100%);
+            box-shadow: 0 6px 20px rgba(183,121,31,0.30);
+        }
+        .revenue-impact-box.upfront-box .impact-value { color: #fff; }
+        .revenue-impact-box.upfront-box .upfront-mo { font-size: 0.8em; font-weight: 700; opacity: 0.9; margin-top: 2px; }
 
         .revenue-impact-box {
             background: linear-gradient(135deg, #4a5fc1 0%, #6b7fd7 100%);
@@ -1253,6 +1263,13 @@
                     <div id="revenueImpactSub" style="display:none;"></div>
                     <div class="impact-returns-note" id="premiumsBadgeSub">including Returns Offset</div>
                 </div>
+                <!-- Upfront Rev Share Payment — shown only when a rep selects an eligible
+                     upfront tier in the hub. Display-only; not part of any total. -->
+                <div class="revenue-impact-box upfront-box" id="upfrontBubble" style="display:none;">
+                    <div class="impact-label">Upfront Rev Share Payment</div>
+                    <div class="impact-value" id="upfrontBubbleValue">$0</div>
+                    <div class="upfront-mo" id="upfrontBubbleSub">(0.0mo)</div>
+                </div>
             </div>
 
             <!-- Red | Green cards -->
@@ -1801,6 +1818,9 @@
         // symbol used everywhere. Carries through share links + the merchant view.
         const CURRENCIES = ['USD','EUR','GBP','CAD','AUD','NZD','JPY'];
         let SI_CURRENCY = 'USD';
+        // Upfront Rev Share tier (fraction of a year's rev share), driven by the hub
+        // sidebar or a link's ?upf= param. Display-only — never enters any total.
+        let _upfrontTier = null;
         function curSym() {
             try { return (0).toLocaleString('en-US', { style:'currency', currency:SI_CURRENCY, minimumFractionDigits:0, maximumFractionDigits:0 }).replace(/[\d\s.,]/g, ''); }
             catch (e) { return '$'; }
@@ -2407,8 +2427,30 @@
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
             updateCompactOutputs(returnsEnabled);
+            renderUpfrontBubble();
             // Keep the Rep Hub sidebar (SI Net, etc.) in sync after every recalc.
             if (typeof _siEmitState === 'function') _siEmitState();
+        }
+
+        // Upfront Rev Share Payment bubble (beside "Premiums You Keep"). Purely a
+        // display of tier × yearly rev share; excluded from every calculator total.
+        // Shown only when a tier is selected AND the deal is eligible (≥ $2,500/mo net).
+        function renderUpfrontBubble() {
+            const box = document.getElementById('upfrontBubble');
+            if (!box) return;
+            const bd = (typeof _bd === 'object' && _bd) ? _bd : {};
+            const view = (document.getElementById('timeframe') || {}).value || 'monthly';
+            const periodNet = bd.postClaimBalance || 0;
+            const annualNet = view === 'annual' ? periodNet : periodNet * 12;
+            const eligible = (annualNet / 12) >= 2500;
+            if (_upfrontTier == null || !eligible) { box.style.display = 'none'; return; }
+            const periodRevShare = bd.revenueShareAmount || 0;
+            const annualRevShare = view === 'annual' ? periodRevShare : periodRevShare * 12;
+            const upfrontAmount = _upfrontTier * annualRevShare;
+            const months = _upfrontTier * 12;
+            document.getElementById('upfrontBubbleValue').textContent = curSym() + (upfrontAmount / 1000).toFixed(1) + 'K';
+            document.getElementById('upfrontBubbleSub').textContent = '(' + months.toFixed(1) + 'mo)';
+            box.style.display = '';
         }
 
         // ── Compact-density view: mirror computed outputs into the combined pairings ──
@@ -2450,6 +2492,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('cur')) setCurrency(urlParams.get('cur'), { silent: true });
             if (urlParams.get('theme')) applyTheme(urlParams.get('theme'));
+            if (urlParams.get('upf')) { const t = parseFloat(urlParams.get('upf')); if (!isNaN(t)) _upfrontTier = t; }
             if (urlParams.toString()) {
                 const up = (id, key, fmt) => {
                     const v = urlParams.get(key);
@@ -2617,6 +2660,7 @@
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
+            if (_upfrontTier != null) params.set('upf', String(_upfrontTier));
 
 
             return `${baseUrl}?${params.toString()}`;
@@ -2689,6 +2733,7 @@
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
+            if (_upfrontTier != null) params.set('upf', String(_upfrontTier));
 
 
             return `${baseUrl}?${params.toString()}`;
@@ -3148,6 +3193,7 @@
             if (typeof d.siInputsVisible === 'boolean') { document.getElementById('siInputsCheck').checked = d.siInputsVisible; toggleSiInputsVisibility(); }
             if (typeof d.coverage === 'string') setReturnsCoverage(d.coverage);
             if (typeof d.currency === 'string') setCurrency(d.currency, { silent: true });
+            if ('upfrontTier' in d) _upfrontTier = (d.upfrontTier == null ? null : parseFloat(d.upfrontTier));
             if (typeof d.theme === 'string') applyTheme(d.theme);
             if (d.command === 'save') saveConfig();
             if (d.command === 'loadConfig' && d.name) loadSavedConfig(d.name);
