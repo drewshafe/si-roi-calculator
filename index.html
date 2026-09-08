@@ -2660,7 +2660,13 @@
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
-            if (_upfrontTier != null) params.set('upf', String(_upfrontTier));
+            if (_upfrontTier != null) {
+                params.set('upf', String(_upfrontTier));
+                const _uv = (document.getElementById('timeframe') || {}).value || 'monthly';
+                const _uprs = (typeof _bd === 'object' && _bd && _bd.revenueShareAmount) || 0;
+                const _uannual = _uv === 'annual' ? _uprs : _uprs * 12;
+                params.set('upfa', String(Math.round(_upfrontTier * _uannual)));
+            }
 
 
             return `${baseUrl}?${params.toString()}`;
@@ -2733,7 +2739,13 @@
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
-            if (_upfrontTier != null) params.set('upf', String(_upfrontTier));
+            if (_upfrontTier != null) {
+                params.set('upf', String(_upfrontTier));
+                const _uv = (document.getElementById('timeframe') || {}).value || 'monthly';
+                const _uprs = (typeof _bd === 'object' && _bd && _bd.revenueShareAmount) || 0;
+                const _uannual = _uv === 'annual' ? _uprs : _uprs * 12;
+                params.set('upfa', String(Math.round(_upfrontTier * _uannual)));
+            }
 
 
             return `${baseUrl}?${params.toString()}`;
