@@ -2377,6 +2377,9 @@
                 const protR = document.getElementById('protectedReturnsRow');
                 const pair  = document.getElementById('siFundedPair');
                 const sfr   = document.getElementById('siFundedReturns');
+                const siBox = document.getElementById('siFundedStripMetric');
+                // SI Funded box only appears with Protection + Returns.
+                if (siBox) siBox.style.display = returnsEnabled ? '' : 'none';
                 if (returnsEnabled) {
                     const protectedReturnsCount = protectedOrders * returnsRate;
                     const allOrders = (_returnsCoverage === 'all_labels' || _returnsCoverage === 'all_labels_platform');
