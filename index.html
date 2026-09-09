@@ -232,13 +232,16 @@
             color: #6c757d;
             font-weight: 500;
         }
-        /* Paired metric boxes: "Orders → N" / "Claims → N" stacked in one box. */
+        /* Paired metric boxes: "Orders → N" / "Claims → N" stacked in one box.
+           Values match the single-box .om-value size; label sits close to the value. */
         .om-pair { display: flex; flex-direction: column; gap: 3px; }
-        .om-pair-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+        .om-pair-row { display: flex; align-items: baseline; justify-content: center; gap: 6px; }
         .om-pair-k { font-size: 0.6em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; color: #6c757d; white-space: nowrap; }
-        .om-pair-v { font-size: 1.2em; font-weight: 800; color: #212529; line-height: 1.1; white-space: nowrap; }
-        .om-pair-v.sm { font-size: 0.95em; }
-        .output-metric.primary-metric .om-pair-v { color: #28a745; }
+        .om-pair-v { font-size: 1.05em; font-weight: 700; color: #212529; line-height: 1.1; white-space: nowrap; }
+        .om-pair-v.sm { font-size: 1.05em; }
+        /* Green baseline box keeps its featured, larger orders figure. */
+        .output-metric.primary-metric .om-pair-v { color: #28a745; font-size: 1.5em; font-weight: 800; }
+        .output-metric.primary-metric .om-pair-v.sm { font-size: 1.05em; }
         .theme-midnight .om-pair-k { color: #b9c2e6; }
         .theme-midnight .om-pair-v { color: #f5f6fb; }
 
