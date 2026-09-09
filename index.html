@@ -1237,9 +1237,9 @@
                 <div class="output-metric primary-metric">
                     <div class="om-label" id="ordersCardLabel">Monthly</div>
                     <div class="om-pair">
-                        <div class="om-pair-row"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="annualOrdersDisplay">0</span></div>
-                        <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v sm" id="totalClaimsDisplay">0</span></div>
+                        <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v" id="totalClaimsDisplay">0</span></div>
                         <div class="om-pair-row" id="annualReturnsRow" style="display:none;"><span class="om-pair-k">Returns →</span><span class="om-pair-v sm" id="annualReturnsDisplay">0</span></div>
+                        <span id="annualOrdersDisplay" style="display:none;"></span>
                     </div>
                 </div>
 
@@ -1251,7 +1251,6 @@
                 <div class="output-metric" id="premiumsMetric">
                     <div class="om-label">Premiums</div>
                     <div class="om-value" id="premiumsPaid">$0</div>
-                    <div class="om-badge" id="premiumsBadge"></div>
                 </div>
                 <div class="output-metric" id="protectedOrdersMetric">
                     <div class="om-label" id="protectedOrdersLabel">Protected</div>
@@ -2365,7 +2364,6 @@
             const tcfEl = document.getElementById('totalClaimsFunded');
             if (tcfEl) tcfEl.textContent = formatCurrency(siFundedReships);
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
-            { const _pb = document.getElementById('premiumsBadge'); if (_pb) { const _at = Math.round((attachRate || 0) * 100); _pb.textContent = _at ? _at + '% attach' : ''; } }
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
             { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) { const _k = premiumPool > 0 ? Math.round((postClaimBalance / premiumPool) * 100) : 0; _pcb.textContent = _k ? _k + '% of premiums' : ''; } }
             // Strip "SI Funded" box: total funded + per-claim average.
