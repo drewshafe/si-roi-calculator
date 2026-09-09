@@ -43,6 +43,11 @@
         .container.force-split  .calc-left { width: 320px; border-right: 2px solid #e0e3f5; border-bottom: none; }
         .container.force-stacked .calc-body { flex-direction: column; }
         .container.force-stacked .calc-left { width: 100%; border-right: none; border-bottom: 2px solid #e0e3f5; }
+        /* Stacked layout: Copy Link moves down to sit directly above the breakdown. */
+        #generateProposalLinkStacked { display: none; }
+        .container.force-stacked #generateProposalLinkStacked { display: block; }
+        .container.force-stacked #generateProposalLink,
+        .container.force-stacked #linkDisplay { display: none !important; }
         /* Density: compact tightens padding/gaps */
         .container.density-compact .inputs-row { gap: 5px; }
         .container.density-compact .input-group { padding: 5px 8px; }
@@ -1308,10 +1313,6 @@
                     </div>
                     <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
-                            <h4 id="siClaimLabel">SI Funded Cost Per Claim</h4>
-                            <div class="value" id="siFundedReships">$0</div>
-                        </div>
-                        <div class="metric-item">
                             <h4>Total Claims Funded</h4>
                             <div class="value" id="totalClaimsFunded">$0</div>
                         </div>
@@ -1321,7 +1322,7 @@
                         </div>
                     </div>
                     <!-- Hidden stash — protectedClaims kept here so existing JS writes don't throw -->
-                    <div style="display:none;"><span id="secondSale"></span><span id="siFundedTotal"></span><span id="protectedClaims"></span></div>
+                    <div style="display:none;"><span id="secondSale"></span><span id="siFundedTotal"></span><span id="protectedClaims"></span><span id="siClaimLabel"></span><span id="siFundedReships"></span></div>
                     <div id="returnsOffsetResults" class="returns-results">
                         <div class="sub-section-label">Returns Offset</div>
                         <div class="metrics-grid">
@@ -1420,6 +1421,9 @@
         </div><!-- /middle-section -->
 
         </div><!-- /widgetMiddleWrapper -->
+
+        <!-- Copy Link — shown here (above the breakdown) only in Stacked layout -->
+        <button id="generateProposalLinkStacked" class="generate-link-btn" style="width:100%;margin:0 0 12px;">🔗 Copy Link</button>
 
         <!-- Calculation Breakdown dropdown -->
         <div class="calc-breakdown">
@@ -2792,12 +2796,12 @@
 
         // One shareable link = the merchant view. Builds it, shows it in the
         // "Share this link" field, and copies it to the clipboard.
-        function generateProposalLink() {
+        function generateProposalLink(ev) {
             const url = buildMerchantLink();
             document.getElementById('shareableLink').value = url;
             document.getElementById('linkDisplay').style.display = 'flex';
+            const btn = (ev && ev.currentTarget) ? ev.currentTarget : document.getElementById('generateProposalLink');
             navigator.clipboard.writeText(url).then(() => {
-                const btn = document.getElementById('generateProposalLink');
                 const orig = btn.innerHTML;
                 btn.innerHTML = '✓ Copied!';
                 setTimeout(() => { btn.innerHTML = orig; }, 2000);
@@ -2985,6 +2989,7 @@
             calculate();
         });
         document.getElementById('generateProposalLink').addEventListener('click', generateProposalLink);
+        { const _sb = document.getElementById('generateProposalLinkStacked'); if (_sb) _sb.addEventListener('click', generateProposalLink); }
         document.getElementById('copyLink').addEventListener('click', copyToClipboard);
         document.getElementById('returnsOffsetModeToggle').addEventListener('click', toggleReturnsOffsetMode);
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
