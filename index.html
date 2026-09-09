@@ -230,6 +230,15 @@
             color: #6c757d;
             font-weight: 500;
         }
+        /* Paired metric boxes: "Orders → N" / "Claims → N" stacked in one box. */
+        .om-pair { display: flex; flex-direction: column; gap: 3px; }
+        .om-pair-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+        .om-pair-k { font-size: 0.6em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; color: #6c757d; white-space: nowrap; }
+        .om-pair-v { font-size: 1.2em; font-weight: 800; color: #212529; line-height: 1.1; white-space: nowrap; }
+        .om-pair-v.sm { font-size: 0.95em; }
+        .output-metric.primary-metric .om-pair-v { color: #28a745; }
+        .theme-midnight .om-pair-k { color: #b9c2e6; }
+        .theme-midnight .om-pair-v { color: #f5f6fb; }
 
         /* ── Middle section ── */
         .middle-section {
@@ -1205,12 +1214,12 @@
         <div class="outputs-strip">
             <div class="outputs-inner">
 
-                <!-- Featured: orders count -->
+                <!-- Baseline volume: order + claim counts for the current period (green). -->
                 <div class="output-metric primary-metric">
-                    <div class="om-label" id="ordersCardLabel">Monthly Orders</div>
-                    <div class="om-big" id="annualOrdersDisplay">0</div>
-                    <div id="annualOrdersMetric" style="display:none;" class="om-sub">
-                        <span id="annualOrdersDisplaySub">0</span>
+                    <div class="om-label" id="ordersCardLabel">Monthly</div>
+                    <div class="om-pair">
+                        <div class="om-pair-row"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="annualOrdersDisplay">0</span></div>
+                        <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v sm" id="totalClaimsDisplay">0</span></div>
                     </div>
                 </div>
 
@@ -1219,21 +1228,29 @@
                     <div class="om-value" id="avgPremium">$0</div>
                     <div class="om-badge" id="avgPremiumBadge"></div>
                 </div>
-                <div class="output-metric" id="protectedOrdersMetric">
-                    <div class="om-label" id="protectedOrdersLabel">Protected Orders</div>
-                    <div class="om-value" id="protectedOrders">0</div>
-                </div>
                 <div class="output-metric" id="premiumsMetric">
                     <div class="om-label">Premiums</div>
                     <div class="om-value" id="premiumsPaid">$0</div>
+                    <div class="om-badge" id="premiumsBadge"></div>
                 </div>
-                <div class="output-metric" id="protectedClaimsMetric">
-                    <div class="om-label">Protected Claims</div>
-                    <div class="om-value" id="protectedClaimsOutput">0</div>
+                <div class="output-metric" id="protectedOrdersMetric">
+                    <div class="om-label" id="protectedOrdersLabel">Protected</div>
+                    <div class="om-pair">
+                        <div class="om-pair-row"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="protectedOrders">0</span></div>
+                        <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v sm" id="protectedClaimsOutput">0</span></div>
+                    </div>
+                </div>
+                <div class="output-metric" id="siFundedStripMetric">
+                    <div class="om-label">SI Funded</div>
+                    <div class="om-pair">
+                        <div class="om-pair-row"><span class="om-pair-k">Total →</span><span class="om-pair-v" id="sSiFundedTotal">$0</span></div>
+                        <div class="om-pair-row"><span class="om-pair-k">Avg Claim →</span><span class="om-pair-v sm" id="sSiFundedAvg">$0</span></div>
+                    </div>
                 </div>
                 <div class="output-metric" id="postClaimMetric">
                     <div class="om-label" id="postClaimBalanceLabel">Post-Claim Balance</div>
                     <div class="om-value" id="postClaimBalance">$0</div>
+                    <div class="om-badge" id="postClaimBadge"></div>
                 </div>
                 <div class="output-metric" id="totalReturnsMetric" style="display:none;">
                     <div class="om-label" id="totalReturnsLabel">Total Returns</div>
@@ -2036,7 +2053,7 @@
                 });
 
                 // Relabel outputs
-                document.getElementById('protectedOrdersLabel').textContent = 'Covered Orders';
+                document.getElementById('protectedOrdersLabel').textContent = 'Covered';
                 document.getElementById('postClaimBalanceLabel').textContent = 'Post-Returns Balance';
 
                 // Hide main card metrics-grids (keep only returns sub-sections)
@@ -2071,7 +2088,7 @@
                 });
 
                 // Restore labels
-                document.getElementById('protectedOrdersLabel').textContent = 'Protected Orders';
+                document.getElementById('protectedOrdersLabel').textContent = 'Protected';
                 document.getElementById('postClaimBalanceLabel').textContent = 'Post-Claim Balance';
 
                 // Restore main card grids
@@ -2167,15 +2184,11 @@
             if (timeframe === 'annual') {
                 periodOrders = ordersInput;
                 periodPlatformCost = monthlyPlatformCost * 12;
-                document.getElementById('annualOrdersMetric').style.display = 'block';
-                document.getElementById('annualOrdersDisplaySub').textContent = 'Monthly: ' + formatNumber(Math.round(ordersInput / 12));
-                document.getElementById('ordersCardLabel').textContent = 'Annual Orders';
+                document.getElementById('ordersCardLabel').textContent = 'Annual';
             } else {
                 periodOrders = ordersInput;
                 periodPlatformCost = monthlyPlatformCost;
-                document.getElementById('annualOrdersMetric').style.display = 'block';
-                document.getElementById('annualOrdersDisplaySub').textContent = 'Annual: ' + formatNumber(ordersInput * 12);
-                document.getElementById('ordersCardLabel').textContent = 'Monthly Orders';
+                document.getElementById('ordersCardLabel').textContent = 'Monthly';
             }
 
             // Resolve claims and returns rates from raw values (% or count)
@@ -2290,6 +2303,7 @@
 
             // Update DOM
             document.getElementById('annualOrdersDisplay').textContent = formatNumber(periodOrders);
+            { const _tc = document.getElementById('totalClaimsDisplay'); if (_tc) _tc.textContent = formatNumber(Math.round(totalClaims)); }
             if (_claimsType === 'count') {
                 document.getElementById('totalClaimsLabel').textContent = 'Claims Rate';
                 document.getElementById('totalClaims').textContent = (claimsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
@@ -2321,7 +2335,12 @@
             const tcfEl = document.getElementById('totalClaimsFunded');
             if (tcfEl) tcfEl.textContent = formatCurrency(siFundedReships);
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
+            { const _pb = document.getElementById('premiumsBadge'); if (_pb) { const _at = Math.round((attachRate || 0) * 100); _pb.textContent = _at ? _at + '% attach' : ''; } }
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
+            { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) { const _k = premiumPool > 0 ? Math.round((postClaimBalance / premiumPool) * 100) : 0; _pcb.textContent = _k ? _k + '% of premiums' : ''; } }
+            // Strip "SI Funded" box: total funded + per-claim average.
+            { const _t = document.getElementById('sSiFundedTotal'); if (_t) _t.textContent = formatCurrency(siFundedReships); }
+            { const _a = document.getElementById('sSiFundedAvg'); if (_a) _a.textContent = formatCurrencyWithCents(siClaimValue); }
             if (_returnsType === 'count') {
                 document.getElementById('totalReturnsLabel').textContent = 'Returns Rate';
                 document.getElementById('totalReturns').textContent = (returnsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
@@ -2380,6 +2399,7 @@
                 const roReturnsPct = premiumPool > 0 ? ((siCoveredLabels + siCoveredPlatform) / premiumPool) * 100 : 0;
 
                 document.getElementById('postClaimBalance').textContent = formatCurrency(roBalance);
+                { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) { const _k = premiumPool > 0 ? Math.round((roBalance / premiumPool) * 100) : 0; _pcb.textContent = _k ? _k + '% of premiums' : ''; } }
                 document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalReturnsCost);
                 document.getElementById('extraRevenue').textContent = formatCurrency(roTotal);
 
