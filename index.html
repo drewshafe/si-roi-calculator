@@ -178,8 +178,10 @@
             padding: 8px 12px;
             border-radius: 8px;
             border: 1px solid #e9ecef;
-            flex: 1;
-            min-width: 90px;
+            /* grow to fill the row but never shrink below content — large paired
+               numbers (e.g. $508,205) must not clip; the strip wraps instead. */
+            flex: 1 0 auto;
+            min-width: 116px;
             text-align: center;
         }
 
