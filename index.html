@@ -263,6 +263,14 @@
         .outputs-inner.simple-mode #premiumsMetric              { order: 3; }
         .outputs-inner.simple-mode #protectedClaimsSingleMetric { order: 4; }
         .outputs-inner.simple-mode #postClaimMetric             { order: 5; }
+        /* Protection + Returns strip: SI Premium · Protected Orders · Premiums · Protected (Claims/Returns) · Post-Claim */
+        .outputs-inner.returns-mode #volumeMetric { display: none !important; }
+        .outputs-inner.returns-mode #protectedOrdersSingleMetric { display: block; }
+        .outputs-inner.returns-mode #avgPremiumMetric      { order: 1; }
+        .outputs-inner.returns-mode #protectedOrdersSingleMetric { order: 2; }
+        .outputs-inner.returns-mode #premiumsMetric        { order: 3; }
+        .outputs-inner.returns-mode #protectedOrdersMetric { order: 4; }
+        .outputs-inner.returns-mode #postClaimMetric       { order: 5; }
         /* SI Funded coverage badges (Protection + Returns): claims / labels / portal */
         .om-cov-badges { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 5px; }
         .om-cov-badge { font-size: 0.55em; font-weight: 800; color: #4a5fc1; background: rgba(74,95,193,0.12); border-radius: 10px; padding: 1px 7px; letter-spacing: 0.2px; }
@@ -1266,7 +1274,7 @@
                 <div class="output-metric box-combined-only" id="protectedOrdersMetric">
                     <div class="om-label" id="protectedOrdersLabel">Protected</div>
                     <div class="om-pair">
-                        <div class="om-pair-row"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="protectedOrders">0</span></div>
+                        <div class="om-pair-row" id="protectedOrdersRow"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="protectedOrders">0</span></div>
                         <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v sm" id="protectedClaimsOutput">0</span></div>
                         <div class="om-pair-row" id="protectedReturnsRow" style="display:none;"><span class="om-pair-k" id="protectedReturnsK">Returns →</span><span class="om-pair-v sm" id="protectedReturnsDisplay">0</span></div>
                     </div>
@@ -1354,31 +1362,27 @@
                     </div>
                     <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
-                            <h4>Total Claims Funded</h4>
-                            <div class="value" id="totalClaimsFunded">$0</div>
+                            <h4 id="mainFundedLabel">Claims Funded</h4>
+                            <div class="value" id="mainFundedValue">$0</div>
                         </div>
                         <div class="metric-item" id="revenueShareMetricItem">
                             <h4>Revenue Share</h4>
                             <div class="value" id="revenueShareAmount">$0</div>
                         </div>
                     </div>
-                    <!-- Hidden stash — protectedClaims kept here so existing JS writes don't throw -->
-                    <div style="display:none;"><span id="secondSale"></span><span id="siFundedTotal"></span><span id="protectedClaims"></span><span id="siClaimLabel"></span><span id="siFundedReships"></span></div>
+                    <!-- Hidden stash — ids kept alive for existing JS writes / compact reads -->
+                    <div style="display:none;">
+                        <span id="secondSale"></span><span id="siFundedTotal"></span><span id="protectedClaims"></span>
+                        <span id="siClaimLabel"></span><span id="siFundedReships"></span><span id="totalClaimsFunded"></span>
+                        <span id="siCoveredReturnLabels"></span><span id="siCoveredPlatformCost"></span>
+                        <span id="siCoveredLabelsMetric"></span><span id="siCoveredPlatformMetric"></span><span id="totalReturnsOffsetMetric"></span>
+                    </div>
+                    <!-- Claims & Return Costs Funded (Protection + Returns) -->
                     <div id="returnsOffsetResults" class="returns-results">
-                        <div class="sub-section-label">Returns Offset</div>
+                        <div class="sub-section-label">Claims &amp; Return Costs Funded</div>
                         <div class="metrics-grid">
-                            <div class="metric-item returns-highlight" id="siCoveredLabelsMetric">
-                                <h4>SI Covered Return Labels</h4>
-                                <div class="value" id="siCoveredReturnLabels">$0</div>
-                            </div>
-                            <div class="metric-item returns-highlight" id="siCoveredPlatformMetric">
-                                <h4>SI Covered Platform Cost</h4>
-                                <div class="value" id="siCoveredPlatformCost">$0</div>
-                            </div>
-                            <div class="metric-item returns-highlight" id="totalReturnsOffsetMetric">
-                                <h4>Total Returns Offset</h4>
-                                <div class="value" id="totalReturnsOffset">$0</div>
-                            </div>
+                            <div class="metric-item returns-highlight"><h4>Claims Funded</h4><div class="value" id="crcClaimsFunded">$0</div></div>
+                            <div class="metric-item returns-highlight"><h4>Returns Offset</h4><div class="value" id="totalReturnsOffset">$0</div></div>
                         </div>
                     </div>
                     <div id="guaranteeResults" class="guarantee-results">
@@ -2383,6 +2387,18 @@
             if (pcOutputEl) pcOutputEl.textContent = formatNumber(claimsOffset);
             const tcfEl = document.getElementById('totalClaimsFunded');
             if (tcfEl) tcfEl.textContent = formatCurrency(siFundedReships);
+            // Extra Revenue card headline metric: "Claims Funded" (protection only) or
+            // "Total Funded" = claims + returns offset (Protection + Returns).
+            {
+                const mfl = document.getElementById('mainFundedLabel');
+                const mfv = document.getElementById('mainFundedValue');
+                if (mfl && mfv) {
+                    if (returnsEnabled) { mfl.textContent = 'Total Funded'; mfv.textContent = formatCurrency(siFundedReships + totalReturnsOffset); }
+                    else { mfl.textContent = 'Claims Funded'; mfv.textContent = formatCurrency(siFundedReships); }
+                }
+                const crc = document.getElementById('crcClaimsFunded');
+                if (crc) crc.textContent = formatCurrency(siFundedReships);
+            }
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
             { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) { const _k = premiumPool > 0 ? Math.round((postClaimBalance / premiumPool) * 100) : 0; _pcb.textContent = _k ? _k + '% of premiums' : ''; } }
@@ -2396,8 +2412,8 @@
                 const pair  = document.getElementById('siFundedPair');
                 const sfr   = document.getElementById('siFundedReturns');
                 const siBox = document.getElementById('siFundedStripMetric');
-                // SI Funded box only appears with Protection + Returns.
-                if (siBox) siBox.style.display = returnsEnabled ? '' : 'none';
+                // SI Funded strip box retired — its total now shows as "Total Funded" in the card.
+                if (siBox) siBox.style.display = 'none';
                 if (returnsEnabled) {
                     const protectedReturnsCount = protectedOrders * returnsRate;
                     const allOrders = (_returnsCoverage === 'all_labels' || _returnsCoverage === 'all_labels_platform');
@@ -2427,16 +2443,24 @@
                     if (sfr)   sfr.style.display = 'none';
                 }
             }
-            // Protection-only: when Current Cost is shown (not hidden), use the simpler
-            // single-box strip; when hidden, use the combined green/paired layout.
+            // Strip layout modes:
+            //  - returns-mode  : Protection + Returns  → SI Premium · Protected Orders · Premiums · Protected(Claims/Returns) · Post-Claim
+            //  - simple-mode   : Protection only + Current Cost shown → SI Premium · Protected Orders · Premiums · Protected Claims · Post-Claim
+            //  - (neither)     : Protection only + Hide Current Cost → green volume + paired Protected
             {
                 const inner = document.querySelector('.outputs-inner');
-                const simpleMode = !returnsEnabled && !_hideCurrentCost;
-                if (inner) inner.classList.toggle('simple-mode', simpleMode);
+                const simpleMode  = !returnsEnabled && !_hideCurrentCost;
+                if (inner) {
+                    inner.classList.toggle('simple-mode', simpleMode);
+                    inner.classList.toggle('returns-mode', returnsEnabled);
+                }
                 const pos = document.getElementById('protectedOrdersSingle');
                 const pcs = document.getElementById('protectedClaimsSingle');
                 if (pos) pos.textContent = formatNumber(protectedOrders);
                 if (pcs) pcs.textContent = formatNumber(claimsOffset);
+                // In returns mode the paired Protected box shows Claims/Returns; Orders has its own box.
+                const protOrdersRow = document.getElementById('protectedOrdersRow');
+                if (protOrdersRow) protOrdersRow.style.display = returnsEnabled ? 'none' : '';
             }
             if (_returnsType === 'count') {
                 document.getElementById('totalReturnsLabel').textContent = 'Returns Rate';
