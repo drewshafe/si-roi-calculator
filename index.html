@@ -992,6 +992,8 @@
         .co-lbl { font-size:0.6em; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; color:#6c757d; }
         .co-val { font-size:1.05em; font-weight:800; color:#212529; }
         .co-badges { grid-column:1 / -1; display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+        .co-upfront { display:flex; flex-direction:column; gap:2px; margin-top:6px; padding-top:6px; border-top:1px dashed #d7dbe6; }
+        .theme-midnight .co-upfront { border-top-color:rgba(212,175,55,.25); }
         .co-badge { font-size:0.58em; font-weight:800; color:#6675FF; background:rgba(102,117,255,0.12); border-radius:10px; padding:1px 8px; letter-spacing:0.2px; }
         .co-badge:empty { display:none; }
         .theme-midnight .co-pair { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
@@ -1192,7 +1194,9 @@
                 </div>
                 <div class="co-pair">
                     <div class="co-box"><span class="co-lbl">Covered Amount</span><span class="co-val" id="coCoveredAmount">$0</span><div class="co-badges"><span class="co-badge" id="coCoveredAmountPct"></span></div></div>
-                    <div class="co-box"><span class="co-lbl">Revenue Share</span><span class="co-val" id="coRevShare">$0</span><div class="co-badges"><span class="co-badge" id="coRevSharePct"></span></div></div>
+                    <div class="co-box"><span class="co-lbl">Revenue Share</span><span class="co-val" id="coRevShare">$0</span><div class="co-badges"><span class="co-badge" id="coRevSharePct"></span></div>
+                        <div class="co-upfront" id="coUpfront" style="display:none;"><span class="co-lbl">Amount Upfront</span><span class="co-val" id="coUpfrontVal">$0</span><div class="co-badges"><span class="co-badge" id="coUpfrontPct"></span></div></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2443,7 +2447,12 @@
             const periodNet = bd.postClaimBalance || 0;
             const annualNet = view === 'annual' ? periodNet : periodNet * 12;
             const eligible = (annualNet / 12) >= 2500;
-            if (_upfrontTier == null || !eligible) { box.style.display = 'none'; return; }
+            const coUp = document.getElementById('coUpfront');
+            if (_upfrontTier == null || !eligible) {
+                box.style.display = 'none';
+                if (coUp) coUp.style.display = 'none';
+                return;
+            }
             const periodRevShare = bd.revenueShareAmount || 0;
             const annualRevShare = view === 'annual' ? periodRevShare : periodRevShare * 12;
             const upfrontAmount = _upfrontTier * annualRevShare;
@@ -2451,6 +2460,12 @@
             document.getElementById('upfrontBubbleValue').textContent = curSym() + (upfrontAmount / 1000).toFixed(1) + 'K';
             document.getElementById('upfrontBubbleSub').textContent = '(' + months.toFixed(1) + 'mo)';
             box.style.display = '';
+            // Compact-density view: mirror into the Revenue Share box as "Amount Upfront".
+            if (coUp) {
+                document.getElementById('coUpfrontVal').textContent = formatCurrency(upfrontAmount);
+                document.getElementById('coUpfrontPct').textContent = (_upfrontTier * 100).toFixed(1).replace(/\.0$/, '') + '% of revenue share';
+                coUp.style.display = '';
+            }
         }
 
         // ── Compact-density view: mirror computed outputs into the combined pairings ──
