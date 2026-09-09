@@ -252,6 +252,17 @@
         /* Total Returns now lives inside the ANNUAL box (Returns → N), so the old
            standalone strip box is retired. */
         #totalReturnsMetric { display: none !important; }
+        /* Protection-only strip has two shapes:
+           - combined (Hide Current Cost ON): green volume + paired Protected box
+           - simple (Current Cost shown): SI Premium · Protected Orders · Premiums · Protected Claims · Post-Claim */
+        .box-simple-only { display: none; }
+        .outputs-inner.simple-mode .box-combined-only { display: none !important; }
+        .outputs-inner.simple-mode .box-simple-only { display: block; }
+        .outputs-inner.simple-mode #avgPremiumMetric            { order: 1; }
+        .outputs-inner.simple-mode #protectedOrdersSingleMetric { order: 2; }
+        .outputs-inner.simple-mode #premiumsMetric              { order: 3; }
+        .outputs-inner.simple-mode #protectedClaimsSingleMetric { order: 4; }
+        .outputs-inner.simple-mode #postClaimMetric             { order: 5; }
         /* SI Funded coverage badges (Protection + Returns): claims / labels / portal */
         .om-cov-badges { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 5px; }
         .om-cov-badge { font-size: 0.55em; font-weight: 800; color: #4a5fc1; background: rgba(74,95,193,0.12); border-radius: 10px; padding: 1px 7px; letter-spacing: 0.2px; }
@@ -1234,7 +1245,7 @@
             <div class="outputs-inner">
 
                 <!-- Baseline volume: order + claim counts for the current period (green). -->
-                <div class="output-metric primary-metric">
+                <div class="output-metric primary-metric box-combined-only" id="volumeMetric">
                     <div class="om-label" id="ordersCardLabel">Monthly</div>
                     <div class="om-pair">
                         <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v" id="totalClaimsDisplay">0</span></div>
@@ -1252,13 +1263,22 @@
                     <div class="om-label">Premiums</div>
                     <div class="om-value" id="premiumsPaid">$0</div>
                 </div>
-                <div class="output-metric" id="protectedOrdersMetric">
+                <div class="output-metric box-combined-only" id="protectedOrdersMetric">
                     <div class="om-label" id="protectedOrdersLabel">Protected</div>
                     <div class="om-pair">
                         <div class="om-pair-row"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="protectedOrders">0</span></div>
                         <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v sm" id="protectedClaimsOutput">0</span></div>
                         <div class="om-pair-row" id="protectedReturnsRow" style="display:none;"><span class="om-pair-k" id="protectedReturnsK">Returns →</span><span class="om-pair-v sm" id="protectedReturnsDisplay">0</span></div>
                     </div>
+                </div>
+                <!-- Protection-only + Current Cost shown: separate single boxes instead of the paired Protected box -->
+                <div class="output-metric box-simple-only" id="protectedOrdersSingleMetric">
+                    <div class="om-label">Protected Orders</div>
+                    <div class="om-value" id="protectedOrdersSingle">0</div>
+                </div>
+                <div class="output-metric box-simple-only" id="protectedClaimsSingleMetric">
+                    <div class="om-label">Protected Claims</div>
+                    <div class="om-value" id="protectedClaimsSingle">0</div>
                 </div>
                 <div class="output-metric" id="siFundedStripMetric">
                     <div class="om-label">SI Funded</div>
@@ -2406,6 +2426,17 @@
                     if (pair)  pair.style.display = '';
                     if (sfr)   sfr.style.display = 'none';
                 }
+            }
+            // Protection-only: when Current Cost is shown (not hidden), use the simpler
+            // single-box strip; when hidden, use the combined green/paired layout.
+            {
+                const inner = document.querySelector('.outputs-inner');
+                const simpleMode = !returnsEnabled && !_hideCurrentCost;
+                if (inner) inner.classList.toggle('simple-mode', simpleMode);
+                const pos = document.getElementById('protectedOrdersSingle');
+                const pcs = document.getElementById('protectedClaimsSingle');
+                if (pos) pos.textContent = formatNumber(protectedOrders);
+                if (pcs) pcs.textContent = formatNumber(claimsOffset);
             }
             if (_returnsType === 'count') {
                 document.getElementById('totalReturnsLabel').textContent = 'Returns Rate';
