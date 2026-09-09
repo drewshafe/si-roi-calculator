@@ -249,6 +249,13 @@
         .om-pair-v.sm { font-size: 1.05em; }
         /* Green baseline box: same value size as the other boxes, just green. */
         .output-metric.primary-metric .om-pair-v { color: #28a745; }
+        /* Total Returns now lives inside the ANNUAL box (Returns → N), so the old
+           standalone strip box is retired. */
+        #totalReturnsMetric { display: none !important; }
+        /* SI Funded coverage badges (Protection + Returns): claims / labels / portal */
+        .om-cov-badges { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 5px; }
+        .om-cov-badge { font-size: 0.55em; font-weight: 800; color: #4a5fc1; background: rgba(74,95,193,0.12); border-radius: 10px; padding: 1px 7px; letter-spacing: 0.2px; }
+        .om-cov-badge:empty { display: none; }
         .theme-midnight .om-pair-k { color: #b9c2e6; }
         .theme-midnight .om-pair-v { color: #f5f6fb; }
 
@@ -1232,6 +1239,7 @@
                     <div class="om-pair">
                         <div class="om-pair-row"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="annualOrdersDisplay">0</span></div>
                         <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v sm" id="totalClaimsDisplay">0</span></div>
+                        <div class="om-pair-row" id="annualReturnsRow" style="display:none;"><span class="om-pair-k">Returns →</span><span class="om-pair-v sm" id="annualReturnsDisplay">0</span></div>
                     </div>
                 </div>
 
@@ -1250,13 +1258,24 @@
                     <div class="om-pair">
                         <div class="om-pair-row"><span class="om-pair-k">Orders →</span><span class="om-pair-v" id="protectedOrders">0</span></div>
                         <div class="om-pair-row"><span class="om-pair-k">Claims →</span><span class="om-pair-v sm" id="protectedClaimsOutput">0</span></div>
+                        <div class="om-pair-row" id="protectedReturnsRow" style="display:none;"><span class="om-pair-k" id="protectedReturnsK">Returns →</span><span class="om-pair-v sm" id="protectedReturnsDisplay">0</span></div>
                     </div>
                 </div>
                 <div class="output-metric" id="siFundedStripMetric">
                     <div class="om-label">SI Funded</div>
-                    <div class="om-pair">
+                    <!-- Protection only: total funded + per-claim average -->
+                    <div class="om-pair" id="siFundedPair">
                         <div class="om-pair-row"><span class="om-pair-k">Total →</span><span class="om-pair-v" id="sSiFundedTotal">$0</span></div>
                         <div class="om-pair-row"><span class="om-pair-k">Avg Claim →</span><span class="om-pair-v sm" id="sSiFundedAvg">$0</span></div>
+                    </div>
+                    <!-- Protection + Returns: single total + coverage badges -->
+                    <div id="siFundedReturns" style="display:none;">
+                        <div class="om-value" id="sSiFundedReturnsVal">$0</div>
+                        <div class="om-cov-badges">
+                            <span class="om-cov-badge" id="covClaims">claims</span>
+                            <span class="om-cov-badge" id="covLabels">labels</span>
+                            <span class="om-cov-badge" id="covPortal">portal</span>
+                        </div>
                     </div>
                 </div>
                 <div class="output-metric" id="postClaimMetric">
@@ -2352,6 +2371,41 @@
             // Strip "SI Funded" box: total funded + per-claim average.
             { const _t = document.getElementById('sSiFundedTotal'); if (_t) _t.textContent = formatCurrency(siFundedReships); }
             { const _a = document.getElementById('sSiFundedAvg'); if (_a) _a.textContent = formatCurrencyWithCents(siClaimValue); }
+            // ── Protection + Returns strip additions ──────────────────────────
+            {
+                const annR  = document.getElementById('annualReturnsRow');
+                const protR = document.getElementById('protectedReturnsRow');
+                const pair  = document.getElementById('siFundedPair');
+                const sfr   = document.getElementById('siFundedReturns');
+                if (returnsEnabled) {
+                    const protectedReturnsCount = protectedOrders * returnsRate;
+                    const allOrders = (_returnsCoverage === 'all_labels' || _returnsCoverage === 'all_labels_platform');
+                    const coveredReturns = allOrders ? totalReturns : protectedReturnsCount;
+                    if (annR) { annR.style.display = ''; document.getElementById('annualReturnsDisplay').textContent = formatNumber(Math.round(totalReturns)); }
+                    if (protR) {
+                        protR.style.display = '';
+                        if (_returnsCoverage === 'platform_only') {
+                            document.getElementById('protectedReturnsK').textContent = 'Portal →';
+                            document.getElementById('protectedReturnsDisplay').textContent = formatCurrency(periodPlatformCost);
+                        } else {
+                            document.getElementById('protectedReturnsK').textContent = 'Returns →';
+                            document.getElementById('protectedReturnsDisplay').textContent = formatNumber(Math.round(coveredReturns));
+                        }
+                    }
+                    if (pair) pair.style.display = 'none';
+                    if (sfr) {
+                        sfr.style.display = '';
+                        document.getElementById('sSiFundedReturnsVal').textContent = formatCurrency(siFundedReships + totalReturnsOffset);
+                        document.getElementById('covLabels').style.display = siCoveredLabels > 0 ? '' : 'none';
+                        document.getElementById('covPortal').style.display = siCoveredPlatform > 0 ? '' : 'none';
+                    }
+                } else {
+                    if (annR)  annR.style.display = 'none';
+                    if (protR) protR.style.display = 'none';
+                    if (pair)  pair.style.display = '';
+                    if (sfr)   sfr.style.display = 'none';
+                }
+            }
             if (_returnsType === 'count') {
                 document.getElementById('totalReturnsLabel').textContent = 'Returns Rate';
                 document.getElementById('totalReturns').textContent = (returnsRate * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
