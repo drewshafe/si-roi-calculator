@@ -43,6 +43,9 @@
         .container.force-split  .calc-left { width: 320px; border-right: 2px solid #e0e3f5; border-bottom: none; }
         .container.force-stacked .calc-body { flex-direction: column; }
         .container.force-stacked .calc-left { width: 100%; border-right: none; border-bottom: 2px solid #e0e3f5; }
+        /* Stacked layout: don't let the Extra Revenue metrics stretch edge-to-edge;
+           cap their width and center the group so a wrapped Rev Share centers. */
+        .container.force-stacked #mainRevenueGrid { grid-template-columns: repeat(auto-fit, minmax(118px, 200px)); justify-content: center; }
         /* Stacked layout: Copy Link moves down to sit directly above the breakdown. */
         #generateProposalLinkStacked { display: none; }
         .container.force-stacked #generateProposalLinkStacked { display: block; }
