@@ -2566,7 +2566,7 @@
             const num = id => parseFloat(String((document.getElementById(id) || {}).textContent || '').replace(/[^0-9.\-]/g, '')) || 0;
             const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
             set('coExtraRev', g('extraRevenue'));
-            set('coKeepPct', g('percentOfPremiums'));
+            set('coKeepPct', 'You keep ' + g('percentOfPremiums') + ' of premiums');
             set('coCoveredOrders', g('protectedOrders'));
             set('coPremiums', g('premiumsPaid'));
             set('coCoveredClaims', g('protectedClaimsOutput'));
