@@ -275,6 +275,9 @@
         .om-cov-badges { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 5px; }
         .om-cov-badge { font-size: 0.55em; font-weight: 800; color: #4a5fc1; background: rgba(74,95,193,0.12); border-radius: 10px; padding: 1px 7px; letter-spacing: 0.2px; }
         .om-cov-badge:empty { display: none; }
+        /* Returns Offset breakdown badges (labels / portal) in the Extra Revenue card */
+        .ro-cost-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+        .ro-cost-badge { font-size: 0.62em; font-weight: 800; color: #c05e1a; background: rgba(230,126,34,0.14); border-radius: 10px; padding: 1px 8px; letter-spacing: 0.2px; }
         .theme-midnight .om-pair-k { color: #b9c2e6; }
         .theme-midnight .om-pair-v { color: #f5f6fb; }
 
@@ -1382,7 +1385,7 @@
                         <div class="sub-section-label">Claims &amp; Return Costs Funded</div>
                         <div class="metrics-grid">
                             <div class="metric-item returns-highlight"><h4>Claims Funded</h4><div class="value" id="crcClaimsFunded">$0</div></div>
-                            <div class="metric-item returns-highlight"><h4>Returns Offset</h4><div class="value" id="totalReturnsOffset">$0</div></div>
+                            <div class="metric-item returns-highlight"><h4>Returns Offset</h4><div class="value" id="totalReturnsOffset">$0</div><div class="ro-cost-badges" id="roCostBadges"></div></div>
                         </div>
                     </div>
                     <div id="guaranteeResults" class="guarantee-results">
@@ -2398,6 +2401,14 @@
                 }
                 const crc = document.getElementById('crcClaimsFunded');
                 if (crc) crc.textContent = formatCurrency(siFundedReships);
+                // Returns Offset breakdown badges — the individual costs SI covers per mode.
+                const roB = document.getElementById('roCostBadges');
+                if (roB) {
+                    const parts = [];
+                    if (siCoveredLabels > 0)   parts.push('labels ' + formatCurrency(siCoveredLabels));
+                    if (siCoveredPlatform > 0) parts.push('portal ' + formatCurrency(siCoveredPlatform));
+                    roB.innerHTML = parts.map(t => '<span class="ro-cost-badge">' + t + '</span>').join('');
+                }
             }
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
