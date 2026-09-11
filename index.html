@@ -1450,7 +1450,7 @@
                         <div class="sub-section-label">Returns Costs</div>
                         <div class="metrics-grid">
                             <div class="metric-item returns-highlight" id="returnLabelsCostMetric">
-                                <h4>Return Labels Cost</h4>
+                                <h4 id="returnLabelsCostLabel">Return Labels Cost</h4>
                                 <div class="value" id="returnLabelsCost">$0</div>
                             </div>
                             <div class="metric-item returns-highlight" id="returnsPlatformCostMetric">
@@ -2484,7 +2484,21 @@
             document.getElementById('csCost').textContent = formatCurrency(csShippingCost);
             document.getElementById('cogs').textContent = formatCurrency(cogs);
             document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalLost);
-            document.getElementById('returnLabelsCost').textContent = formatCurrency(returnLabelsCostTotal);
+            // Red-card "Return Labels Cost": when returns are on and the coverage mode
+            // includes labels, relabel to "Labels & Cost" and show the merchant's total
+            // returns count alongside the cost.
+            {
+                const rlcLabel = document.getElementById('returnLabelsCostLabel');
+                const rlcVal = document.getElementById('returnLabelsCost');
+                const labelsCovered = returnsEnabled && _returnsCoverage !== 'platform_only';
+                if (labelsCovered) {
+                    if (rlcLabel) rlcLabel.textContent = 'Labels & Cost';
+                    if (rlcVal) rlcVal.textContent = formatNumber(Math.round(totalReturns)) + ' · ' + formatCurrency(returnLabelsCostTotal);
+                } else {
+                    if (rlcLabel) rlcLabel.textContent = 'Return Labels Cost';
+                    if (rlcVal) rlcVal.textContent = formatCurrency(returnLabelsCostTotal);
+                }
+            }
             document.getElementById('returnsPlatformCostDisplay').textContent = formatCurrency(periodPlatformCost);
             document.getElementById('totalReturnsCost').textContent = formatCurrency(totalReturnsCost);
             const secondSaleEl = document.getElementById('secondSale');
