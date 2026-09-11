@@ -1652,11 +1652,11 @@
             const m = _returnsCoverage;
             // Rate/return-cost inputs hidden for platform_only.
             const showRateInputs   = m !== 'platform_only';
-            // Platform cost is *covered* (metric shown) for default / platform_only / all_labels_platform,
-            // but the platform-cost INPUT is only surfaced for default + platform_only (rep spec:
-            // hide it for labels_protected, all_labels_platform, all_labels).
+            // Platform cost is *covered* (metric shown) for default / platform_only / all_labels_platform.
+            // The platform-cost INPUT surfaces whenever platform is covered — "All + Platform"
+            // mirrors the default "Protected + Platform" inputs (rate + avg return cost + platform cost).
             const platformCovered  = (m === 'default' || m === 'platform_only' || m === 'all_labels_platform');
-            const showPlatformInput = (m === 'default' || m === 'platform_only');
+            const showPlatformInput = platformCovered;
             const showLabelsMetric  = m !== 'platform_only';
             const showPlatformMetric = platformCovered;
 
