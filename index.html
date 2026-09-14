@@ -271,6 +271,22 @@
         .outputs-inner.returns-mode #premiumsMetric        { order: 3; }
         .outputs-inner.returns-mode #protectedOrdersMetric { order: 4; }
         .outputs-inner.returns-mode #postClaimMetric       { order: 5; }
+        /* Returns Offset strip: SI Premium · Opt-in Orders · Premiums · Covered · Post-Offset */
+        #roOptinOrdersMetric, #roCoveredMetric { display: none; }
+        .outputs-inner.ro-mode #volumeMetric,
+        .outputs-inner.ro-mode #protectedOrdersMetric,
+        .outputs-inner.ro-mode #protectedOrdersSingleMetric,
+        .outputs-inner.ro-mode #protectedClaimsSingleMetric,
+        .outputs-inner.ro-mode #siFundedStripMetric,
+        .outputs-inner.ro-mode #totalReturnsMetric,
+        .outputs-inner.ro-mode #cashbackMetric { display: none !important; }
+        .outputs-inner.ro-mode #roOptinOrdersMetric,
+        .outputs-inner.ro-mode #roCoveredMetric { display: block; }
+        .outputs-inner.ro-mode #avgPremiumMetric    { order: 1; }
+        .outputs-inner.ro-mode #roOptinOrdersMetric { order: 2; }
+        .outputs-inner.ro-mode #premiumsMetric      { order: 3; }
+        .outputs-inner.ro-mode #roCoveredMetric     { order: 4; }
+        .outputs-inner.ro-mode #postClaimMetric     { order: 5; }
         /* SI Funded coverage badges (Protection + Returns): claims / labels / portal */
         .om-cov-badges { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 5px; }
         .om-cov-badge { font-size: 0.55em; font-weight: 800; color: #4a5fc1; background: rgba(74,95,193,0.12); border-radius: 10px; padding: 1px 7px; letter-spacing: 0.2px; }
@@ -1176,11 +1192,11 @@
                 <div class="returns-coverage-bar" id="returnsCoverageBar">
                     <div class="rc-divider">Coverage Mode</div>
                     <div class="rc-buttons">
-                        <button class="rc-btn active" data-rc="default" onclick="setReturnsCoverage('default')">Protected + Platform</button>
-                        <button class="rc-btn" data-rc="platform_only" onclick="setReturnsCoverage('platform_only')">Platform Only</button>
-                        <button class="rc-btn" data-rc="labels_protected" onclick="setReturnsCoverage('labels_protected')">Protected Labels</button>
-                        <button class="rc-btn" data-rc="all_labels_platform" onclick="setReturnsCoverage('all_labels_platform')">All + Platform</button>
-                        <button class="rc-btn" data-rc="all_labels" onclick="setReturnsCoverage('all_labels')">All Labels</button>
+                        <button class="rc-btn active" data-rc="default" onclick="setReturnsCoverage('default')">Portal + Opt-ins Offset</button>
+                        <button class="rc-btn" data-rc="platform_only" onclick="setReturnsCoverage('platform_only')">Portal Offset</button>
+                        <button class="rc-btn" data-rc="labels_protected" onclick="setReturnsCoverage('labels_protected')">Opt-in Offset</button>
+                        <button class="rc-btn" data-rc="all_labels_platform" onclick="setReturnsCoverage('all_labels_platform')">Total Returns Offset</button>
+                        <button class="rc-btn" data-rc="all_labels" onclick="setReturnsCoverage('all_labels')">All Labels Offset</button>
                     </div>
                 </div>
             </div>
@@ -1291,6 +1307,17 @@
                     <div class="om-label">Protected Claims</div>
                     <div class="om-value" id="protectedClaimsSingle">0</div>
                 </div>
+                <!-- Returns Offset mode only: opt-in orders + covered returns -->
+                <div class="output-metric" id="roOptinOrdersMetric">
+                    <div class="om-label">Opt-in Orders</div>
+                    <div class="om-value" id="roOptinOrders">0</div>
+                </div>
+                <div class="output-metric" id="roCoveredMetric">
+                    <div class="om-label">Covered</div>
+                    <div class="om-pair">
+                        <div class="om-pair-row"><span class="om-pair-k">Returns →</span><span class="om-pair-v" id="roCoveredReturns">0</span></div>
+                    </div>
+                </div>
                 <div class="output-metric" id="siFundedStripMetric">
                     <div class="om-label">SI Funded</div>
                     <!-- Protection only: total funded + per-claim average -->
@@ -1382,10 +1409,18 @@
                     </div>
                     <!-- Claims & Return Costs Funded (Protection + Returns) -->
                     <div id="returnsOffsetResults" class="returns-results">
-                        <div class="sub-section-label">Claims &amp; Return Costs Funded</div>
-                        <div class="metrics-grid">
+                        <div class="sub-section-label" id="crcSubLabel">Claims &amp; Return Costs Funded</div>
+                        <!-- Normal Protection + Returns view -->
+                        <div class="metrics-grid" id="crcNormalGrid">
                             <div class="metric-item returns-highlight"><h4>Claims Funded</h4><div class="value" id="crcClaimsFunded">$0</div></div>
                             <div class="metric-item returns-highlight"><h4>Returns Offset</h4><div class="value" id="totalReturnsOffset">$0</div><div class="ro-cost-badges" id="roCostBadges"></div></div>
+                        </div>
+                        <!-- Returns Offset mode: individual coverage-component boxes + Rev Share.
+                             Box B (portal) shows only for Portal + Opt-ins and Total Returns. -->
+                        <div class="metrics-grid" id="roExtraGrid" style="display:none;">
+                            <div class="metric-item returns-highlight" id="roBoxA"><h4 id="roBoxALabel">Opt-in Offset</h4><div class="value" id="roBoxAVal">$0</div></div>
+                            <div class="metric-item returns-highlight" id="roBoxB"><h4 id="roBoxBLabel">Portal Offset</h4><div class="value" id="roBoxBVal">$0</div></div>
+                            <div class="metric-item" id="roRevShareBox"><h4>Revenue Share</h4><div class="value" id="roRevShareVal">$0</div></div>
                         </div>
                     </div>
                     <div id="guaranteeResults" class="guarantee-results">
@@ -1615,6 +1650,10 @@
         let cashbackEnabled     = false;
         let guaranteeEnabled    = false;
         let returnsOffsetMode   = false;
+        // Returns Offset mode: SI Premium auto-tracks half the Avg Return Cost until the rep
+        // edits it; we remember the pre-offset pricing so exiting the mode restores it.
+        let _roSiPremiumManual  = false;
+        let _roPrevPricing      = null;   // { template, premium } snapshot taken on entering offset mode
         let _cogsType        = 'pct';     // 'pct' | 'flat'
         let _claimsType      = 'pct';     // 'pct' | 'count'
         let _returnsType     = 'pct';     // 'pct' | 'count'
@@ -2052,19 +2091,27 @@
             }
         }
 
+        // Rev Share label: (gross) when gross is on, otherwise (net offset) in Returns Offset
+        // mode or (net claims) in the normal claims view.
+        function updateRevShareLabel() {
+            const lbl = document.getElementById('revShareLabel');
+            if (!lbl) return;
+            lbl.textContent = _grossRevShare
+                ? 'Rev Share % (gross)'
+                : (returnsOffsetMode ? 'Rev Share % (net offset)' : 'Rev Share % (net claims)');
+        }
+
         function toggleGrossRevShare() {
             _grossRevShare = !_grossRevShare;
             const btn = document.getElementById('grossRevShareToggle');
-            const lbl = document.getElementById('revShareLabel');
             if (_grossRevShare) {
                 btn.classList.add('active');
                 btn.innerHTML = '<span>✓</span> Gross Rev Share';
-                if (lbl) lbl.textContent = 'Rev Share % (gross)';
             } else {
                 btn.classList.remove('active');
                 btn.innerHTML = '<span>◌</span> Gross Rev Share';
-                if (lbl) lbl.textContent = 'Rev Share % (net claims)';
             }
+            updateRevShareLabel();
             calculate();
         }
 
@@ -2082,12 +2129,31 @@
             arrow.classList.toggle('open', isOpen);
         }
 
+        // Half the Avg Return Cost — the auto SI Premium default in Returns Offset mode.
+        function _roComputeHalfPremium() {
+            const arc = parseFloat(removeCommas(document.getElementById('avgReturnCost').value)) || 0;
+            return arc > 0 ? +(arc / 2).toFixed(2) : 0;
+        }
+        // Keep SI Premium ($) at half the Avg Return Cost until the rep edits it directly.
+        function _roApplyAutoPremium() {
+            if (!returnsOffsetMode) return;
+            const el = document.getElementById('protectionPremium');
+            if (!el) return;
+            if (document.activeElement === el) { _roSiPremiumManual = true; return; }
+            if (_roSiPremiumManual) return;
+            const half = _roComputeHalfPremium();
+            if (half > 0 && el.value !== String(half)) el.value = String(half);
+        }
+
         function toggleReturnsOffsetMode() {
             returnsOffsetMode = !returnsOffsetMode;
             const btn = document.getElementById('returnsOffsetModeToggle');
 
             const roHideOutputs   = ['totalClaimsMetric', 'protectedClaimsMetric'];
-            const roHideInputs    = ['claimsRateGroup', 'additionalInputsToggle', 'additionalInputsBody', 'claimResSelectorWrapper'];
+            // Product Cost / Avg Shipping / Avg Ticket Cost and the claims + additional-inputs
+            // machinery are irrelevant once we're only modelling the returns offset.
+            const roHideInputs    = ['claimsRateGroup', 'miAdditionalToggle', 'cogsGroup',
+                                     'avgShippingGroup', 'csCostGroup', 'claimResSelectorWrapper'];
             const roHideCardGrids = ['mainCostGrid', 'mainRevenueGrid'];
             const roHideToggleBtns = ['returnsToggle', 'cashbackToggle', 'guaranteeToggle'];
 
@@ -2102,33 +2168,35 @@
                 if (cashbackEnabled) toggleCashback();
                 if (guaranteeEnabled) toggleGuarantee();
 
-                // Hide irrelevant output metrics
-                roHideOutputs.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'none';
-                });
+                // Snapshot pricing, switch to $-based, and seed SI Premium = ½ Avg Return Cost.
+                _roPrevPricing = {
+                    template: document.getElementById('pricingTemplate').value,
+                    premium:  document.getElementById('protectionPremium').value
+                };
+                _roSiPremiumManual = false;
+                document.getElementById('pricingTemplate').value = 'flat_dollar';
+                toggleProtectionPremiumVisibility();
+                { const half = _roComputeHalfPremium(); if (half > 0) document.getElementById('protectionPremium').value = String(half); }
 
-                // Relabel outputs
-                document.getElementById('protectedOrdersLabel').textContent = 'Covered';
-                document.getElementById('postClaimBalanceLabel').textContent = 'Post-Returns Balance';
+                // Move the returns metrics ABOVE the Rev Share row (spec input order).
+                { const ri = document.getElementById('returnsInputs'), sr = document.getElementById('secondaryInputsRow');
+                  if (ri && sr && sr.parentNode) sr.parentNode.insertBefore(ri, sr); }
+
+                // Hide irrelevant output metrics
+                roHideOutputs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+
+                // Relabel outputs for the offset view
+                document.getElementById('postClaimBalanceLabel').textContent = 'Post-Offset Balance';
+                updateRevShareLabel();
 
                 // Hide main card metrics-grids (keep only returns sub-sections)
-                roHideCardGrids.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'none';
-                });
+                roHideCardGrids.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 
                 // Hide irrelevant inputs
-                roHideInputs.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'none';
-                });
+                roHideInputs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 
                 // Hide the Protection+ toggle buttons (returns handled by this mode)
-                roHideToggleBtns.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'none';
-                });
+                roHideToggleBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 
                 // In RO mode, hide claims impact from the Premiums You Keep box
                 document.getElementById('claimsImpactPct').style.display = 'none';
@@ -2138,32 +2206,36 @@
                 btn.innerHTML = '<span>＋</span> Returns Offset';
 
                 // Restore output metrics
-                roHideOutputs.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = '';
-                });
+                roHideOutputs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+
+                // Restore pricing/premium captured on entry
+                if (_roPrevPricing) {
+                    document.getElementById('pricingTemplate').value = _roPrevPricing.template;
+                    document.getElementById('protectionPremium').value = _roPrevPricing.premium;
+                    toggleProtectionPremiumVisibility();
+                    _roPrevPricing = null;
+                }
+                _roSiPremiumManual = false;
+
+                // Move the returns metrics back below the Rev Share row.
+                { const ri = document.getElementById('returnsInputs'), cb = document.getElementById('cashbackInputs');
+                  if (ri && cb && cb.parentNode) cb.parentNode.insertBefore(ri, cb); }
 
                 // Restore labels
                 document.getElementById('protectedOrdersLabel').textContent = 'Protected';
                 document.getElementById('postClaimBalanceLabel').textContent = 'Post-Claim Balance';
+                updateRevShareLabel();
 
                 // Restore main card grids
-                roHideCardGrids.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = '';
-                });
+                roHideCardGrids.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
 
                 // Restore inputs
-                roHideInputs.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = '';
-                });
+                roHideInputs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
 
                 // Restore toggle buttons
-                roHideToggleBtns.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = '';
-                });
+                roHideToggleBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+
+                document.getElementById('claimsImpactPct').style.display = '';
             }
 
             updateBadges();
@@ -2171,6 +2243,8 @@
         }
 
         function calculate() {
+            // Keep SI Premium = ½ Avg Return Cost in Returns Offset mode (until edited).
+            _roApplyAutoPremium();
             const timeframe = document.getElementById('timeframe').value;
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const ordersInput = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
@@ -2409,6 +2483,11 @@
                     if (siCoveredPlatform > 0) parts.push('portal ' + formatCurrency(siCoveredPlatform));
                     roB.innerHTML = parts.map(t => '<span class="ro-cost-badge">' + t + '</span>').join('');
                 }
+                // Default to the normal grid; the Returns Offset block below overrides.
+                const ng = document.getElementById('crcNormalGrid'), rg = document.getElementById('roExtraGrid'), sl = document.getElementById('crcSubLabel');
+                if (ng) ng.style.display = '';
+                if (rg) rg.style.display = 'none';
+                if (sl) sl.textContent = 'Claims & Return Costs Funded';
             }
             document.getElementById('premiumsPaid').textContent = formatCurrency(premiumPool);
             document.getElementById('postClaimBalance').textContent = formatCurrency(postClaimBalance);
@@ -2429,6 +2508,9 @@
                     const protectedReturnsCount = protectedOrders * returnsRate;
                     const allOrders = (_returnsCoverage === 'all_labels' || _returnsCoverage === 'all_labels_platform');
                     const coveredReturns = allOrders ? totalReturns : protectedReturnsCount;
+                    // Returns Offset mode boxes: Opt-in Orders + Covered (Returns → X)
+                    { const oo = document.getElementById('roOptinOrders'); if (oo) oo.textContent = formatNumber(Math.round(protectedOrders));
+                      const cr = document.getElementById('roCoveredReturns'); if (cr) cr.textContent = formatNumber(Math.round(coveredReturns)); }
                     if (annR) { annR.style.display = ''; document.getElementById('annualReturnsDisplay').textContent = formatNumber(Math.round(totalReturns)); }
                     if (protR) {
                         protR.style.display = '';
@@ -2462,8 +2544,9 @@
                 const inner = document.querySelector('.outputs-inner');
                 const simpleMode  = !returnsEnabled && !_hideCurrentCost;
                 if (inner) {
-                    inner.classList.toggle('simple-mode', simpleMode);
-                    inner.classList.toggle('returns-mode', returnsEnabled);
+                    inner.classList.toggle('simple-mode', simpleMode && !returnsOffsetMode);
+                    inner.classList.toggle('returns-mode', returnsEnabled && !returnsOffsetMode);
+                    inner.classList.toggle('ro-mode', returnsOffsetMode);
                 }
                 const pos = document.getElementById('protectedOrdersSingle');
                 const pcs = document.getElementById('protectedClaimsSingle');
@@ -2548,6 +2631,29 @@
                 { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) { const _k = premiumPool > 0 ? Math.round((roBalance / premiumPool) * 100) : 0; _pcb.textContent = _k ? _k + '% of premiums' : ''; } }
                 document.getElementById('lostRevenue').textContent = '-' + formatCurrency(totalReturnsCost);
                 document.getElementById('extraRevenue').textContent = formatCurrency(roTotal);
+
+                // Extra Revenue grid: swap the Claims Funded / Returns Offset pair for
+                // individual coverage-component boxes (+ a Rev Share box). Box B (Portal)
+                // shows only for the two combined modes.
+                {
+                    const ng = document.getElementById('crcNormalGrid'), rg = document.getElementById('roExtraGrid'), sl = document.getElementById('crcSubLabel');
+                    if (ng) ng.style.display = 'none';
+                    if (rg) rg.style.display = '';
+                    if (sl) sl.textContent = 'Returns Offset Breakdown';
+                    const cov = _returnsCoverage;
+                    let aLabel = 'Opt-ins Offset', aVal = siCoveredLabels, showB = false;
+                    if (cov === 'platform_only')          { aLabel = 'Portal Offset';     aVal = siCoveredPlatform; }
+                    else if (cov === 'labels_protected')  { aLabel = 'Opt-in Offset';     aVal = siCoveredLabels; }
+                    else if (cov === 'all_labels')        { aLabel = 'All Labels Offset'; aVal = siCoveredLabels; }
+                    else if (cov === 'all_labels_platform'){ aLabel = 'All Labels Offset'; aVal = siCoveredLabels; showB = true; }
+                    else                                  { aLabel = 'Opt-ins Offset';    aVal = siCoveredLabels; showB = true; } // default
+                    document.getElementById('roBoxALabel').textContent = aLabel;
+                    document.getElementById('roBoxAVal').textContent = formatCurrency(aVal);
+                    const boxB = document.getElementById('roBoxB');
+                    if (boxB) boxB.style.display = showB ? '' : 'none';
+                    if (showB) document.getElementById('roBoxBVal').textContent = formatCurrency(siCoveredPlatform);
+                    document.getElementById('roRevShareVal').textContent = formatCurrency(roRevShare);
+                }
 
                 // Override Premiums You Keep box for RO mode
                 document.getElementById('percentOfPremiums').textContent = roPct.toFixed(1) + '%';
