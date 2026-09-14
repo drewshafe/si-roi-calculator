@@ -952,11 +952,11 @@
                     <div class="rc-label">Extra Revenue With ShipInsure</div>
                     <div class="rc-total positive" id="r-extraRevenue">$0</div>
                     <div class="rc-metrics">
-                        <div class="rc-metric">
+                        <div class="rc-metric" id="r-siFundedClaimsMetric">
                             <div class="rc-metric-label">SI Funded Cost Per Claim</div>
                             <div class="rc-metric-value" id="r-siFundedClaims">$0</div>
                         </div>
-                        <div class="rc-metric">
+                        <div class="rc-metric" id="r-totalClaimsFundedMetric">
                             <div class="rc-metric-label">Total Claims Funded</div>
                             <div class="rc-metric-value" id="r-totalClaimsFunded">$0</div>
                         </div>
@@ -971,11 +971,11 @@
                     <div class="rc-label">Current Cost Without ShipInsure</div>
                     <div class="rc-total negative" id="r-lostRevenue">$0</div>
                     <div class="rc-metrics">
-                        <div class="rc-metric">
+                        <div class="rc-metric" id="r-costPerReshipMetric">
                             <div class="rc-metric-label">Cost Per Reship</div>
                             <div class="rc-metric-value" id="r-costPerReship">$0</div>
                         </div>
-                        <div class="rc-metric">
+                        <div class="rc-metric" id="r-totalClaimsMetric">
                             <div class="rc-metric-label" id="r-totalClaimsLabel">Total Claims</div>
                             <div class="rc-metric-value" id="r-totalClaims">0</div>
                         </div>
@@ -993,12 +993,12 @@
                     <div class="kmp-label">Total SI Premiums</div>
                     <div class="kmp-value" id="r-totalPremiums">$0</div>
                 </div>
-                <div class="key-metric-pill">
+                <div class="key-metric-pill" id="r-protectedClaimsPill">
                     <div class="kmp-label">Protected Claims</div>
                     <div class="kmp-value" id="r-protectedClaims">0</div>
                 </div>
                 <div class="key-metric-pill">
-                    <div class="kmp-label">Protected Orders</div>
+                    <div class="kmp-label" id="r-protectedOrdersLabel">Protected Orders</div>
                     <div class="kmp-value" id="r-protectedOrders">0</div>
                     <div class="kmp-sub" id="r-attachRate">0% attach rate</div>
                 </div>
@@ -1010,19 +1010,23 @@
 
             <!-- Returns result block -->
             <div class="feature-result-block" id="returnsResultBlock" style="display:none;">
-                <div class="feature-result-title">Returns Savings</div>
+                <div class="feature-result-title" id="returnsResultTitle">Returns Savings</div>
                 <div class="feature-result-grid">
                     <div class="feature-result-item" id="r-siCoveredLabelsItem">
-                        <div class="feature-result-item-label">SI Covered Return Labels</div>
+                        <div class="feature-result-item-label" id="r-siCoveredLabelsLabel">SI Covered Return Labels</div>
                         <div class="feature-result-item-value" id="r-siCoveredLabels">$0</div>
                     </div>
                     <div class="feature-result-item" id="r-siCoveredPlatformItem">
-                        <div class="feature-result-item-label">SI Covered Platform Cost</div>
+                        <div class="feature-result-item-label" id="r-siCoveredPlatformLabel">SI Covered Platform Cost</div>
                         <div class="feature-result-item-value" id="r-siCoveredPlatform">$0</div>
                     </div>
                     <div class="feature-result-item" id="r-totalReturnsOffsetItem">
-                        <div class="feature-result-item-label">Total Returns Offset</div>
+                        <div class="feature-result-item-label" id="r-totalReturnsOffsetLabel">Total Returns Offset</div>
                         <div class="feature-result-item-value" id="r-totalReturnsOffset">$0</div>
+                    </div>
+                    <div class="feature-result-item" id="r-offsetRevShareItem" style="display:none;">
+                        <div class="feature-result-item-label">Revenue Share</div>
+                        <div class="feature-result-item-value" id="r-offsetRevShare">$0</div>
                     </div>
                 </div>
             </div>
@@ -1103,6 +1107,7 @@
         let p_cashbackEnabled   = false;
         let p_guaranteeEnabled  = false;
         let p_returnsOffsetMode = false;
+        let _pRoSiPremiumManual = false;  // SI Premium auto-tracks ½ Avg Return Cost until edited
         let p_cogsType          = 'pct';
         let p_claimsType        = 'pct';
         let p_returnsType       = 'pct';
@@ -1377,6 +1382,30 @@
             }
         }
 
+        // ── Returns Offset mode (merchant view) ──────────────────────────────────
+        function _pRoComputeHalfPremium() {
+            const arc = parseFloat(removeCommas((document.getElementById('p-arc') || {}).value)) || 0;
+            return arc > 0 ? +(arc / 2).toFixed(2) : 0;
+        }
+        function _pRoApplyAutoPremium() {
+            if (!p_returnsOffsetMode) return;
+            const el = document.getElementById('p-premium');
+            if (!el) return;
+            if (document.activeElement === el) { _pRoSiPremiumManual = true; return; }
+            if (_pRoSiPremiumManual) return;
+            const half = _pRoComputeHalfPremium();
+            if (half > 0 && el.value !== String(half)) el.value = String(half);
+        }
+        // Hide the claims + additional inputs and relabel Rev Share for the offset view.
+        function pApplyOffsetVisibility() {
+            if (!p_returnsOffsetMode) return;
+            const hide = id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+            hide('p-claims-group');
+            hide('additionalInputsDetails');
+            const sl = document.getElementById('p-share-label');
+            if (sl) sl.textContent = p_grossRevShare ? 'Revenue Share % (gross)' : 'Revenue Share % (net offset)';
+        }
+
         // ── Lock inputs ────────────────────────────────────────────────────────
         function lockAllInputs() {
             p_locked = true;
@@ -1422,6 +1451,8 @@
 
         // ── Main Calculation ───────────────────────────────────────────────────
         function calculateProposal() {
+            // Keep SI Premium = ½ Avg Return Cost in Returns Offset mode (until edited).
+            _pRoApplyAutoPremium();
             const urlParams = new URLSearchParams(window.location.search);
             const viewMode = urlParams.get('view') || 'monthly';
             window._urlView = viewMode;
@@ -1629,6 +1660,45 @@
                 sv('r-siCoveredLabelsItem',   showLbl);
                 sv('r-siCoveredPlatformItem', showPlat);
                 sv('r-totalReturnsOffsetItem', showBoth);
+            }
+
+            // ── Returns Offset mode: relabel / restructure to the offset framing ──
+            {
+                const on = p_returnsOffsetMode;
+                const sv = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
+                // Revenue card: drop the claims metrics (returns offset has none)
+                sv('r-siFundedClaimsMetric', !on);
+                sv('r-totalClaimsFundedMetric', !on);
+                // Cost card: drop claims metrics
+                sv('r-costPerReshipMetric', !on);
+                sv('r-totalClaimsMetric', !on);
+                // Key pills: hide Protected Claims; Protected Orders → Opt-in Orders
+                sv('r-protectedClaimsPill', !on);
+                const poL = document.getElementById('r-protectedOrdersLabel');
+                if (poL) poL.textContent = on ? 'Opt-in Orders' : 'Protected Orders';
+                // Returns block → offset framing
+                const rt = document.getElementById('returnsResultTitle');
+                const laL = document.getElementById('r-siCoveredLabelsLabel');
+                const plL = document.getElementById('r-siCoveredPlatformLabel');
+                if (on) {
+                    if (rt) rt.textContent = 'Returns Offset Breakdown';
+                    const cov = p_returnsCoverage;
+                    let labelsName = 'Opt-ins Offset';
+                    if (cov === 'labels_protected') labelsName = 'Opt-in Offset';
+                    else if (cov === 'all_labels' || cov === 'all_labels_platform') labelsName = 'All Labels Offset';
+                    if (laL) laL.textContent = labelsName;
+                    if (plL) plL.textContent = 'Portal Offset';
+                    // Component boxes (labels/platform) carry the breakdown; the combined
+                    // "Total Returns Offset" line is redundant with the header total, and
+                    // Revenue Share stays in the Extra Revenue card (no duplication).
+                    sv('r-totalReturnsOffsetItem', false);
+                    sv('r-offsetRevShareItem', false);
+                } else {
+                    if (rt) rt.textContent = 'Returns Savings';
+                    if (laL) laL.textContent = 'SI Covered Return Labels';
+                    if (plL) plL.textContent = 'SI Covered Platform Cost';
+                    sv('r-offsetRevShareItem', false);
+                }
             }
 
             // Cashback block
@@ -1873,7 +1943,8 @@
                 if (urlPs.get('rc')) p_returnsCoverage = urlPs.get('rc');
                 pApplyCoverageVisibility();
             }
-            if (rom) p_returnsOffsetMode = true;
+            if (rom) { p_returnsOffsetMode = true; pApplyOffsetVisibility(); }
+            { const pe = document.getElementById('p-premium'); if (pe) pe.addEventListener('input', () => { if (p_returnsOffsetMode) _pRoSiPremiumManual = true; }); }
 
             if (cbe) {
                 p_cashbackEnabled = true;
@@ -1901,7 +1972,8 @@
             const hasOrders  = (urlPs.get('orders') || '').trim() !== '';
             const hasAov     = (urlPs.get('aov') || '').trim() !== '';
             const hasClaims  = (urlPs.get('claims') || '').trim() !== '';
-            if (hasOrders && hasAov && hasClaims) {
+            // Returns Offset links carry no claims figure, so don't gate calc on it.
+            if (hasOrders && hasAov && (hasClaims || p_returnsOffsetMode)) {
                 calculateProposal();
             }
 
