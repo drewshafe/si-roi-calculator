@@ -1066,6 +1066,54 @@
         .theme-midnight .co-lbl { color:#9a9ab0; }
         .theme-midnight .co-val { color:#efe7cf; }
         .theme-midnight .mi-additional-toggle { background:linear-gradient(150deg,#191a22,#0b0c12); color:#e9c46a; border-color:rgba(233,196,106,.35); }
+
+        /* ═══════════ PROJECT MIDNIGHT — real asset overlays (ROI calc) ═══════════ */
+        /* Header logo → gold/opal ROI wordmark */
+        .theme-midnight .logo-area img.logo-img { content:url("assets/midnight/roi-logo.png"); }
+
+        /* Animated background video, confined behind the results area (calc-right) */
+        .calc-right { position:relative; }
+        .mn-bg, .mn-scrim { display:none; }
+        .theme-midnight .calc-right > * { position:relative; z-index:2; }
+        .theme-midnight .mn-bg { display:block; position:absolute; inset:0; width:100%; height:100%;
+            object-fit:cover; z-index:0; opacity:.62; pointer-events:none; }
+        .theme-midnight .mn-scrim { display:block; position:absolute; inset:0; z-index:1; pointer-events:none;
+            background:linear-gradient(180deg, rgba(4,4,8,.66), rgba(4,4,8,.42) 42%, rgba(4,4,8,.74)); }
+
+        /* "Premiums You Keep" marble banner (label baked into the art) */
+        .theme-midnight .revenue-impact-box {
+            background:url("assets/midnight/youkeep.png") center/100% 100% no-repeat !important;
+            border:none !important; box-shadow:0 12px 32px rgba(0,0,0,.55) !important; }
+        .theme-midnight .revenue-impact-box .impact-label { visibility:hidden; }
+        .theme-midnight .revenue-impact-box .impact-value { color:#fff; text-shadow:0 2px 12px rgba(0,0,0,.75); }
+        .theme-midnight .revenue-impact-box .impact-pct-line { color:#0c0a04 !important;
+            background:linear-gradient(180deg,#f2d98a,#c69a30); }
+
+        /* Copy Link / Load buttons → marble textures (text baked in) */
+        .theme-midnight #generateProposalLink,
+        .theme-midnight #generateProposalLinkStacked {
+            background:url("assets/midnight/btn-copylink.png") center/contain no-repeat !important;
+            background-color:transparent !important; border:none !important; box-shadow:none !important;
+            font-size:0 !important; min-height:46px; }
+        .theme-midnight #loadLinkBtn {
+            background:url("assets/midnight/btn-load.png") center/contain no-repeat !important;
+            background-color:transparent !important; border:none !important; box-shadow:none !important;
+            font-size:0 !important; min-height:40px; min-width:70px; }
+
+        /* Faint iridescent white-wash over the metric strip */
+        .theme-midnight .outputs-strip { position:relative; }
+        .theme-midnight .outputs-strip::before { content:""; position:absolute; inset:0; z-index:0;
+            background:url("assets/midnight/whitewash.png") center/280px repeat; opacity:.055; pointer-events:none; }
+        .theme-midnight .outputs-inner { position:relative; z-index:1; }
+
+        /* Animate toggle (Midnight only) */
+        #mnAnimBtn { display:none; }
+        .theme-midnight #mnAnimBtn { display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+            background:linear-gradient(180deg,#14151d,#0b0c12); border:1px solid rgba(212,175,55,.4);
+            color:#e9c46a; border-radius:999px; padding:6px 12px; font-size:.72em; font-weight:800;
+            letter-spacing:.14em; text-transform:uppercase; font-family:inherit; }
+        .theme-midnight #mnAnimBtn .mn-dot { width:8px; height:8px; border-radius:50%; background:#5e6577; transition:all .25s; }
+        .theme-midnight #mnAnimBtn.on .mn-dot { background:#e9c46a; box-shadow:0 0 9px #e9c46a; }
     </style>
 </head>
 <body>
@@ -1085,6 +1133,7 @@
                 <div class="badge-pill" id="gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png" alt="Guarantee" onerror="this.closest('.badge-pill').style.display='none'"></div>
             </div>
             <div class="controls-area">
+                <button type="button" id="mnAnimBtn" onclick="mnToggleAnimate()" title="Animate the Midnight background" aria-pressed="false"><span class="mn-dot"></span>Animate</button>
                 <div class="view-selector">
                     <label for="timeframe">View:</label>
                     <select id="timeframe">
@@ -1235,6 +1284,9 @@
         </div><!-- /inputs-strip -->
         </div><!-- /calc-left -->
         <div class="calc-right">
+        <!-- Project Midnight ambient background (behind the results); poster shows until "Animate" is on -->
+        <video id="mnBg" class="mn-bg" muted loop playsinline preload="none" poster="assets/midnight/midnight-bg-poster.jpg" aria-hidden="true"></video>
+        <div class="mn-scrim" aria-hidden="true"></div>
 
         <!-- Compact-density outputs (shown only when density is Compact) -->
         <div id="compactOutputs">
@@ -1981,7 +2033,29 @@
 
         // Project Midnight theme — applied via ?theme=midnight or a hub postMessage.
         function applyTheme(name) {
-            document.body.classList.toggle('theme-midnight', name === 'midnight');
+            const midnight = name === 'midnight';
+            document.body.classList.toggle('theme-midnight', midnight);
+            // Leaving Midnight: stop the ambient video and reset the toggle.
+            if (!midnight) {
+                document.body.classList.remove('mn-animate');
+                const v = document.getElementById('mnBg'); if (v) v.pause();
+                const b = document.getElementById('mnAnimBtn'); if (b) { b.classList.remove('on'); b.setAttribute('aria-pressed','false'); }
+            }
+        }
+
+        // Midnight ambient background: poster still by default; the 6MB loop is only
+        // fetched + played once the rep opts in, so it never costs first-load or a screen-share.
+        function mnToggleAnimate() {
+            const v = document.getElementById('mnBg'), b = document.getElementById('mnAnimBtn');
+            const on = document.body.classList.toggle('mn-animate');
+            if (b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+            if (!v) return;
+            if (on) {
+                if (!v.getAttribute('src')) { v.src = 'assets/midnight/midnight-bg.mp4'; v.load(); }
+                v.play().catch(() => {});
+            } else {
+                v.pause();
+            }
         }
 
         function formatNumber(value) {
