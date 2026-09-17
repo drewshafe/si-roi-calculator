@@ -1023,12 +1023,21 @@
         .theme-midnight .output-metric.primary-metric { background:linear-gradient(150deg,#12211a,#0a0f0c); border-color:rgba(40,167,69,.4); }
         .theme-midnight .om-value { color:#f2eede; }
         /* result cards */
-        .theme-midnight .result-card.positive { background:linear-gradient(150deg,#0e1a12,#081109); }
-        .theme-midnight .result-card.negative { background:linear-gradient(150deg,#1e0f10,#120809); }
-        .theme-midnight .card-header h3 { color:#c9cbe0; }
-        .theme-midnight .result-card .value, .theme-midnight .card-total { color:#e8e8ee; }
-        .theme-midnight .card-total.positive { color:#2ee6a0; }
-        .theme-midnight .card-total.negative { color:#ff6b6b; }
+        /* Extra Revenue (with) / Current Cost (without) cards — platinum-white Statuario marble */
+        .theme-midnight { --statuario: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27640%27%20height%3D%27420%27%3E%3Cdefs%3E%3Cfilter%20id%3D%27vg%27%20x%3D%27-5%25%27%20y%3D%27-5%25%27%20width%3D%27110%25%27%20height%3D%27110%25%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.013%200.030%27%20numOctaves%3D%275%27%20seed%3D%279%27%20result%3D%27n%27%2F%3E%3CfeColorMatrix%20in%3D%27n%27%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%20-1.75%201.02%27%20result%3D%27mask%27%2F%3E%3CfeFlood%20flood-color%3D%27%238f95a3%27%20result%3D%27c%27%2F%3E%3CfeComposite%20in%3D%27c%27%20in2%3D%27mask%27%20operator%3D%27in%27%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%27vf%27%20x%3D%27-5%25%27%20y%3D%27-5%25%27%20width%3D%27110%25%27%20height%3D%27110%25%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.028%200.055%27%20numOctaves%3D%273%27%20seed%3D%274%27%20result%3D%27n2%27%2F%3E%3CfeColorMatrix%20in%3D%27n2%27%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%20-2.4%201.22%27%20result%3D%27m2%27%2F%3E%3CfeFlood%20flood-color%3D%27%23b8935a%27%20result%3D%27c2%27%2F%3E%3CfeComposite%20in%3D%27c2%27%20in2%3D%27m2%27%20operator%3D%27in%27%2F%3E%3C%2Ffilter%3E%3ClinearGradient%20id%3D%27base%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23fafbfc%27%2F%3E%3Cstop%20offset%3D%270.55%27%20stop-color%3D%27%23eef0f3%27%2F%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23e3e5ea%27%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20fill%3D%27url%28%23base%29%27%2F%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23vg%29%27%20opacity%3D%270.5%27%2F%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23vf%29%27%20opacity%3D%270.16%27%2F%3E%3C%2Fsvg%3E"); }
+        .theme-midnight .result-card.positive,
+        .theme-midnight .result-card.negative {
+            background: var(--statuario) center/cover, #eef0f3 !important;
+            border:1px solid rgba(212,175,55,.45);
+            box-shadow:0 14px 34px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.6);
+        }
+        .theme-midnight .result-card.positive { border-left:4px solid #1f9d63; }
+        .theme-midnight .result-card.negative { border-left:4px solid #d1483f; }
+        /* On-marble text flips dark for legibility; inner metric tiles stay dark insets */
+        .theme-midnight .result-card .card-header h3 { color:#1b1d24; }
+        .theme-midnight .result-card .sub-section-label { color:#3a3d47; }
+        .theme-midnight .card-total.positive { color:#0f8f56; }
+        .theme-midnight .card-total.negative { color:#c0392b; }
         .theme-midnight .value .sub, .theme-midnight .value small { color:#9a9ab0; }
         /* middle section + sub-metric pills */
         .theme-midnight .middle-section, .theme-midnight .cards-row, .theme-midnight .calc-right { background:transparent; }
