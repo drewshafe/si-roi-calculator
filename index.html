@@ -233,6 +233,16 @@
             letter-spacing: 0.2px;
         }
         .om-badge:empty { display: none; }
+        /* SI Premium "example order" probe — non-destructive premium-at-order preview */
+        .om-ex { margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .om-ex-in { width: 62px; font-size: 0.72em; padding: 2px 6px; border: 1px solid #d0d4e8; border-radius: 5px;
+            text-align: center; font-family: inherit; background: #fff; color: #212529; }
+        .om-ex-in:focus { outline: none; box-shadow: 0 0 0 2px rgba(102,117,255,0.35); }
+        .om-ex-arrow { font-size: 0.7em; color: #adb5bd; }
+        .om-ex-out { font-size: 0.62em; font-weight: 800; color: #c0641a; white-space: nowrap; min-width: 20px; text-align: left; }
+        .om-ex-out:empty::before { content: "\2014"; color: #ccd0dd; }
+        .theme-midnight .om-ex-in { background: #14141c; color: #e8e8ee; border-color: rgba(212,175,55,.3); }
+        .theme-midnight .om-ex-out { color: #e9c46a; }
 
         .om-sub {
             margin-top: 4px;
@@ -1346,6 +1356,11 @@
                     <div class="om-label" id="avgPremiumLabel" style="color:#6675FF;">SI Premium</div>
                     <div class="om-value" id="avgPremium">$0</div>
                     <div class="om-badge" id="avgPremiumBadge"></div>
+                    <div class="om-ex" title="See the SI premium for an outlier order value on the selected pricing template — doesn't change your AOV or results">
+                        <input type="text" id="exOrderInput" class="om-ex-in" placeholder="order $" inputmode="decimal" autocomplete="off" oninput="updateExamplePremium()" aria-label="Example order value">
+                        <span class="om-ex-arrow">&rarr;</span>
+                        <span class="om-ex-out" id="exOrderOut"></span>
+                    </div>
                 </div>
                 <div class="output-metric" id="premiumsMetric">
                     <div class="om-label">Premiums</div>
@@ -2019,6 +2034,33 @@
             return last.pct ? orderValue * last.pct : last.premium;
         }
 
+        // SI premium for ANY order value on the current pricing template (mirrors the
+        // main calc's premium logic). Used by the example-order probe under SI Premium.
+        function siPremiumFor(orderValue) {
+            const template = document.getElementById('pricingTemplate').value;
+            if (template === 'percentage') {
+                const raw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
+                const minFloor = parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0;
+                return Math.max(orderValue * (raw / 100), minFloor);
+            } else if (template === 'flat_dollar') {
+                return parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
+            }
+            return getTieredPremium(orderValue, template);
+        }
+
+        // Non-destructive: shows the premium (+ effective %) for the typed order value,
+        // without touching AOV or the headline results.
+        function updateExamplePremium() {
+            const inp = document.getElementById('exOrderInput');
+            const out = document.getElementById('exOrderOut');
+            if (!inp || !out) return;
+            const v = parseFloat(removeCommas(inp.value));
+            if (!v || v <= 0) { out.textContent = ''; return; }
+            const prem = siPremiumFor(v);
+            const eff = prem / v * 100;
+            out.textContent = formatCurrencyWithCents(prem) + ' · ' + eff.toFixed(1) + '%';
+        }
+
         function toggleProtectionPremiumVisibility() {
             const template = document.getElementById('pricingTemplate').value;
             const premiumGroup = document.getElementById('protectionPremiumGroup');
@@ -2575,6 +2617,7 @@
             // SI Premium box: always the $ premium, with a badge describing the pricing basis.
             document.getElementById('avgPremiumLabel').textContent = 'SI Premium';
             document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
+            updateExamplePremium();
             const _apBadge = document.getElementById('avgPremiumBadge');
             if (_apBadge) {
                 let _bt = '';
