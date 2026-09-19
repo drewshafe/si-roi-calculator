@@ -3670,6 +3670,7 @@
                 hideCurrentCost: _hideCurrentCost,
                 pricing:         document.getElementById('pricingTemplate').value,
                 minPremium:      (document.getElementById('minPremium') || {}).value || '',
+                limit:           (document.getElementById('coverageLimit') || {}).value || '',
                 claimResolution: document.getElementById('claimResolution').value,
                 merchantName:    document.getElementById('merchantName').value,
                 siInputsVisible: document.getElementById('siInputsCheck').checked,
@@ -3775,6 +3776,7 @@
             if (typeof d.hideCurrentCost === 'boolean' && d.hideCurrentCost !== _hideCurrentCost) toggleCurrentCost();
             if (typeof d.pricing === 'string') { document.getElementById('pricingTemplate').value = d.pricing; toggleProtectionPremiumVisibility(); }
             if (typeof d.minPremium === 'string') { const mp = document.getElementById('minPremium'); if (mp) mp.value = d.minPremium; }
+            if (typeof d.limit === 'string') { const cl = document.getElementById('coverageLimit'); if (cl) cl.value = d.limit; }
             if (typeof d.claimResolution === 'string') { document.getElementById('claimResolution').value = d.claimResolution; setClaimResolution(d.claimResolution); }
             if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
             if (typeof d.siInputsVisible === 'boolean') { document.getElementById('siInputsCheck').checked = d.siInputsVisible; toggleSiInputsVisibility(); }
