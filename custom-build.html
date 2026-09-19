@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custom Build — ShipInsure Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+<style>
+  :root{ --bg:#eef0f6; --panel:#fff; --ink:#1f2430; --muted:#6c757d; --line:#e3e6f0; --accent:#6675ff; --font:'Inter',system-ui,sans-serif; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{ background:var(--bg); color:var(--ink); font-family:var(--font); display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+  header.cbh{ background:#2a2f45; color:#fff; padding:12px 18px; display:flex; align-items:center; gap:14px; flex-shrink:0; border-bottom:3px solid var(--accent); }
+  header.cbh h1{ font-size:1.05rem; font-weight:800; margin:0; letter-spacing:.01em; }
+  header.cbh .sub{ font-size:.72rem; color:rgba(255,255,255,.65); }
+  .cb-link-row{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .cb-link-row input{ width:280px; max-width:40vw; font-family:inherit; font-size:.8rem; padding:7px 9px; border-radius:7px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.12); color:#fff; }
+  .cb-link-row input::placeholder{ color:rgba(255,255,255,.55); }
+  .cb-btn{ font-family:inherit; font-size:.78rem; font-weight:700; padding:7px 13px; border-radius:7px; border:none; cursor:pointer; background:var(--accent); color:#fff; }
+  .cb-btn.ghost{ background:rgba(255,255,255,.14); }
+  main{ flex:1; display:grid; grid-template-columns:340px 1fr; min-height:0; }
+  .editor{ background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding:16px; }
+  .preview{ background:#d8dced; overflow:hidden; position:relative; }
+  .preview iframe{ width:100%; height:100%; border:0; display:block; }
+  .grp{ margin-bottom:20px; }
+  .grp-h{ font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .fld{ margin-bottom:11px; }
+  .fld label{ display:block; font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:4px; }
+  .fld input[type=text], .fld select{ width:100%; font-family:inherit; font-size:.85rem; padding:7px 9px; border:1px solid #d0d4e8; border-radius:7px; background:#fff; color:var(--ink); }
+  .fld-row{ display:flex; gap:8px; align-items:center; }
+  .fld-row input[type=color]{ width:44px; height:36px; padding:2px; border:1px solid #d0d4e8; border-radius:7px; background:#fff; cursor:pointer; }
+  .fld-row input[type=text]{ flex:1; }
+  .swatches{ display:flex; gap:6px; margin-top:7px; flex-wrap:wrap; }
+  .sw{ width:22px; height:22px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px #d0d4e8; cursor:pointer; }
+  /* drag list */
+  .lay-list{ display:flex; flex-direction:column; gap:6px; }
+  .lay-item{ display:flex; align-items:center; gap:9px; padding:9px 10px; background:#f7f8fc; border:1px solid #e3e6f0; border-radius:9px; cursor:grab; user-select:none; }
+  .lay-item.dragging{ opacity:.45; }
+  .lay-item.over{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(102,117,255,.25); }
+  .lay-grip{ color:#adb5bd; font-size:1em; line-height:1; cursor:grab; }
+  .lay-name{ flex:1; font-size:.82rem; font-weight:700; }
+  .lay-item.hidden .lay-name{ color:#b0b6c6; text-decoration:line-through; }
+  .lay-eye{ background:none; border:none; cursor:pointer; font-size:.95em; opacity:.85; padding:2px; }
+  .hint{ font-size:.66rem; color:var(--muted); line-height:1.5; margin-top:8px; }
+  .cb-linkout{ margin-top:10px; }
+  .cb-linkout textarea{ width:100%; height:52px; font-family:ui-monospace,Menlo,monospace; font-size:.62rem; padding:7px; border:1px solid #d0d4e8; border-radius:7px; resize:none; color:#3a3d47; background:#f7f8fc; }
+  @media (max-width:820px){ main{ grid-template-columns:1fr; } .preview{ min-height:50vh; } .cb-link-row input{ width:150px; } }
+</style>
+</head>
+<body>
+  <header class="cbh">
+    <div>
+      <h1>Custom Build</h1>
+      <div class="sub">Brand &amp; arrange the merchant proposal</div>
+    </div>
+    <div class="cb-link-row">
+      <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
+      <button class="cb-btn ghost" id="loadBase">Load</button>
+      <button class="cb-btn" id="copyLink">📋 Copy Custom Link</button>
+    </div>
+  </header>
+  <main>
+    <div class="editor">
+      <div class="grp">
+        <div class="grp-h">Merchant Branding</div>
+        <div class="fld">
+          <label>Accent color</label>
+          <div class="fld-row">
+            <input type="color" id="accent" value="#6675ff">
+            <input type="text" id="accentHex" value="#6675ff" spellcheck="false">
+          </div>
+          <div class="swatches" id="swatches"></div>
+        </div>
+        <div class="fld">
+          <label>Font</label>
+          <select id="font">
+            <option value="">System default</option>
+            <option value="Poppins">Poppins</option>
+            <option value="Montserrat">Montserrat</option>
+            <option value="Inter">Inter</option>
+            <option value="Lora">Lora (serif)</option>
+            <option value="Georgia">Georgia (serif)</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Logo image URL</label>
+          <input type="text" id="logoUrl" placeholder="https://…/logo.png" spellcheck="false">
+        </div>
+        <div class="fld">
+          <label>Banner image URL</label>
+          <input type="text" id="bannerUrl" placeholder="https://…/banner.jpg" spellcheck="false">
+        </div>
+        <div class="hint">Paste image URLs (uploads aren't hosted yet — Brandfetch auto-fill is coming). The logo replaces the header mark; the banner sits atop the results.</div>
+      </div>
+      <div class="grp">
+        <div class="grp-h">Layout — drag to reorder, 👁 to show/hide</div>
+        <div class="lay-list" id="layList"></div>
+        <div class="hint">Feature sections (Returns, Cashback, Guarantee) only appear when that feature is on in the underlying calc.</div>
+      </div>
+      <div class="cb-linkout">
+        <label style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Shareable link</label>
+        <textarea id="linkOut" readonly></textarea>
+      </div>
+    </div>
+    <div class="preview">
+      <iframe id="preview" title="Proposal preview"></iframe>
+    </div>
+  </main>
+
+<script>
+  // Default base params so the preview shows a realistic proposal immediately.
+  const DEFAULT_BASE = 'mname=Acme+Co&orders=10000&aov=80&claims=1.5&share=25&attach=68&premium=3&minp=0.98&avg_premium=2.40&view=monthly&template=percentage';
+  let baseParams = DEFAULT_BASE;
+
+  const SECTIONS = [
+    { k: 'hero',      label: 'Net Benefit Hero' },
+    { k: 'cards',     label: 'Revenue / Cost Cards' },
+    { k: 'metrics',   label: 'Key Metric Pills' },
+    { k: 'returns',   label: 'Returns Savings' },
+    { k: 'cashback',  label: 'Cashback' },
+    { k: 'guarantee', label: 'Guarantee' },
+  ];
+  const SWATCHES = ['#6675ff','#1f9d63','#e0007a','#c0641a','#0f8f56','#2a2f45','#d4af37','#7c3aed'];
+
+  let layout = SECTIONS.map(s => ({ k: s.k, v: true }));
+
+  const $ = id => document.getElementById(id);
+  const proposalBase = () => new URL('proposal.html', location.href).href;
+
+  function cfg() {
+    return {
+      branding: {
+        accent: $('accentHex').value.trim() || undefined,
+        font: $('font').value || undefined,
+        logoUrl: $('logoUrl').value.trim() || undefined,
+        bannerUrl: $('bannerUrl').value.trim() || undefined,
+      },
+      layout: layout,
+    };
+  }
+  function buildUrl() {
+    const enc = encodeURIComponent(JSON.stringify(cfg()));
+    return proposalBase() + '?' + baseParams + '&bld=' + enc;
+  }
+
+  let _t = null;
+  function refresh(immediate) {
+    const url = buildUrl();
+    $('linkOut').value = url;
+    clearTimeout(_t);
+    const doIt = () => { $('preview').src = url; };
+    if (immediate) doIt(); else _t = setTimeout(doIt, 400);
+  }
+
+  // ── Branding controls ──
+  function renderSwatches() {
+    $('swatches').innerHTML = '';
+    SWATCHES.forEach(c => {
+      const s = document.createElement('div');
+      s.className = 'sw'; s.style.background = c; s.title = c;
+      s.addEventListener('click', () => { $('accent').value = c; $('accentHex').value = c; refresh(true); });
+      $('swatches').appendChild(s);
+    });
+  }
+  $('accent').addEventListener('input', e => { $('accentHex').value = e.target.value; refresh(true); });
+  $('accentHex').addEventListener('input', e => {
+    const v = e.target.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent').value = v; refresh(true); } else { refresh(false); }
+  });
+  $('font').addEventListener('change', () => refresh(true));
+  $('logoUrl').addEventListener('input', () => refresh(false));
+  $('bannerUrl').addEventListener('input', () => refresh(false));
+
+  // ── Layout drag-and-drop ──
+  let dragKey = null;
+  function renderLayout() {
+    const list = $('layList'); list.innerHTML = '';
+    layout.forEach(item => {
+      const meta = SECTIONS.find(s => s.k === item.k);
+      const row = document.createElement('div');
+      row.className = 'lay-item' + (item.v ? '' : ' hidden');
+      row.draggable = true;
+      row.dataset.k = item.k;
+      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name">' + meta.label + '</span>' +
+                      '<button class="lay-eye" title="Show / hide">' + (item.v ? '👁' : '🚫') + '</button>';
+      row.querySelector('.lay-eye').addEventListener('click', e => {
+        e.stopPropagation();
+        item.v = !item.v; renderLayout(); refresh(true);
+      });
+      row.addEventListener('dragstart', () => { dragKey = item.k; row.classList.add('dragging'); });
+      row.addEventListener('dragend', () => { dragKey = null; row.classList.remove('dragging'); [...list.children].forEach(c => c.classList.remove('over')); });
+      row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('over'); });
+      row.addEventListener('dragleave', () => row.classList.remove('over'));
+      row.addEventListener('drop', e => {
+        e.preventDefault(); row.classList.remove('over');
+        if (!dragKey || dragKey === item.k) return;
+        const from = layout.findIndex(l => l.k === dragKey);
+        const to = layout.findIndex(l => l.k === item.k);
+        const [moved] = layout.splice(from, 1);
+        layout.splice(to, 0, moved);
+        renderLayout(); refresh(true);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  // ── Base link ──
+  function loadBase() {
+    const raw = ($('baseLink').value || '').trim();
+    if (!raw) return;
+    let search = '';
+    try { search = new URL(raw).search.replace(/^\?/, ''); } catch (e) { search = raw.replace(/^\?/, ''); }
+    // strip any existing bld so we don't nest
+    const p = new URLSearchParams(search); p.delete('bld');
+    if (p.toString()) baseParams = p.toString();
+    refresh(true);
+  }
+  $('loadBase').addEventListener('click', loadBase);
+  $('baseLink').addEventListener('keydown', e => { if (e.key === 'Enter') loadBase(); });
+
+  $('copyLink').addEventListener('click', () => {
+    const url = buildUrl();
+    navigator.clipboard && navigator.clipboard.writeText(url);
+    const btn = $('copyLink'); const old = btn.textContent; btn.textContent = '✓ Copied';
+    setTimeout(() => btn.textContent = old, 1400);
+  });
+
+  // Seed from an incoming ?base= or existing query (lets the hub pass the current link)
+  (function initFromQuery(){
+    const q = new URLSearchParams(location.search);
+    const seed = q.get('base');
+    if (seed) { try { $('baseLink').value = decodeURIComponent(seed); loadBase(); } catch(e){} }
+  })();
+
+  renderSwatches();
+  renderLayout();
+  refresh(true);
+</script>
+</body>
+</html>

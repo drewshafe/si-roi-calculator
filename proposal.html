@@ -753,6 +753,7 @@
         .kmp-badge { display: inline-block; margin-top: 3px; font-size: 0.56em; font-weight: 800; color: #6675ff;
             background: rgba(102,117,255,0.12); border-radius: 10px; padding: 1px 7px; letter-spacing: 0.2px; }
         .kmp-badge:empty { display: none; }
+        [data-cb-hidden="1"] { display: none !important; }
         .theme-midnight .kmp-badge { color: #e9c46a; background: rgba(233,196,106,0.14); }
 
         /* ═══════════════ PROJECT MIDNIGHT — merchant view ═══════════════ */
@@ -2157,9 +2158,77 @@
             if (on) { if (!v.getAttribute('src')) { v.src = 'assets/midnight/midnight-bg.mp4'; v.load(); } v.play().catch(function(){}); }
             else { v.pause(); }
         }
+        // ── Custom Build: apply a branding + layout config carried on the link (?cb=) ──
+        const CB_GOOGLE_FONTS = { 'Poppins':1, 'Montserrat':1, 'Inter':1, 'Lora':1, 'Roboto Slab':1 };
+        function _cbShade(hex, pct) {
+            try {
+                const n = parseInt(String(hex).replace('#', ''), 16);
+                let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255; const f = pct / 100;
+                r = Math.round(r + (f < 0 ? r * f : (255 - r) * f));
+                g = Math.round(g + (f < 0 ? g * f : (255 - g) * f));
+                b = Math.round(b + (f < 0 ? b * f : (255 - b) * f));
+                return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            } catch (e) { return hex; }
+        }
+        function applyCustomBuild(urlPs) {
+            let cfg = null;
+            try { const raw = urlPs.get('bld'); if (raw) cfg = JSON.parse(decodeURIComponent(raw)); } catch (e) { return; }
+            if (!cfg) return;
+            const b = cfg.branding || {};
+            if (b.font) {
+                if (CB_GOOGLE_FONTS[b.font]) {
+                    const l = document.createElement('link'); l.rel = 'stylesheet';
+                    l.href = 'https://fonts.googleapis.com/css2?family=' + b.font.replace(/ /g, '+') + ':wght@400;600;700;800&display=swap';
+                    document.head.appendChild(l);
+                }
+                document.body.style.fontFamily = "'" + b.font + "', system-ui, sans-serif";
+            }
+            if (b.logoUrl) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = b.logoUrl; lg.style.display = ''; } }
+            if (b.bannerUrl) {
+                const rp = document.querySelector('.right-panel');
+                if (rp && !document.getElementById('cb-banner')) {
+                    const img = document.createElement('img');
+                    img.id = 'cb-banner'; img.src = b.bannerUrl; img.alt = 'Merchant banner'; img.onerror = function(){ this.style.display = 'none'; };
+                    img.style.cssText = 'display:block;width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin-bottom:12px;';
+                    rp.insertBefore(img, rp.firstChild);
+                }
+            }
+            if (b.accent) {
+                const a = b.accent, st = document.createElement('style'); st.id = 'cb-accent';
+                st.textContent = '.kmp-value{color:' + a + ' !important;}' +
+                    '.result-hero:not(.upfront-hero){background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;}' +
+                    '.calc-btn{background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;}' +
+                    '#p-save-link-btn{color:' + a + ' !important;border-color:' + _cbShade(a, 40) + ' !important;}' +
+                    '.proposal-header{border-bottom-color:' + a + ' !important;}' +
+                    '.no-results-placeholder strong{color:' + a + ' !important;}';
+                document.head.appendChild(st);
+            }
+            if (Array.isArray(cfg.layout) && cfg.layout.length) {
+                const MAP = {
+                    hero: document.querySelector('.hero-row'),
+                    cards: document.getElementById('resultCardsRow'),
+                    metrics: document.querySelector('.key-metrics'),
+                    returns: document.getElementById('returnsResultBlock'),
+                    cashback: document.getElementById('cashbackResultBlock'),
+                    guarantee: document.getElementById('guaranteeResultBlock')
+                };
+                const anchor = document.getElementById('p-calcBreakdown');
+                const parent = document.getElementById('resultsSection');
+                cfg.layout.forEach(item => {
+                    const key = (typeof item === 'string') ? item : item.k;
+                    const visible = (typeof item === 'string') ? true : (item.v !== false);
+                    const el = MAP[key];
+                    if (!el || !parent || !anchor) return;
+                    parent.insertBefore(el, anchor);
+                    el.setAttribute('data-cb-hidden', visible ? '' : '1');
+                });
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const urlPs = new URLSearchParams(window.location.search);
             if (urlPs.get('theme') === 'midnight') document.body.classList.add('theme-midnight');
+            applyCustomBuild(urlPs);
 
             // Helper: set field value
             const up = (id, key, fmt) => {
