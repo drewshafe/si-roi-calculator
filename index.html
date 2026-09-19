@@ -3198,6 +3198,8 @@
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
+            // Carry the Project Midnight theme through to the merchant view.
+            if (document.body.classList.contains('theme-midnight')) params.set('theme', 'midnight');
             if (_upfrontTier != null) {
                 params.set('upf', String(_upfrontTier));
                 const _uv = (document.getElementById('timeframe') || {}).value || 'monthly';
@@ -3277,6 +3279,8 @@
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
+            // Carry the Project Midnight theme through to the merchant view.
+            if (document.body.classList.contains('theme-midnight')) params.set('theme', 'midnight');
             if (_upfrontTier != null) {
                 params.set('upf', String(_upfrontTier));
                 const _uv = (document.getElementById('timeframe') || {}).value || 'monthly';
