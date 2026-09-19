@@ -721,6 +721,32 @@
             flex-direction: column;
             gap: 4px;
         }
+        /* SI Premium outlier-order probe → little popup with chips (non-destructive) */
+        #avgPremiumPill { position: relative; }
+        .om-ex { margin-top: 6px; display: flex; justify-content: center; }
+        .om-ex-in { width: 78px; font-size: 0.72em; padding: 3px 8px; border: 1px solid #d0d4e8; border-radius: 6px;
+            text-align: center; font-family: inherit; background: #fff; color: #212529; }
+        .om-ex-in:focus { outline: none; box-shadow: 0 0 0 2px rgba(102,117,255,0.35); }
+        /* Avg Premium is the right-most pill, so open the popup right-aligned (opens inward, never clips) */
+        .om-ex-pop { position: absolute; top: 100%; right: 0; left: auto; margin-top: 9px; z-index: 40;
+            width: 240px; max-width: 78vw; background: #fff; border: 1px solid #e3e6f0; border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(30,36,60,.22); padding: 10px 11px; text-align: center; }
+        .om-ex-pop::before { content: ""; position: absolute; top: -6px; right: 46px; transform: rotate(45deg);
+            width: 11px; height: 11px; background: #fff; border-left: 1px solid #e3e6f0; border-top: 1px solid #e3e6f0; }
+        .om-ex-pop-hd { font-size: 0.56em; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #6c757d; margin-bottom: 5px; }
+        .om-ex-pop-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; }
+        .om-ex-pop-o { font-size: 0.82em; font-weight: 800; color: #26304f; font-variant-numeric: tabular-nums; }
+        .om-ex-arrow { color: #adb5bd; font-size: 0.75em; }
+        .om-ex-pop-p { font-size: 0.82em; font-weight: 800; color: #c0641a; font-variant-numeric: tabular-nums; }
+        .om-ex-chips { display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; }
+        .om-ex-chip { border: 1px solid #d3d9f2; background: #fff; border-radius: 7px; padding: 5px 2px; cursor: pointer; font-family: inherit; text-align: center; }
+        .om-ex-chip:hover { border-color: #6675ff; }
+        .om-ex-chip.active { border-color: #6675ff; background: #eef1ff; box-shadow: 0 0 0 2px rgba(102,117,255,.2); }
+        .om-ex-chip .m { font-size: 0.5em; font-weight: 800; color: #8890a5; text-transform: uppercase; }
+        .om-ex-chip .o { font-size: 0.6em; font-weight: 800; color: #26304f; font-variant-numeric: tabular-nums; }
+        .om-ex-chip .p { font-size: 0.58em; font-weight: 800; color: #c0641a; margin-top: 1px; font-variant-numeric: tabular-nums; }
+        .om-ex-chip.aov { background: linear-gradient(135deg,#eafaf0,#dff5e8); border-color: rgba(31,157,99,.4); }
+        .om-ex-chip.aov .p { color: #1f9d63; }
     </style>
 </head>
 <body>
@@ -1062,9 +1088,18 @@
                     <div class="kmp-value" id="r-protectedOrders">0</div>
                     <div class="kmp-sub" id="r-attachRate">0% attach rate</div>
                 </div>
-                <div class="key-metric-pill">
+                <div class="key-metric-pill" id="avgPremiumPill">
                     <div class="kmp-label">Avg Premium</div>
                     <div class="kmp-value" id="r-avgPremium">$0</div>
+                    <div class="om-ex" id="omEx" title="Check the SI premium for an outlier order on this pricing template">
+                        <input type="text" id="exOrderInput" class="om-ex-in" placeholder="Order $" inputmode="decimal" autocomplete="off"
+                               oninput="updateExamplePremium()" onfocus="showExPop()" onblur="hideExPopSoon()" aria-label="Outlier order value">
+                        <div class="om-ex-pop" id="exPop" hidden>
+                            <div class="om-ex-pop-hd">Premium at order value</div>
+                            <div class="om-ex-pop-row"><span class="om-ex-pop-o" id="exPopOrder">&mdash;</span><span class="om-ex-arrow">&rarr;</span><span class="om-ex-pop-p" id="exPopPrem">&mdash;</span></div>
+                            <div class="om-ex-chips" id="exChips"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1339,6 +1374,76 @@
             }
             const last = tiers[tiers.length - 1];
             return last.pct ? orderValue * last.pct : last.premium;
+        }
+
+        // ── Outlier-order probe (Option B), mirrored from the rep calc ──
+        function pSiPremiumFor(orderValue) {
+            const template = document.getElementById('p-template').value;
+            if (template === 'percentage') {
+                const raw = parseFloat(removeCommas(document.getElementById('p-premium').value)) || 0;
+                const minFloor = parseFloat((new URLSearchParams(window.location.search).get('minp')) || '') || 0;
+                return Math.max(orderValue * (raw / 100), minFloor);
+            } else if (template === 'flat_dollar') {
+                return parseFloat(removeCommas(document.getElementById('p-premium').value)) || 0;
+            }
+            return getTieredPremium(orderValue, template);
+        }
+        let _exHideTimer = null;
+        function _premiumIsFlat() {
+            const t = document.getElementById('p-template').value;
+            return t === 'flat_dollar' || t.slice(0, 2) === 'f_';
+        }
+        function buildExChips() {
+            const chips = document.getElementById('exChips');
+            if (!chips) return;
+            const aov = parseFloat(removeCommas(document.getElementById('p-aov').value)) || 0;
+            const cur = Math.round(parseFloat(removeCommas(document.getElementById('exOrderInput').value)) || 0);
+            chips.innerHTML = '';
+            [['¼×', 0.25], ['½×', 0.5], ['1×', 1], ['2×', 2], ['4×', 4]].forEach(([m, mult]) => {
+                const order = Math.max(1, Math.round(aov * mult));
+                const prem = pSiPremiumFor(order);
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'om-ex-chip' + (mult === 1 ? ' aov' : '') + (order === cur ? ' active' : '');
+                b.innerHTML = '<div class="m">' + m + '</div><div class="o">$' + fmtNum(order) + '</div>' +
+                              '<div class="p">' + fmtDollarCents(prem).replace('.00', '') + '</div>';
+                b.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    document.getElementById('exOrderInput').value = String(order);
+                    updateExamplePremium();
+                    document.getElementById('exOrderInput').focus();
+                });
+                chips.appendChild(b);
+            });
+        }
+        function showExPop() {
+            if (_premiumIsFlat()) return;
+            buildExChips();
+            const pop = document.getElementById('exPop');
+            if (pop) pop.hidden = false;
+        }
+        function hideExPopSoon() {
+            clearTimeout(_exHideTimer);
+            _exHideTimer = setTimeout(() => { const p = document.getElementById('exPop'); if (p) p.hidden = true; }, 170);
+        }
+        function updateExamplePremium() {
+            const omEx = document.getElementById('omEx');
+            const inp = document.getElementById('exOrderInput');
+            if (!omEx || !inp) return;
+            if (_premiumIsFlat()) { omEx.style.display = 'none'; const p = document.getElementById('exPop'); if (p) p.hidden = true; return; }
+            omEx.style.display = '';
+            const v = parseFloat(removeCommas(inp.value)) || 0;
+            const o = document.getElementById('exPopOrder'), pEl = document.getElementById('exPopPrem');
+            if (v > 0) {
+                const prem = pSiPremiumFor(v);
+                if (o) o.textContent = '$' + fmtNum(Math.round(v));
+                if (pEl) pEl.textContent = fmtDollarCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
+                const pop = document.getElementById('exPop'); if (pop) pop.hidden = false;
+            } else {
+                if (o) o.textContent = '—';
+                if (pEl) pEl.textContent = '—';
+            }
+            buildExChips();
         }
 
         // ── Type toggle helpers ────────────────────────────────────────────────
@@ -1692,6 +1797,7 @@
             document.getElementById('r-protectedOrders').textContent = fmtNum(protectedOrders);
             document.getElementById('r-attachRate').textContent = (attachRate * 100).toFixed(0) + '% attach rate';
             document.getElementById('r-avgPremium').textContent = fmtDollarCents(avgPremium);
+            updateExamplePremium();
 
             // Returns block
             if (p_returnsEnabled) {

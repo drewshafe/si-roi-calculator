@@ -233,16 +233,40 @@
             letter-spacing: 0.2px;
         }
         .om-badge:empty { display: none; }
-        /* SI Premium "example order" probe — non-destructive premium-at-order preview */
-        .om-ex { margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .om-ex-in { width: 62px; font-size: 0.72em; padding: 2px 6px; border: 1px solid #d0d4e8; border-radius: 5px;
+        /* SI Premium outlier-order probe → little popup with ¼×–4× chips (non-destructive) */
+        #avgPremiumMetric { position: relative; }
+        .om-ex { margin-top: 6px; display: flex; justify-content: center; }
+        .om-ex-in { width: 78px; font-size: 0.72em; padding: 3px 8px; border: 1px solid #d0d4e8; border-radius: 6px;
             text-align: center; font-family: inherit; background: #fff; color: #212529; }
         .om-ex-in:focus { outline: none; box-shadow: 0 0 0 2px rgba(102,117,255,0.35); }
-        .om-ex-arrow { font-size: 0.7em; color: #adb5bd; }
-        .om-ex-out { font-size: 0.62em; font-weight: 800; color: #c0641a; white-space: nowrap; min-width: 20px; text-align: left; }
-        .om-ex-out:empty::before { content: "\2014"; color: #ccd0dd; }
+        .om-ex-pop { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 9px; z-index: 40;
+            width: 240px; background: #fff; border: 1px solid #e3e6f0; border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(30,36,60,.22); padding: 10px 11px; text-align: center; }
+        .om-ex-pop::before { content: ""; position: absolute; top: -6px; left: 50%; transform: translateX(-50%) rotate(45deg);
+            width: 11px; height: 11px; background: #fff; border-left: 1px solid #e3e6f0; border-top: 1px solid #e3e6f0; }
+        .om-ex-pop-hd { font-size: 0.56em; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #6c757d; margin-bottom: 5px; }
+        .om-ex-pop-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; }
+        .om-ex-pop-o { font-size: 0.82em; font-weight: 800; color: #26304f; font-variant-numeric: tabular-nums; }
+        .om-ex-arrow { color: #adb5bd; font-size: 0.75em; }
+        .om-ex-pop-p { font-size: 0.82em; font-weight: 800; color: #c0641a; font-variant-numeric: tabular-nums; }
+        .om-ex-chips { display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; }
+        .om-ex-chip { border: 1px solid #d3d9f2; background: #fff; border-radius: 7px; padding: 5px 2px; cursor: pointer; font-family: inherit; text-align: center; }
+        .om-ex-chip:hover { border-color: #6675ff; }
+        .om-ex-chip.active { border-color: #6675ff; background: #eef1ff; box-shadow: 0 0 0 2px rgba(102,117,255,.2); }
+        .om-ex-chip .m { font-size: 0.5em; font-weight: 800; color: #8890a5; text-transform: uppercase; }
+        .om-ex-chip .o { font-size: 0.6em; font-weight: 800; color: #26304f; font-variant-numeric: tabular-nums; }
+        .om-ex-chip .p { font-size: 0.58em; font-weight: 800; color: #c0641a; margin-top: 1px; font-variant-numeric: tabular-nums; }
+        .om-ex-chip.aov { background: linear-gradient(135deg,#eafaf0,#dff5e8); border-color: rgba(31,157,99,.4); }
+        .om-ex-chip.aov .p { color: #1f9d63; }
         .theme-midnight .om-ex-in { background: #14141c; color: #e8e8ee; border-color: rgba(212,175,55,.3); }
-        .theme-midnight .om-ex-out { color: #e9c46a; }
+        .theme-midnight .om-ex-pop { background: #12121a; border-color: rgba(212,175,55,.3); box-shadow: 0 14px 36px rgba(0,0,0,.62); }
+        .theme-midnight .om-ex-pop::before { background: #12121a; border-color: rgba(212,175,55,.3); }
+        .theme-midnight .om-ex-pop-hd { color: #9a9ab0; }
+        .theme-midnight .om-ex-pop-o { color: #e8e8ee; }
+        .theme-midnight .om-ex-pop-p { color: #e9c46a; }
+        .theme-midnight .om-ex-chip { background: #14141c; border-color: rgba(212,175,55,.2); }
+        .theme-midnight .om-ex-chip .o { color: #e8e8ee; }
+        .theme-midnight .om-ex-chip.aov { background: linear-gradient(150deg,#12211a,#0a0f0c); border-color: rgba(40,167,69,.4); }
 
         .om-sub {
             margin-top: 4px;
@@ -1356,10 +1380,14 @@
                     <div class="om-label" id="avgPremiumLabel" style="color:#6675FF;">SI Premium</div>
                     <div class="om-value" id="avgPremium">$0</div>
                     <div class="om-badge" id="avgPremiumBadge"></div>
-                    <div class="om-ex" title="See the SI premium for an outlier order value on the selected pricing template — doesn't change your AOV or results">
-                        <input type="text" id="exOrderInput" class="om-ex-in" placeholder="order $" inputmode="decimal" autocomplete="off" oninput="updateExamplePremium()" aria-label="Example order value">
-                        <span class="om-ex-arrow">&rarr;</span>
-                        <span class="om-ex-out" id="exOrderOut"></span>
+                    <div class="om-ex" id="omEx" title="Check the SI premium for an outlier order on the selected pricing template — doesn't change your AOV or results">
+                        <input type="text" id="exOrderInput" class="om-ex-in" placeholder="Order $" inputmode="decimal" autocomplete="off"
+                               oninput="updateExamplePremium()" onfocus="showExPop()" onblur="hideExPopSoon()" aria-label="Outlier order value">
+                        <div class="om-ex-pop" id="exPop" hidden>
+                            <div class="om-ex-pop-hd">Premium at order value</div>
+                            <div class="om-ex-pop-row"><span class="om-ex-pop-o" id="exPopOrder">&mdash;</span><span class="om-ex-arrow">&rarr;</span><span class="om-ex-pop-p" id="exPopPrem">&mdash;</span></div>
+                            <div class="om-ex-chips" id="exChips"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="output-metric" id="premiumsMetric">
@@ -2048,17 +2076,67 @@
             return getTieredPremium(orderValue, template);
         }
 
-        // Non-destructive: shows the premium (+ effective %) for the typed order value,
-        // without touching AOV or the headline results.
+        // Outlier-order probe (Option B). The premium only flexes with order value on
+        // %/tiered pricing, so the whole feature is hidden for $-Based / flat presets.
+        let _exHideTimer = null;
+        function _premiumIsFlat() {
+            const t = document.getElementById('pricingTemplate').value;
+            return t === 'flat_dollar' || t.slice(0, 2) === 'f_';
+        }
+        function buildExChips() {
+            const chips = document.getElementById('exChips');
+            if (!chips) return;
+            const aov = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
+            const cur = Math.round(parseFloat(removeCommas(document.getElementById('exOrderInput').value)) || 0);
+            chips.innerHTML = '';
+            [['¼×', 0.25], ['½×', 0.5], ['1×', 1], ['2×', 2], ['4×', 4]].forEach(([m, mult]) => {
+                const order = Math.max(1, Math.round(aov * mult));
+                const prem = siPremiumFor(order);
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'om-ex-chip' + (mult === 1 ? ' aov' : '') + (order === cur ? ' active' : '');
+                b.innerHTML = '<div class="m">' + m + '</div><div class="o">$' + formatNumber(order) + '</div>' +
+                              '<div class="p">' + formatCurrencyWithCents(prem).replace('.00', '') + '</div>';
+                // mousedown (not click) so it fires before the input's blur hides the popup
+                b.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    document.getElementById('exOrderInput').value = String(order);
+                    updateExamplePremium();
+                    document.getElementById('exOrderInput').focus();
+                });
+                chips.appendChild(b);
+            });
+        }
+        function showExPop() {
+            if (_premiumIsFlat()) return;
+            buildExChips();
+            const pop = document.getElementById('exPop');
+            if (pop) pop.hidden = false;
+        }
+        function hideExPopSoon() {
+            clearTimeout(_exHideTimer);
+            _exHideTimer = setTimeout(() => { const p = document.getElementById('exPop'); if (p) p.hidden = true; }, 170);
+        }
+        // Non-destructive: premium (+ effective %) for the typed/selected order value.
         function updateExamplePremium() {
+            const omEx = document.getElementById('omEx');
             const inp = document.getElementById('exOrderInput');
-            const out = document.getElementById('exOrderOut');
-            if (!inp || !out) return;
-            const v = parseFloat(removeCommas(inp.value));
-            if (!v || v <= 0) { out.textContent = ''; return; }
-            const prem = siPremiumFor(v);
-            const eff = prem / v * 100;
-            out.textContent = formatCurrencyWithCents(prem) + ' · ' + eff.toFixed(1) + '%';
+            if (!omEx || !inp) return;
+            // Hide the whole feature when premium doesn't flex with order value.
+            if (_premiumIsFlat()) { omEx.style.display = 'none'; const p = document.getElementById('exPop'); if (p) p.hidden = true; return; }
+            omEx.style.display = '';
+            const v = parseFloat(removeCommas(inp.value)) || 0;
+            const o = document.getElementById('exPopOrder'), pEl = document.getElementById('exPopPrem');
+            if (v > 0) {
+                const prem = siPremiumFor(v);
+                if (o) o.textContent = '$' + formatNumber(Math.round(v));
+                if (pEl) pEl.textContent = formatCurrencyWithCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
+                const pop = document.getElementById('exPop'); if (pop) pop.hidden = false;
+            } else {
+                if (o) o.textContent = '—';
+                if (pEl) pEl.textContent = '—';
+            }
+            buildExChips();
         }
 
         function toggleProtectionPremiumVisibility() {
