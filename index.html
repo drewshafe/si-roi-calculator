@@ -239,10 +239,11 @@
         .om-ex-in { width: 78px; font-size: 0.72em; padding: 3px 8px; border: 1px solid #d0d4e8; border-radius: 6px;
             text-align: center; font-family: inherit; background: #fff; color: #212529; }
         .om-ex-in:focus { outline: none; box-shadow: 0 0 0 2px rgba(102,117,255,0.35); }
-        .om-ex-pop { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 9px; z-index: 40;
-            width: 240px; background: #fff; border: 1px solid #e3e6f0; border-radius: 10px;
+        /* SI Premium is the left-most box, so open the popup left-aligned (opens inward, never clips) */
+        .om-ex-pop { position: absolute; top: 100%; left: 0; margin-top: 9px; z-index: 40;
+            width: 240px; max-width: 78vw; background: #fff; border: 1px solid #e3e6f0; border-radius: 10px;
             box-shadow: 0 12px 32px rgba(30,36,60,.22); padding: 10px 11px; text-align: center; }
-        .om-ex-pop::before { content: ""; position: absolute; top: -6px; left: 50%; transform: translateX(-50%) rotate(45deg);
+        .om-ex-pop::before { content: ""; position: absolute; top: -6px; left: 46px; transform: rotate(45deg);
             width: 11px; height: 11px; background: #fff; border-left: 1px solid #e3e6f0; border-top: 1px solid #e3e6f0; }
         .om-ex-pop-hd { font-size: 0.56em; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #6c757d; margin-bottom: 5px; }
         .om-ex-pop-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; }
@@ -258,6 +259,10 @@
         .om-ex-chip .p { font-size: 0.58em; font-weight: 800; color: #c0641a; margin-top: 1px; font-variant-numeric: tabular-nums; }
         .om-ex-chip.aov { background: linear-gradient(135deg,#eafaf0,#dff5e8); border-color: rgba(31,157,99,.4); }
         .om-ex-chip.aov .p { color: #1f9d63; }
+        .om-ex-chip.over { opacity: 0.55; }
+        .om-ex-chip.over .p { color: #adb5bd; }
+        .om-ex-pop-p.over { color: #d9534f; }
+        .theme-midnight .om-ex-pop-p.over { color: #ff8a7a; }
         .theme-midnight .om-ex-in { background: #14141c; color: #e8e8ee; border-color: rgba(212,175,55,.3); }
         .theme-midnight .om-ex-pop { background: #12121a; border-color: rgba(212,175,55,.3); box-shadow: 0 14px 36px rgba(0,0,0,.62); }
         .theme-midnight .om-ex-pop::before { background: #12121a; border-color: rgba(212,175,55,.3); }
@@ -1340,21 +1345,21 @@
             </div>
             <div class="co-pairs">
                 <div class="co-pair">
-                    <div class="co-box"><span class="co-lbl">Covered Orders</span><span class="co-val" id="coCoveredOrders">0</span></div>
+                    <div class="co-box"><span class="co-lbl">Protected Orders</span><span class="co-val" id="coCoveredOrders">0</span></div>
                     <div class="co-box"><span class="co-lbl">Premiums</span><span class="co-val" id="coPremiums">$0</span></div>
                     <div class="co-badges"><span class="co-badge" id="coBadge1"></span></div>
                 </div>
                 <div class="co-pair">
-                    <div class="co-box"><span class="co-lbl">Covered Claims</span><span class="co-val" id="coCoveredClaims">0</span></div>
-                    <div class="co-box"><span class="co-lbl">Net Balance</span><span class="co-val" id="coNetBalance">$0</span></div>
+                    <div class="co-box"><span class="co-lbl">Protected Claims</span><span class="co-val" id="coCoveredClaims">0</span></div>
+                    <div class="co-box"><span class="co-lbl">Post-Claim Balance</span><span class="co-val" id="coNetBalance">$0</span></div>
                     <div class="co-badges"><span class="co-badge" id="coBadge2"></span></div>
                 </div>
                 <div class="co-pair" id="coReturnsPair" style="display:none;">
                     <div class="co-box"><span class="co-lbl">Total Returns</span><span class="co-val" id="coTotalReturns">0</span><div class="co-badges"><span class="co-badge" id="coReturnsMode"></span></div></div>
-                    <div class="co-box"><span class="co-lbl">Returns Cost Covered</span><span class="co-val" id="coReturnsCost">$0</span><div class="co-badges"><span class="co-badge" id="coReturnsPct"></span></div></div>
+                    <div class="co-box"><span class="co-lbl">Total Returns Cost</span><span class="co-val" id="coReturnsCost">$0</span><div class="co-badges"><span class="co-badge" id="coReturnsPct"></span></div></div>
                 </div>
                 <div class="co-pair">
-                    <div class="co-box"><span class="co-lbl">Covered Amount</span><span class="co-val" id="coCoveredAmount">$0</span><div class="co-badges"><span class="co-badge" id="coCoveredAmountPct"></span></div></div>
+                    <div class="co-box"><span class="co-lbl">Claims Funded</span><span class="co-val" id="coCoveredAmount">$0</span><div class="co-badges"><span class="co-badge" id="coCoveredAmountPct"></span></div></div>
                     <div class="co-box"><span class="co-lbl">Revenue Share</span><span class="co-val" id="coRevShare">$0</span><div class="co-badges"><span class="co-badge" id="coRevSharePct"></span></div>
                         <div class="co-upfront" id="coUpfront" style="display:none;"><span class="co-lbl">Amount Upfront</span><span class="co-val" id="coUpfrontVal">$0</span><div class="co-badges"><span class="co-badge" id="coUpfrontPct"></span></div></div>
                     </div>
@@ -1657,7 +1662,7 @@
             </div>
             <div class="si-inputs-body" id="siInputsBody">
                 <button id="returnsOffsetModeToggle" class="returns-offset-toggle-btn">
-                    <span>＋</span> Returns Offset
+                    <span>＋</span> No Protection
                 </button>
                 <button id="returnsToggle" class="returns-toggle-btn">
                     <span>＋</span> Protection + Returns
@@ -1792,6 +1797,10 @@
                 <div class="si-selector" id="minPremiumWrapper">
                     <label for="minPremium">Min $:</label>
                     <input type="text" id="minPremium" value="0.98" placeholder="0.00" style="width:60px;" oninput="calculate()">
+                </div>
+                <div class="si-selector" id="coverageLimitWrapper" title="Order value above which this plan doesn't offer coverage (leave blank for none)">
+                    <label for="coverageLimit">Limit $:</label>
+                    <input type="text" id="coverageLimit" placeholder="none" style="width:64px;" oninput="calculate()">
                 </div>
                 <div class="si-selector" id="claimResSelectorWrapper">
                     <label for="claimResolution">Claim Resolution:</label>
@@ -2083,20 +2092,29 @@
             const t = document.getElementById('pricingTemplate').value;
             return t === 'flat_dollar' || t.slice(0, 2) === 'f_';
         }
+        // Optional coverage cap ("Limit $") — above it, coverage isn't offered.
+        function _coverageLimit() {
+            const el = document.getElementById('coverageLimit');
+            const v = el ? parseFloat(removeCommas(el.value)) : 0;
+            return (v && v > 0) ? v : 0;
+        }
         function buildExChips() {
             const chips = document.getElementById('exChips');
             if (!chips) return;
             const aov = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             const cur = Math.round(parseFloat(removeCommas(document.getElementById('exOrderInput').value)) || 0);
+            const limit = _coverageLimit();
             chips.innerHTML = '';
-            [['¼×', 0.25], ['½×', 0.5], ['1×', 1], ['2×', 2], ['4×', 4]].forEach(([m, mult]) => {
+            [['¼×', 0.25], ['½×', 0.5], ['AOV', 1], ['2×', 2], ['4×', 4]].forEach(([m, mult]) => {
                 const order = Math.max(1, Math.round(aov * mult));
-                const prem = siPremiumFor(order);
+                const over = limit > 0 && order > limit;
                 const b = document.createElement('button');
                 b.type = 'button';
-                b.className = 'om-ex-chip' + (mult === 1 ? ' aov' : '') + (order === cur ? ' active' : '');
+                b.className = 'om-ex-chip' + (mult === 1 ? ' aov' : '') + (order === cur ? ' active' : '') + (over ? ' over' : '');
+                const pTxt = over ? 'n/a' : formatCurrencyWithCents(siPremiumFor(order)).replace('.00', '');
                 b.innerHTML = '<div class="m">' + m + '</div><div class="o">$' + formatNumber(order) + '</div>' +
-                              '<div class="p">' + formatCurrencyWithCents(prem).replace('.00', '') + '</div>';
+                              '<div class="p">' + pTxt + '</div>';
+                if (over) b.title = 'Above the $' + formatNumber(limit) + ' coverage limit';
                 // mousedown (not click) so it fires before the input's blur hides the popup
                 b.addEventListener('mousedown', e => {
                     e.preventDefault();
@@ -2121,22 +2139,48 @@
         function updateExamplePremium() {
             const omEx = document.getElementById('omEx');
             const inp = document.getElementById('exOrderInput');
-            if (!omEx || !inp) return;
+            if (!omEx || !inp) { updateSiPremiumLabelBadge(); return; }
             // Hide the whole feature when premium doesn't flex with order value.
-            if (_premiumIsFlat()) { omEx.style.display = 'none'; const p = document.getElementById('exPop'); if (p) p.hidden = true; return; }
+            if (_premiumIsFlat()) { omEx.style.display = 'none'; const p = document.getElementById('exPop'); if (p) p.hidden = true; updateSiPremiumLabelBadge(); return; }
             omEx.style.display = '';
             const v = parseFloat(removeCommas(inp.value)) || 0;
+            const limit = _coverageLimit();
             const o = document.getElementById('exPopOrder'), pEl = document.getElementById('exPopPrem');
             if (v > 0) {
-                const prem = siPremiumFor(v);
                 if (o) o.textContent = '$' + formatNumber(Math.round(v));
-                if (pEl) pEl.textContent = formatCurrencyWithCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
+                if (limit > 0 && v > limit) {
+                    if (pEl) { pEl.textContent = 'Not offered above $' + formatNumber(limit); pEl.classList.add('over'); }
+                } else {
+                    const prem = siPremiumFor(v);
+                    if (pEl) { pEl.textContent = formatCurrencyWithCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%'; pEl.classList.remove('over'); }
+                }
                 const pop = document.getElementById('exPop'); if (pop) pop.hidden = false;
             } else {
                 if (o) o.textContent = '—';
-                if (pEl) pEl.textContent = '—';
+                if (pEl) { pEl.textContent = '—'; pEl.classList.remove('over'); }
             }
             buildExChips();
+            updateSiPremiumLabelBadge();
+        }
+        // Label = "Avg Premium" (%-based) or "SI Premium" ($-based). Badge: $-based shows
+        // % of AOV; %-based shows nothing until an Order $ is probed, then % of that order.
+        function updateSiPremiumLabelBadge() {
+            const dollar = _premiumIsFlat();
+            const labelEl = document.getElementById('avgPremiumLabel');
+            const badgeEl = document.getElementById('avgPremiumBadge');
+            if (labelEl) labelEl.textContent = dollar ? 'SI Premium' : 'Avg Premium';
+            if (!badgeEl) return;
+            const aov = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
+            const probe = parseFloat(removeCommas((document.getElementById('exOrderInput') || {}).value)) || 0;
+            let txt = '';
+            if (dollar) {
+                if (aov > 0) { const prem = siPremiumFor(aov); txt = (prem / aov * 100).toFixed(1) + '% of AOV'; }
+                else txt = 'Flat rate';
+            } else if (probe > 0) {
+                const prem = siPremiumFor(probe);
+                txt = (prem / probe * 100).toFixed(1) + '% of $' + formatNumber(Math.round(probe));
+            }
+            badgeEl.textContent = txt;
         }
 
         function toggleProtectionPremiumVisibility() {
@@ -2409,7 +2453,7 @@
 
             if (returnsOffsetMode) {
                 btn.classList.add('active');
-                btn.innerHTML = '<span>✓</span> Returns Offset';
+                btn.innerHTML = '<span>✓</span> No Protection';
 
                 // Force returns on (needed for returns calculations to run)
                 if (!returnsEnabled) toggleReturns();
@@ -2453,7 +2497,7 @@
 
             } else {
                 btn.classList.remove('active');
-                btn.innerHTML = '<span>＋</span> Returns Offset';
+                btn.innerHTML = '<span>＋</span> No Protection';
 
                 // Restore output metrics
                 roHideOutputs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
@@ -2692,24 +2736,10 @@
                 document.getElementById('totalClaims').textContent = formatNumber(totalClaims);
             }
             document.getElementById('protectedOrders').textContent = formatNumber(protectedOrders);
-            // SI Premium box: always the $ premium, with a badge describing the pricing basis.
-            document.getElementById('avgPremiumLabel').textContent = 'SI Premium';
+            // SI Premium box: value, plus the label/badge logic (Avg Premium vs SI Premium).
             document.getElementById('avgPremium').textContent = formatCurrencyWithCents(avgPremium);
             updateExamplePremium();
-            const _apBadge = document.getElementById('avgPremiumBadge');
-            if (_apBadge) {
-                let _bt = '';
-                if (pricingTemplate === 'percentage') {
-                    const _pp = removeCommas(document.getElementById('protectionPremium').value) || '';
-                    _bt = (_pp !== '' ? _pp : '') + '% of AOV';
-                } else if (pricingTemplate === 'flat_dollar') {
-                    _bt = 'Flat rate';
-                } else {
-                    const _opt = Array.from(document.getElementById('pricingTemplate').options).find(o => o.value === pricingTemplate);
-                    _bt = _opt ? _opt.textContent : '';
-                }
-                _apBadge.textContent = _bt;
-            }
+            updateSiPremiumLabelBadge();
             document.getElementById('protectedClaims').textContent = formatNumber(claimsOffset);
             const pcOutputEl = document.getElementById('protectedClaimsOutput');
             if (pcOutputEl) pcOutputEl.textContent = formatNumber(claimsOffset);
@@ -3200,6 +3230,7 @@
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
             // Carry the Project Midnight theme through to the merchant view.
             if (document.body.classList.contains('theme-midnight')) params.set('theme', 'midnight');
+            { const _lim = removeCommas((document.getElementById('coverageLimit') || {}).value || ''); if (_lim) params.set('limit', _lim); }
             if (_upfrontTier != null) {
                 params.set('upf', String(_upfrontTier));
                 const _uv = (document.getElementById('timeframe') || {}).value || 'monthly';
@@ -3281,6 +3312,7 @@
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
             // Carry the Project Midnight theme through to the merchant view.
             if (document.body.classList.contains('theme-midnight')) params.set('theme', 'midnight');
+            { const _lim = removeCommas((document.getElementById('coverageLimit') || {}).value || ''); if (_lim) params.set('limit', _lim); }
             if (_upfrontTier != null) {
                 params.set('upf', String(_upfrontTier));
                 const _uv = (document.getElementById('timeframe') || {}).value || 'monthly';

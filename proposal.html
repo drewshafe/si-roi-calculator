@@ -747,6 +747,13 @@
         .om-ex-chip .p { font-size: 0.58em; font-weight: 800; color: #c0641a; margin-top: 1px; font-variant-numeric: tabular-nums; }
         .om-ex-chip.aov { background: linear-gradient(135deg,#eafaf0,#dff5e8); border-color: rgba(31,157,99,.4); }
         .om-ex-chip.aov .p { color: #1f9d63; }
+        .om-ex-chip.over { opacity: 0.55; }
+        .om-ex-chip.over .p { color: #adb5bd; }
+        .om-ex-pop-p.over { color: #d9534f; }
+        .kmp-badge { display: inline-block; margin-top: 3px; font-size: 0.56em; font-weight: 800; color: #6675ff;
+            background: rgba(102,117,255,0.12); border-radius: 10px; padding: 1px 7px; letter-spacing: 0.2px; }
+        .kmp-badge:empty { display: none; }
+        .theme-midnight .kmp-badge { color: #e9c46a; background: rgba(233,196,106,0.14); }
 
         /* ═══════════════ PROJECT MIDNIGHT — merchant view ═══════════════ */
         body.theme-midnight { background:#040406; }
@@ -1167,8 +1174,9 @@
                     <div class="kmp-sub" id="r-attachRate">0% attach rate</div>
                 </div>
                 <div class="key-metric-pill" id="avgPremiumPill">
-                    <div class="kmp-label">Avg Premium</div>
+                    <div class="kmp-label" id="p-avgPremiumLabel">Avg Premium</div>
                     <div class="kmp-value" id="r-avgPremium">$0</div>
+                    <div class="kmp-badge" id="p-avgPremiumBadge"></div>
                     <div class="om-ex" id="omEx" title="Check the SI premium for an outlier order on this pricing template">
                         <input type="text" id="exOrderInput" class="om-ex-in" placeholder="Order $" inputmode="decimal" autocomplete="off"
                                oninput="updateExamplePremium()" onfocus="showExPop()" onblur="hideExPopSoon()" aria-label="Outlier order value">
@@ -1471,20 +1479,26 @@
             const t = document.getElementById('p-template').value;
             return t === 'flat_dollar' || t.slice(0, 2) === 'f_';
         }
+        function _coverageLimit() {
+            const v = parseFloat(removeCommas(new URLSearchParams(location.search).get('limit') || '')) || 0;
+            return v > 0 ? v : 0;
+        }
         function buildExChips() {
             const chips = document.getElementById('exChips');
             if (!chips) return;
             const aov = parseFloat(removeCommas(document.getElementById('p-aov').value)) || 0;
             const cur = Math.round(parseFloat(removeCommas(document.getElementById('exOrderInput').value)) || 0);
+            const limit = _coverageLimit();
             chips.innerHTML = '';
-            [['¼×', 0.25], ['½×', 0.5], ['1×', 1], ['2×', 2], ['4×', 4]].forEach(([m, mult]) => {
+            [['¼×', 0.25], ['½×', 0.5], ['AOV', 1], ['2×', 2], ['4×', 4]].forEach(([m, mult]) => {
                 const order = Math.max(1, Math.round(aov * mult));
-                const prem = pSiPremiumFor(order);
+                const over = limit > 0 && order > limit;
                 const b = document.createElement('button');
                 b.type = 'button';
-                b.className = 'om-ex-chip' + (mult === 1 ? ' aov' : '') + (order === cur ? ' active' : '');
-                b.innerHTML = '<div class="m">' + m + '</div><div class="o">$' + fmtNum(order) + '</div>' +
-                              '<div class="p">' + fmtDollarCents(prem).replace('.00', '') + '</div>';
+                b.className = 'om-ex-chip' + (mult === 1 ? ' aov' : '') + (order === cur ? ' active' : '') + (over ? ' over' : '');
+                const pTxt = over ? 'n/a' : fmtDollarCents(pSiPremiumFor(order)).replace('.00', '');
+                b.innerHTML = '<div class="m">' + m + '</div><div class="o">$' + fmtNum(order) + '</div><div class="p">' + pTxt + '</div>';
+                if (over) b.title = 'Above the $' + fmtNum(limit) + ' coverage limit';
                 b.addEventListener('mousedown', e => {
                     e.preventDefault();
                     document.getElementById('exOrderInput').value = String(order);
@@ -1507,21 +1521,47 @@
         function updateExamplePremium() {
             const omEx = document.getElementById('omEx');
             const inp = document.getElementById('exOrderInput');
-            if (!omEx || !inp) return;
-            if (_premiumIsFlat()) { omEx.style.display = 'none'; const p = document.getElementById('exPop'); if (p) p.hidden = true; return; }
+            if (!omEx || !inp) { updateSiPremiumLabelBadge(); return; }
+            if (_premiumIsFlat()) { omEx.style.display = 'none'; const p = document.getElementById('exPop'); if (p) p.hidden = true; updateSiPremiumLabelBadge(); return; }
             omEx.style.display = '';
             const v = parseFloat(removeCommas(inp.value)) || 0;
+            const limit = _coverageLimit();
             const o = document.getElementById('exPopOrder'), pEl = document.getElementById('exPopPrem');
             if (v > 0) {
-                const prem = pSiPremiumFor(v);
                 if (o) o.textContent = '$' + fmtNum(Math.round(v));
-                if (pEl) pEl.textContent = fmtDollarCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
+                if (limit > 0 && v > limit) {
+                    if (pEl) { pEl.textContent = 'Not offered above $' + fmtNum(limit); pEl.classList.add('over'); }
+                } else {
+                    const prem = pSiPremiumFor(v);
+                    if (pEl) { pEl.textContent = fmtDollarCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%'; pEl.classList.remove('over'); }
+                }
                 const pop = document.getElementById('exPop'); if (pop) pop.hidden = false;
             } else {
                 if (o) o.textContent = '—';
-                if (pEl) pEl.textContent = '—';
+                if (pEl) { pEl.textContent = '—'; pEl.classList.remove('over'); }
             }
             buildExChips();
+            updateSiPremiumLabelBadge();
+        }
+        // Label = "Avg Premium" (%-based) or "SI Premium" ($-based); badge shows % of AOV
+        // ($-based) or % of a probed Order $ (%-based).
+        function updateSiPremiumLabelBadge() {
+            const dollar = _premiumIsFlat();
+            const labelEl = document.getElementById('p-avgPremiumLabel');
+            const badgeEl = document.getElementById('p-avgPremiumBadge');
+            if (labelEl) labelEl.textContent = dollar ? 'SI Premium' : 'Avg Premium';
+            if (!badgeEl) return;
+            const aov = parseFloat(removeCommas(document.getElementById('p-aov').value)) || 0;
+            const probe = parseFloat(removeCommas((document.getElementById('exOrderInput') || {}).value)) || 0;
+            let txt = '';
+            if (dollar) {
+                if (aov > 0) { const prem = pSiPremiumFor(aov); txt = (prem / aov * 100).toFixed(1) + '% of AOV'; }
+                else txt = 'Flat rate';
+            } else if (probe > 0) {
+                const prem = pSiPremiumFor(probe);
+                txt = (prem / probe * 100).toFixed(1) + '% of $' + fmtNum(Math.round(probe));
+            }
+            badgeEl.textContent = txt;
         }
 
         // ── Type toggle helpers ────────────────────────────────────────────────
