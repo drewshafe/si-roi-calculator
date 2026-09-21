@@ -1121,6 +1121,48 @@
         <!-- ── Results Section ── -->
         <div id="resultsSection">
 
+            <!-- Key Metrics row (above the Net Benefit hero) -->
+            <div class="key-metrics">
+                <!-- 1. Avg / SI Premium (with outlier-order probe) -->
+                <div class="key-metric-pill" id="avgPremiumPill">
+                    <div class="kmp-label" id="p-avgPremiumLabel">Avg Premium</div>
+                    <div class="kmp-value" id="r-avgPremium">$0</div>
+                    <div class="kmp-badge" id="p-avgPremiumBadge"></div>
+                    <div class="om-ex" id="omEx" title="Check the SI premium for an outlier order on this pricing template">
+                        <input type="text" id="exOrderInput" class="om-ex-in" placeholder="Order $" inputmode="decimal" autocomplete="off"
+                               oninput="updateExamplePremium()" onfocus="showExPop()" onblur="hideExPopSoon()" aria-label="Outlier order value">
+                        <div class="om-ex-pop" id="exPop" hidden>
+                            <div class="om-ex-pop-hd">Premium at order value</div>
+                            <div class="om-ex-pop-row"><span class="om-ex-pop-o" id="exPopOrder">&mdash;</span><span class="om-ex-arrow">&rarr;</span><span class="om-ex-pop-p" id="exPopPrem">&mdash;</span></div>
+                            <div class="om-ex-chips" id="exChips"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 2. Protected Orders / Opt-in Orders -->
+                <div class="key-metric-pill">
+                    <div class="kmp-label" id="r-protectedOrdersLabel">Protected Orders</div>
+                    <div class="kmp-value" id="r-protectedOrders">0</div>
+                    <div class="kmp-sub" id="r-attachRate">0% attach rate</div>
+                </div>
+                <!-- 3. Premiums -->
+                <div class="key-metric-pill">
+                    <div class="kmp-label">Premiums</div>
+                    <div class="kmp-value" id="r-totalPremiums">$0</div>
+                </div>
+                <!-- 4. Protected (dual) / Covered -->
+                <div class="key-metric-pill" id="r-protectedClaimsPill">
+                    <div class="kmp-label" id="r-protectedDualLabel">Protected</div>
+                    <div class="kmp-value" id="r-protectedDualValue">0</div>
+                    <div class="kmp-sub" id="r-protectedDualSub">Orders / Claims</div>
+                    <div class="kmp-value" id="r-protectedClaims" style="display:none;">0</div>
+                </div>
+                <!-- 5. Post-Claim / Post-Offset Balance -->
+                <div class="key-metric-pill">
+                    <div class="kmp-label" id="r-balanceLabel">Post-Claim Balance</div>
+                    <div class="kmp-value" id="r-postClaimBalance">$0</div>
+                </div>
+            </div>
+
             <!-- Hero -->
             <div class="hero-row">
             <div class="result-hero">
@@ -1175,41 +1217,6 @@
                         <div class="rc-metric" id="r-totalClaimsMetric">
                             <div class="rc-metric-label" id="r-totalClaimsLabel">Total Claims</div>
                             <div class="rc-metric-value" id="r-totalClaims">0</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Key Metrics row -->
-            <div class="key-metrics">
-                <div class="key-metric-pill">
-                    <div class="kmp-label">Premiums You Keep</div>
-                    <div class="kmp-value" id="r-premiumsPct">0%</div>
-                </div>
-                <div class="key-metric-pill">
-                    <div class="kmp-label">Total SI Premiums</div>
-                    <div class="kmp-value" id="r-totalPremiums">$0</div>
-                </div>
-                <div class="key-metric-pill" id="r-protectedClaimsPill">
-                    <div class="kmp-label">Protected Claims</div>
-                    <div class="kmp-value" id="r-protectedClaims">0</div>
-                </div>
-                <div class="key-metric-pill">
-                    <div class="kmp-label" id="r-protectedOrdersLabel">Protected Orders</div>
-                    <div class="kmp-value" id="r-protectedOrders">0</div>
-                    <div class="kmp-sub" id="r-attachRate">0% attach rate</div>
-                </div>
-                <div class="key-metric-pill" id="avgPremiumPill">
-                    <div class="kmp-label" id="p-avgPremiumLabel">Avg Premium</div>
-                    <div class="kmp-value" id="r-avgPremium">$0</div>
-                    <div class="kmp-badge" id="p-avgPremiumBadge"></div>
-                    <div class="om-ex" id="omEx" title="Check the SI premium for an outlier order on this pricing template">
-                        <input type="text" id="exOrderInput" class="om-ex-in" placeholder="Order $" inputmode="decimal" autocomplete="off"
-                               oninput="updateExamplePremium()" onfocus="showExPop()" onblur="hideExPopSoon()" aria-label="Outlier order value">
-                        <div class="om-ex-pop" id="exPop" hidden>
-                            <div class="om-ex-pop-hd">Premium at order value</div>
-                            <div class="om-ex-pop-row"><span class="om-ex-pop-o" id="exPopOrder">&mdash;</span><span class="om-ex-arrow">&rarr;</span><span class="om-ex-pop-p" id="exPopPrem">&mdash;</span></div>
-                            <div class="om-ex-chips" id="exChips"></div>
                         </div>
                     </div>
                 </div>
@@ -1579,7 +1586,7 @@
             const dollar = _premiumIsFlat();
             const labelEl = document.getElementById('p-avgPremiumLabel');
             const badgeEl = document.getElementById('p-avgPremiumBadge');
-            if (labelEl) labelEl.textContent = dollar ? 'SI Premium' : 'Avg Premium';
+            if (labelEl) labelEl.textContent = (dollar || p_returnsOffsetMode) ? 'SI Premium' : 'Avg Premium';
             if (!badgeEl) return;
             const aov = parseFloat(removeCommas(document.getElementById('p-aov').value)) || 0;
             const probe = parseFloat(removeCommas((document.getElementById('exOrderInput') || {}).value)) || 0;
@@ -1940,7 +1947,6 @@
             document.getElementById('r-revShareMetric').style.display = rsZero ? 'none' : '';
 
             // Key metrics
-            document.getElementById('r-premiumsPct').textContent = percentOfPremiums.toFixed(1) + '%';
             document.getElementById('r-totalPremiums').textContent = fmtDollar(premiumPool);
             document.getElementById('r-protectedOrders').textContent = fmtNum(protectedOrders);
             document.getElementById('r-attachRate').textContent = (attachRate * 100).toFixed(0) + '% attach rate';
@@ -1973,10 +1979,7 @@
                 // Cost card: drop claims metrics
                 sv('r-costPerReshipMetric', !on);
                 sv('r-totalClaimsMetric', !on);
-                // Key pills: hide Protected Claims; Protected Orders → Opt-in Orders
-                sv('r-protectedClaimsPill', !on);
-                const poL = document.getElementById('r-protectedOrdersLabel');
-                if (poL) poL.textContent = on ? 'Opt-in Orders' : 'Protected Orders';
+                // Key pills (labels/values/dual pill) are managed by pUpdateKeyPills().
                 // Returns block → offset framing
                 const rt = document.getElementById('returnsResultTitle');
                 const laL = document.getElementById('r-siCoveredLabelsLabel');
@@ -2048,6 +2051,8 @@
                 extraRevenue: extraRevenue,
                 percentOfPremiums: percentOfPremiums,
                 returnsEnabled: p_returnsEnabled,
+                returnsCoverage: p_returnsCoverage,
+                returnsOffsetMode: p_returnsOffsetMode,
                 returnsRate: returnsRate,
                 totalReturnsOffset: (siCoveredLabels + siCoveredPlatform),
                 totalReturns: totalReturns,
@@ -2074,6 +2079,7 @@
             // Re-render breakdown if it's open
             if (document.getElementById('p-bdBody').classList.contains('visible')) renderPBreakdown();
             renderPFlows();
+            pUpdateKeyPills();
             // Show/hide cost column based on p_hideCurrentCost
             const pBdCostCol = document.getElementById('p-bdCostCol');
             if (pBdCostCol) pBdCostCol.style.display = p_hideCurrentCost ? 'none' : '';
@@ -2090,6 +2096,62 @@
             const rs = document.getElementById('resultsSection');
             rs.classList.add('visible');
             document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ── Key Metric pills — mode-aware content (order: AVG/SI Premium ·
+        //    Protected/Opt-in Orders · Premiums · Protected(dual)/Covered · Balance) ──
+        function pUpdateKeyPills() {
+            const d = _p_bd; if (!d.ready) return;
+            const off = d.returnsOffsetMode;
+            const cov = d.returnsCoverage;
+            const nb = v => fmtNum(Math.round(v || 0));
+
+            // Pill 2 — Protected Orders vs Opt-in Orders
+            const ordLbl = document.getElementById('r-protectedOrdersLabel');
+            if (ordLbl) ordLbl.textContent = off ? 'Opt-in Orders' : 'Protected Orders';
+
+            // Pill 4 — dual "Protected (A / B)" or single "Covered"
+            const p4lbl = document.getElementById('r-protectedDualLabel');
+            const p4val = document.getElementById('r-protectedDualValue');
+            const p4sub = document.getElementById('r-protectedDualSub');
+            const claims     = d.protectedClaims || 0;
+            const protReturns = (d.protectedOrders || 0) * (d.returnsRate || 0);
+            const allReturns  = d.totalReturns || 0;
+            const svp = (el, show) => { if (el) el.style.display = show ? '' : 'none'; };
+            if (off) {
+                // No Protection → single "Covered" (returns offset count)
+                const covered = (cov === 'platform_only' || cov === 'all_labels' || cov === 'all_labels_platform') ? allReturns : protReturns;
+                if (p4lbl) p4lbl.textContent = 'Covered';
+                if (p4val) p4val.textContent = nb(covered);
+                if (p4sub) p4sub.textContent = 'returns offset';
+                svp(p4sub, true);
+            } else if (d.returnsEnabled) {
+                if (p4lbl) p4lbl.textContent = 'Protected';
+                if (cov === 'platform_only') {
+                    if (p4val) p4val.textContent = nb(claims) + ' / ' + nb(allReturns);
+                    if (p4sub) p4sub.textContent = 'Claims / Portal';
+                } else {
+                    const retCount = (cov === 'all_labels' || cov === 'all_labels_platform') ? allReturns : protReturns;
+                    if (p4val) p4val.textContent = nb(claims) + ' / ' + nb(retCount);
+                    if (p4sub) p4sub.textContent = 'Claims / Returns';
+                }
+                svp(p4sub, true);
+            } else {
+                // Only Protection Plan → Orders / Claims
+                if (p4lbl) p4lbl.textContent = 'Protected';
+                if (p4val) p4val.textContent = nb(d.protectedOrders) + ' / ' + nb(claims);
+                if (p4sub) p4sub.textContent = 'Orders / Claims';
+                svp(p4sub, true);
+            }
+
+            // Pill 5 — Post-Claim vs Post-Offset Balance
+            const balLbl = document.getElementById('r-balanceLabel');
+            const balVal = document.getElementById('r-postClaimBalance');
+            const balance = off
+                ? ((d.premiumPool || 0) - (d.siCoveredLabels || 0) - (d.siCoveredPlatform || 0))
+                : (d.postClaimBalance || 0);
+            if (balLbl) balLbl.textContent = off ? 'Post-Offset Balance' : 'Post-Claim Balance';
+            if (balVal) balVal.textContent = fmtDollar(balance);
         }
 
         // ── Billing Explained / Backend Flow (merchant view) ──
