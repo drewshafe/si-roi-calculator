@@ -2214,15 +2214,40 @@
                 };
                 const anchor = document.getElementById('p-calcBreakdown');
                 const parent = document.getElementById('resultsSection');
+                const blocks = Array.isArray(cfg.blocks) ? cfg.blocks : [];
                 cfg.layout.forEach(item => {
                     const key = (typeof item === 'string') ? item : item.k;
                     const visible = (typeof item === 'string') ? true : (item.v !== false);
-                    const el = MAP[key];
+                    let el = MAP[key];
+                    if (!el) {                                   // a custom content block?
+                        const blk = blocks.find(b => b.id === key);
+                        if (blk) el = document.getElementById('cb-blk-' + blk.id) || _cbBlockEl(blk);
+                    }
                     if (!el || !parent || !anchor) return;
                     parent.insertBefore(el, anchor);
                     el.setAttribute('data-cb-hidden', visible ? '' : '1');
                 });
             }
+        }
+        function _cbEsc(s) { return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+        function _cbBlockEl(blk) {
+            const d = document.createElement('div');
+            d.className = 'cb-block'; d.id = 'cb-blk-' + blk.id;
+            const st = blk.style || {}, s = d.style;
+            s.textAlign = st.align || 'left';
+            if (st.color) s.color = st.color;
+            s.fontSize = ({ s: '0.85em', m: '1em', l: '1.25em' }[st.size] || '1em');
+            if (st.weight) s.fontWeight = st.weight;
+            const bw = (st.bw != null ? +st.bw : 0);
+            s.border = bw > 0 ? (bw + 'px solid ' + (st.bc || '#e3e6f0')) : 'none';
+            if (st.radius != null) s.borderRadius = (+st.radius) + 'px';
+            s.padding = (st.pad != null ? +st.pad : 0) + 'px';
+            s.margin = (st.margin != null ? +st.margin : 0) + 'px 0';
+            let html = '';
+            if (blk.heading) html += '<div class="cb-block-h" style="font-weight:800;margin-bottom:4px;">' + _cbEsc(blk.heading) + '</div>';
+            if (blk.body) html += '<div class="cb-block-b" style="white-space:pre-wrap;line-height:1.5;">' + _cbEsc(blk.body) + '</div>';
+            d.innerHTML = html;
+            return d;
         }
 
         document.addEventListener('DOMContentLoaded', function() {

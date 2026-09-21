@@ -43,6 +43,19 @@
   .lay-item.hidden .lay-name{ color:#b0b6c6; text-decoration:line-through; }
   .lay-eye{ background:none; border:none; cursor:pointer; font-size:.95em; opacity:.85; padding:2px; }
   .hint{ font-size:.66rem; color:var(--muted); line-height:1.5; margin-top:8px; }
+  .lay-item.is-block{ background:#eef1ff; border-color:#ccd3ff; }
+  .lay-mini{ background:none; border:none; cursor:pointer; font-size:.85em; opacity:.8; padding:2px; }
+  .blk-edit{ border:1px solid #ccd3ff; border-radius:9px; padding:10px; margin:-2px 0 4px; background:#fff; display:flex; flex-direction:column; gap:8px; }
+  .blk-edit input[type=text], .blk-edit textarea{ width:100%; font-family:inherit; font-size:.8rem; padding:6px 8px; border:1px solid #d0d4e8; border-radius:6px; }
+  .blk-edit textarea{ resize:vertical; min-height:48px; }
+  .blk-edit .blk-sub{ font-size:.56rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .blk-ctrls{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .blk-ctrls .c label{ display:block; font-size:.55rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+  .blk-ctrls .c input, .blk-ctrls .c select{ width:100%; font-family:inherit; font-size:.76rem; padding:4px 6px; border:1px solid #d0d4e8; border-radius:6px; }
+  .blk-ctrls .c input[type=color]{ padding:1px; height:30px; }
+  .blk-seg{ display:flex; gap:3px; }
+  .blk-seg button{ flex:1; font-family:inherit; font-size:.68rem; padding:4px 2px; border:1px solid #d0d4e8; background:#fff; border-radius:5px; cursor:pointer; }
+  .blk-seg button.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
   .cb-linkout{ margin-top:10px; }
   .cb-linkout textarea{ width:100%; height:52px; font-family:ui-monospace,Menlo,monospace; font-size:.62rem; padding:7px; border:1px solid #d0d4e8; border-radius:7px; resize:none; color:#3a3d47; background:#f7f8fc; }
   @media (max-width:820px){ main{ grid-template-columns:1fr; } .preview{ min-height:50vh; } .cb-link-row input{ width:150px; } }
@@ -96,7 +109,8 @@
       <div class="grp">
         <div class="grp-h">Layout — drag to reorder, 👁 to show/hide</div>
         <div class="lay-list" id="layList"></div>
-        <div class="hint">Feature sections (Returns, Cashback, Guarantee) only appear when that feature is on in the underlying calc.</div>
+        <button class="cb-btn ghost" id="addBlock" style="margin-top:9px;width:100%;background:#eef1ff;color:var(--accent);border:1px dashed var(--accent);">➕ Add text block</button>
+        <div class="hint">Feature sections (Returns, Cashback, Guarantee) only appear when that feature is on in the underlying calc. Text blocks you add render in the proposal at their position.</div>
       </div>
       <div class="cb-linkout">
         <label style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Shareable link</label>
@@ -124,9 +138,13 @@
   const SWATCHES = ['#6675ff','#1f9d63','#e0007a','#c0641a','#0f8f56','#2a2f45','#d4af37','#7c3aed'];
 
   let layout = SECTIONS.map(s => ({ k: s.k, v: true }));
+  let blocks = [];          // [{ id, heading, body, style:{align,color,size,weight,bw,bc,radius,pad,margin} }]
+  let _blkSeq = 0;
+  let _openBlk = null;      // id of the block whose inline editor is expanded
 
   const $ = id => document.getElementById(id);
   const proposalBase = () => new URL('proposal.html', location.href).href;
+  const blockById = id => blocks.find(b => b.id === id);
 
   function cfg() {
     return {
@@ -137,6 +155,7 @@
         bannerUrl: $('bannerUrl').value.trim() || undefined,
       },
       layout: layout,
+      blocks: blocks,
     };
   }
   function buildUrl() {
@@ -178,16 +197,31 @@
     const list = $('layList'); list.innerHTML = '';
     layout.forEach(item => {
       const meta = SECTIONS.find(s => s.k === item.k);
+      const blk = meta ? null : blockById(item.k);
+      const label = meta ? meta.label
+        : ((blk && (blk.heading || blk.body)) ? (blk.heading || blk.body).slice(0, 24) : 'Text block');
       const row = document.createElement('div');
-      row.className = 'lay-item' + (item.v ? '' : ' hidden');
+      row.className = 'lay-item' + (item.v ? '' : ' hidden') + (blk ? ' is-block' : '');
       row.draggable = true;
       row.dataset.k = item.k;
-      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name">' + meta.label + '</span>' +
-                      '<button class="lay-eye" title="Show / hide">' + (item.v ? '👁' : '🚫') + '</button>';
+      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name">' + label + '</span>' +
+                      (blk ? '<button class="lay-mini blk-edit-btn" title="Edit block">✎</button>' : '') +
+                      '<button class="lay-eye" title="Show / hide">' + (item.v ? '👁' : '🚫') + '</button>' +
+                      (blk ? '<button class="lay-mini blk-del-btn" title="Delete block">🗑</button>' : '');
       row.querySelector('.lay-eye').addEventListener('click', e => {
         e.stopPropagation();
         item.v = !item.v; renderLayout(); refresh(true);
       });
+      if (blk) {
+        row.querySelector('.blk-edit-btn').addEventListener('click', e => { e.stopPropagation(); _openBlk = (_openBlk === item.k) ? null : item.k; renderLayout(); });
+        row.querySelector('.blk-del-btn').addEventListener('click', e => {
+          e.stopPropagation();
+          blocks = blocks.filter(b => b.id !== item.k);
+          layout = layout.filter(l => l.k !== item.k);
+          if (_openBlk === item.k) _openBlk = null;
+          renderLayout(); refresh(true);
+        });
+      }
       row.addEventListener('dragstart', () => { dragKey = item.k; row.classList.add('dragging'); });
       row.addEventListener('dragend', () => { dragKey = null; row.classList.remove('dragging'); [...list.children].forEach(c => c.classList.remove('over')); });
       row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('over'); });
@@ -202,8 +236,57 @@
         renderLayout(); refresh(true);
       });
       list.appendChild(row);
+      if (blk && _openBlk === item.k) list.appendChild(buildBlockEditor(blk));
     });
   }
+
+  // Inline editor for a text block: content + per-element type & border controls.
+  function buildBlockEditor(blk) {
+    const st = blk.style || (blk.style = {});
+    const wrap = document.createElement('div');
+    wrap.className = 'blk-edit';
+    wrap.innerHTML =
+      '<div class="blk-sub">Heading</div><input type="text" class="be-h">' +
+      '<div class="blk-sub">Body</div><textarea class="be-b"></textarea>' +
+      '<div class="blk-ctrls">' +
+        '<div class="c"><label>Text color</label><input type="color" class="be-color"></div>' +
+        '<div class="c"><label>Size</label><div class="blk-seg be-size"><button data-v="s">S</button><button data-v="m">M</button><button data-v="l">L</button></div></div>' +
+        '<div class="c"><label>Weight</label><div class="blk-seg be-weight"><button data-v="400">Normal</button><button data-v="800">Bold</button></div></div>' +
+        '<div class="c"><label>Align</label><div class="blk-seg be-align"><button data-v="left">L</button><button data-v="center">C</button><button data-v="right">R</button></div></div>' +
+        '<div class="c"><label>Border px</label><input type="text" class="be-bw" inputmode="numeric"></div>' +
+        '<div class="c"><label>Border color</label><input type="color" class="be-bc"></div>' +
+        '<div class="c"><label>Radius px</label><input type="text" class="be-radius" inputmode="numeric"></div>' +
+        '<div class="c"><label>Padding px</label><input type="text" class="be-pad" inputmode="numeric"></div>' +
+        '<div class="c"><label>Margin px</label><input type="text" class="be-margin" inputmode="numeric"></div>' +
+      '</div>';
+    const q = s => wrap.querySelector(s);
+    q('.be-h').value = blk.heading || ''; q('.be-b').value = blk.body || '';
+    q('.be-color').value = st.color || '#1f2430'; q('.be-bc').value = st.bc || '#e3e6f0';
+    q('.be-bw').value = st.bw != null ? st.bw : ''; q('.be-radius').value = st.radius != null ? st.radius : '';
+    q('.be-pad').value = st.pad != null ? st.pad : ''; q('.be-margin').value = st.margin != null ? st.margin : '';
+    const segSet = (cls, val) => wrap.querySelectorAll('.' + cls + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === String(val)));
+    segSet('be-size', st.size || 'm'); segSet('be-weight', st.weight || '400'); segSet('be-align', st.align || 'left');
+    const num = v => { const n = parseInt(v, 10); return isNaN(n) ? undefined : n; };
+    q('.be-h').addEventListener('input', e => { blk.heading = e.target.value; refresh(false); });
+    q('.be-b').addEventListener('input', e => { blk.body = e.target.value; refresh(false); });
+    q('.be-color').addEventListener('input', e => { st.color = e.target.value; refresh(true); });
+    q('.be-bc').addEventListener('input', e => { st.bc = e.target.value; refresh(true); });
+    q('.be-bw').addEventListener('input', e => { st.bw = num(e.target.value); refresh(false); });
+    q('.be-radius').addEventListener('input', e => { st.radius = num(e.target.value); refresh(false); });
+    q('.be-pad').addEventListener('input', e => { st.pad = num(e.target.value); refresh(false); });
+    q('.be-margin').addEventListener('input', e => { st.margin = num(e.target.value); refresh(false); });
+    wrap.querySelectorAll('.be-size button').forEach(b => b.addEventListener('click', () => { st.size = b.dataset.v; segSet('be-size', st.size); refresh(true); }));
+    wrap.querySelectorAll('.be-weight button').forEach(b => b.addEventListener('click', () => { st.weight = b.dataset.v; segSet('be-weight', st.weight); refresh(true); }));
+    wrap.querySelectorAll('.be-align button').forEach(b => b.addEventListener('click', () => { st.align = b.dataset.v; segSet('be-align', st.align); refresh(true); }));
+    return wrap;
+  }
+  $('addBlock').addEventListener('click', () => {
+    const id = 'b' + (++_blkSeq);
+    blocks.push({ id, heading: 'Custom heading', body: 'Add your message here…', style: { align: 'left', size: 'm', weight: '400', pad: 12, bw: 1, bc: '#e3e6f0', radius: 10, margin: 0 } });
+    layout.push({ k: id, v: true });
+    _openBlk = id;
+    renderLayout(); refresh(true);
+  });
 
   // ── Base link ──
   function loadBase() {
