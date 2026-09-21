@@ -2183,6 +2183,16 @@
             badgeEl.textContent = txt;
         }
 
+        // Coerce a template key to a currently-valid option. Older saved calcs / links
+        // may carry a preset key that no longer exists after a catalog change — fall
+        // back to %-Based so the calc never renders blank + zeros.
+        function normalizeTemplate(t) {
+            if (t === 'percentage' || t === 'flat_dollar') return t;
+            const sel = document.getElementById('pricingTemplate');
+            if (sel && t && Array.from(sel.options).some(o => o.value === t)) return t;
+            return 'percentage';
+        }
+
         function toggleProtectionPremiumVisibility() {
             const template = document.getElementById('pricingTemplate').value;
             const premiumGroup = document.getElementById('protectionPremiumGroup');
@@ -3078,7 +3088,7 @@
                 document.getElementById('protectionPremium').value = urlParams.get('premium') || '3.00';
                 if (urlParams.get('minp') !== null) document.getElementById('minPremium').value = urlParams.get('minp');
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
-                document.getElementById('pricingTemplate').value = urlParams.get('template') || 'percentage';
+                document.getElementById('pricingTemplate').value = normalizeTemplate(urlParams.get('template') || 'percentage');
                 if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
                 if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 if (urlParams.get('cr')) setClaimResolution(urlParams.get('cr'));
@@ -3141,7 +3151,7 @@
                 if (!s('avgShipping')) document.getElementById('avgShipping').value = '8';
                 if (!s('csCostPerClaim')) document.getElementById('csCostPerClaim').value = '5';
                 document.getElementById('timeframe').value = s('timeframe') || 'monthly';
-                document.getElementById('pricingTemplate').value = s('pricingTemplate') || 'percentage';
+                document.getElementById('pricingTemplate').value = normalizeTemplate(s('pricingTemplate') || 'percentage');
                 if (s('cogsType')) setCogsType(s('cogsType'));
                 if (s('claimsType')) setClaimsType(s('claimsType'));
                 if (s('returnsRate')) document.getElementById('returnsRate').value = s('returnsRate');
@@ -3774,7 +3784,7 @@
             }
             if (typeof d.grossRevShare   === 'boolean' && d.grossRevShare   !== _grossRevShare)   toggleGrossRevShare();
             if (typeof d.hideCurrentCost === 'boolean' && d.hideCurrentCost !== _hideCurrentCost) toggleCurrentCost();
-            if (typeof d.pricing === 'string') { document.getElementById('pricingTemplate').value = d.pricing; toggleProtectionPremiumVisibility(); }
+            if (typeof d.pricing === 'string') { document.getElementById('pricingTemplate').value = normalizeTemplate(d.pricing); toggleProtectionPremiumVisibility(); }
             if (typeof d.minPremium === 'string') { const mp = document.getElementById('minPremium'); if (mp) mp.value = d.minPremium; }
             if (typeof d.limit === 'string') { const cl = document.getElementById('coverageLimit'); if (cl) cl.value = d.limit; }
             if (typeof d.claimResolution === 'string') { document.getElementById('claimResolution').value = d.claimResolution; setClaimResolution(d.claimResolution); }

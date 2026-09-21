@@ -2290,7 +2290,9 @@
             document.getElementById('p-share').value  = urlPs.get('share')  || '25';
             document.getElementById('p-premium').value = urlPs.get('premium') || '3.00';
 
-            if (urlPs.get('template')) document.getElementById('p-template').value = urlPs.get('template');
+            { // Coerce unknown/legacy template keys to %-Based so premiums never render as zeros.
+              const _tsel = document.getElementById('p-template'); const _t = urlPs.get('template');
+              if (_t) _tsel.value = (_t === 'percentage' || _t === 'flat_dollar' || Array.from(_tsel.options).some(o => o.value === _t)) ? _t : 'percentage'; }
             if (urlPs.get('cogstype')) pSetCogsType(urlPs.get('cogstype'));
             if (urlPs.get('claimstype')) pSetClaimsType(urlPs.get('claimstype'));
             if (urlPs.get('cr')) p_claimResolution = urlPs.get('cr');
