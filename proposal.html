@@ -651,6 +651,31 @@
             border-top: 1px solid #e0e3f5;
         }
         .bd-body.visible { display: block; }
+        /* Billing Explained / Backend Flow — nested click-throughs */
+        .flow-toggle { border-top: 1px solid #e0e3f5; }
+        .flow-body { padding: 12px 14px; }
+        .flow-body.visible { display: block; }
+        .flow-intro { font-size: 0.72em; color: #6c757d; line-height: 1.5; margin-bottom: 12px; }
+        .flow-step { display: flex; align-items: flex-start; gap: 11px; padding: 9px 0; border-bottom: 1px dashed #e6e9f5; }
+        .flow-step:last-child { border-bottom: none; }
+        .flow-num { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; background: #eef0fb; color: #4a5fc1;
+            font-size: 0.72em; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+        .flow-main { flex: 1; min-width: 0; }
+        .flow-title { font-size: 0.78em; font-weight: 800; color: #26304f; }
+        .flow-detail { font-size: 0.68em; color: #6c757d; line-height: 1.45; margin-top: 2px; }
+        .flow-val { flex: 0 0 auto; font-size: 0.82em; font-weight: 800; color: #28a745; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+        .flow-val.neg { color: #dc3545; }
+        .flow-val.accent { color: #6675ff; }
+        .flow-arrow { text-align: center; color: #c3c9e0; font-size: 0.9em; line-height: 1; margin: 1px 0; }
+        .theme-midnight .flow-toggle { border-top-color: rgba(212,175,55,.2); }
+        .theme-midnight .flow-body { background: #0a0a12; }
+        .theme-midnight .flow-intro, .theme-midnight .flow-detail { color: #9a9ab0; }
+        .theme-midnight .flow-step { border-bottom-color: rgba(212,175,55,.14); }
+        .theme-midnight .flow-num { background: rgba(233,196,106,.14); color: #e9c46a; }
+        .theme-midnight .flow-title { color: #f2eede; }
+        .theme-midnight .flow-val { color: #2ee6a0; }
+        .theme-midnight .flow-val.neg { color: #ff6b6b; }
+        .theme-midnight .flow-val.accent { color: #8ea2ff; }
         .bd-shared-section {
             padding: 10px 14px 12px;
             border-bottom: 1px solid #e0e3f5;
@@ -1273,6 +1298,10 @@
                             <div id="p-bd-revenue"></div>
                         </div>
                     </div>
+                    <button class="calc-toggle flow-toggle" onclick="togglePFlow(this,'p-billing')"><span class="calc-toggle-arrow" id="p-billingArrow">▶</span> 💳 Billing Explained</button>
+                    <div class="bd-body flow-body" id="p-billingBody"></div>
+                    <button class="calc-toggle flow-toggle" onclick="togglePFlow(this,'p-backend')"><span class="calc-toggle-arrow" id="p-backendArrow">▶</span> ⚙️ Backend Flow</button>
+                    <div class="bd-body flow-body" id="p-backendBody"></div>
                 </div>
             </div>
 
@@ -2019,6 +2048,8 @@
                 extraRevenue: extraRevenue,
                 percentOfPremiums: percentOfPremiums,
                 returnsEnabled: p_returnsEnabled,
+                returnsRate: returnsRate,
+                totalReturnsOffset: (siCoveredLabels + siCoveredPlatform),
                 totalReturns: totalReturns,
                 returnLabelsCostTotal: returnLabelsCostTotal,
                 returnLabelCost: returnLabelCost,
@@ -2042,6 +2073,7 @@
             pRenderUpfront();
             // Re-render breakdown if it's open
             if (document.getElementById('p-bdBody').classList.contains('visible')) renderPBreakdown();
+            renderPFlows();
             // Show/hide cost column based on p_hideCurrentCost
             const pBdCostCol = document.getElementById('p-bdCostCol');
             if (pBdCostCol) pBdCostCol.style.display = p_hideCurrentCost ? 'none' : '';
@@ -2058,6 +2090,51 @@
             const rs = document.getElementById('resultsSection');
             rs.classList.add('visible');
             document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ── Billing Explained / Backend Flow (merchant view) ──
+        function togglePFlow(btn, which) {
+            const body = document.getElementById(which + 'Body');
+            const arrow = document.getElementById(which + 'Arrow');
+            const open = body.classList.toggle('visible');
+            if (arrow) arrow.classList.toggle('open', open);
+            btn.querySelector('.calc-toggle-arrow').textContent = open ? '▼' : '▶';
+            if (open) renderPFlows();
+        }
+        function renderPFlows() {
+            const d = _p_bd; if (!d.ready) return;
+            const fc = v => fmtDollar(v), fcc = v => fmtDollarCents(v), fn = v => fmtNum(v);
+            const pct = v => (v * 100).toFixed(1).replace(/\.0$/, '') + '%';
+            const step = (n, title, detail, val, cls) =>
+                `<div class="flow-step"><div class="flow-num">${n}</div><div class="flow-main"><div class="flow-title">${title}</div><div class="flow-detail">${detail}</div></div><div class="flow-val ${cls || ''}">${val == null ? '' : val}</div></div>`;
+            const resCogs = (p_claimResolution === 'cogs');
+
+            const bill = document.getElementById('p-billingBody');
+            if (bill && bill.classList.contains('visible')) {
+                let n = 0; const nx = () => ++n;
+                let s = `<div class="flow-intro">How the money moves each period — from customer premiums to what you earn.</div>`;
+                s += step(nx(), 'Customers add protection at checkout', `${fcc(d.avgPremium)} premium × ${fn(d.protectedOrders)} protected orders (${pct(d.attachP)} attach) — paid by customers, not you`, fc(d.premiumPool), 'accent');
+                s += step(nx(), 'ShipInsure funds every claim', `${fn(d.protectedClaims)} claims × ${fcc(d.siClaimValue)} (${resCogs ? 'reshipped at COGS' : '2nd sale at AOV'})`, '−' + fc(d.siFundedReships), 'neg');
+                if (d.guaranteeEnabled) s += step(nx(), 'ShipInsure funds guarantee claims', `${fn(d.gAdditionalClaims)} extra claims × ${fcc(d.siClaimValue)}`, '−' + fc(d.gSiFundedClaims), 'neg');
+                if (d.returnsEnabled) s += step(nx(), 'ShipInsure offsets your returns', `labels ${fc(d.siCoveredLabels)} + portal ${fc(d.siCoveredPlatform)}`, '−' + fc(d.totalReturnsOffset), 'neg');
+                if (d.cashbackEnabled) s += step(nx(), 'ShipInsure funds cashback', `${fc(d.siSponsoredCashbackTotal)} issued × ${pct(d.cashbackRedemptionRate)} redeemed`, '−' + fc(d.cashbackRedeemed), 'neg');
+                s += step(nx(), 'Post-claim balance', `premiums ${fc(d.premiumPool)} − everything ShipInsure paid`, fc(d.postClaimBalance));
+                s += step(nx(), 'Revenue Share to you', (d.postClaimBalance <= 0 && !d.grossRevShare) ? 'balance negative this period → no share' : `${pct(d.revShareP)} of ${d.grossRevShare ? 'premiums (gross)' : 'the positive balance'}`, fc(d.revenueShareAmount), 'accent');
+                s += step(nx(), 'Extra Revenue With ShipInsure', `SI-funded claims + rev share${d.guaranteeEnabled ? ' + guarantee' : ''}${d.returnsEnabled ? ' + returns offset' : ''}${d.cashbackEnabled ? ' + cashback' : ''} = ${d.percentOfPremiums.toFixed(1)}% of premiums`, fc(d.extraRevenue), 'accent');
+                bill.innerHTML = s;
+            }
+            const back = document.getElementById('p-backendBody');
+            if (back && back.classList.contains('visible')) {
+                let n = 0; const nx = () => ++n;
+                let s = `<div class="flow-intro">The operational path of a protected order — what actually happens behind each claim.</div>`;
+                s += step(nx(), 'Customer opts into protection', `${pct(d.attachP)} of ${fn(d.orders)} orders are protected`, fn(d.protectedOrders));
+                s += step(nx(), 'An issue is reported', `${pct(d.claimsP)} claim rate${d.returnsEnabled ? ` · ${pct(d.returnsRate)} returns` : ''}`, fn(d.totalClaims) + ' claims');
+                s += step(nx(), 'ShipInsure resolves it', `${resCogs ? 'covers your COGS' : 'funds a replacement (2nd sale)'} · ${fcc(d.costPerReship)}/reship`, '−' + fc(d.siFundedReships), 'neg');
+                if (d.returnsEnabled) s += step(nx(), 'ShipInsure handles the return', `labels ${fc(d.siCoveredLabels)} + portal ${fc(d.siCoveredPlatform)}`, fc(d.totalReturnsOffset));
+                s += step(nx(), 'You are made whole', 'no reship or refund cost out of your pocket', '✓');
+                s += step(nx(), 'Period close → payout', 'ShipInsure pays your Revenue Share', fc(d.revenueShareAmount), 'accent');
+                back.innerHTML = s;
+            }
         }
 
         function togglePBreakdown(btn) {
