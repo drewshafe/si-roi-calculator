@@ -348,6 +348,19 @@
             font-size: 0.78em;
             opacity: 0.8;
         }
+        /* "Premiums You Keep" breakdown bubbles (mirrors the rep calc's impact box) */
+        .impact-breakdown { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0 2px; }
+        .impact-pct-line { font-size: 0.72em; font-weight: 700; opacity: 0.92; background: rgba(255,255,255,0.18);
+            border-radius: 20px; padding: 2px 10px; white-space: nowrap; }
+        /* Card sub-sections (Claims & Return Costs Funded · Returns Costs) — match the calc 1:1 */
+        .rc-subsection { margin-top: 8px; }
+        .rc-sub-label { font-size: 0.6em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px;
+            color: #8a93a5; margin: 0 0 4px 2px; }
+        .rc-cost-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+        .rc-cost-badge { font-size: 0.58em; font-weight: 700; color: #6675ff; background: rgba(102,117,255,0.1);
+            border-radius: 12px; padding: 1px 7px; white-space: nowrap; }
+        .theme-midnight .rc-sub-label { color: #9a9ab0; }
+        .theme-midnight .rc-cost-badge { color: #e9c46a; background: rgba(233,196,106,0.14); }
 
         /* Hero row — Net Benefit beside the (optional) Upfront Rev Share Payment. */
         .hero-row { display: flex; gap: 14px; align-items: stretch; flex-wrap: wrap; margin-bottom: 10px; }
@@ -1166,8 +1179,14 @@
             <!-- Hero -->
             <div class="hero-row">
             <div class="result-hero">
-                <div class="hero-label" id="heroLabel">Net Benefit With ShipInsure</div>
-                <div class="hero-value" id="heroValue">$0</div>
+                <div class="hero-label" id="heroLabel">Premiums You Keep</div>
+                <div class="hero-value" id="heroValue">0%</div>
+                <div class="impact-breakdown" id="p-heroBreakdown">
+                    <div class="impact-pct-line" id="p-claimsImpactPct">0% from claims</div>
+                    <div class="impact-pct-line" id="p-revShareImpactPct">0% from rev share</div>
+                    <div class="impact-pct-line" id="p-returnsOffsetImpactPct" style="display:none;">0% from returns</div>
+                    <div class="impact-pct-line" id="p-cashbackImpactPct" style="display:none;">0% from cashback</div>
+                </div>
                 <div class="hero-sub" id="heroSub">per year</div>
                 <div class="hero-badge-area" id="heroBadgeArea" style="display:none;">
                     <div class="hero-badge-pill" id="p-ppBadge"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/protectionbadges.png" alt="Protection" onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
@@ -1196,12 +1215,27 @@
                             <div class="rc-metric-value" id="r-siFundedClaims">$0</div>
                         </div>
                         <div class="rc-metric" id="r-totalClaimsFundedMetric">
-                            <div class="rc-metric-label">Total Claims Funded</div>
+                            <div class="rc-metric-label" id="r-totalClaimsFundedLabel">Total Claims Funded</div>
                             <div class="rc-metric-value" id="r-totalClaimsFunded">$0</div>
                         </div>
                         <div class="rc-metric" id="r-revShareMetric">
                             <div class="rc-metric-label">Revenue Share</div>
                             <div class="rc-metric-value" id="r-revenueShare">$0</div>
+                        </div>
+                    </div>
+                    <!-- Protection + Returns: Claims & Return Costs Funded (matches the calc 1:1) -->
+                    <div class="rc-subsection" id="r-crcSection" style="display:none;">
+                        <div class="rc-sub-label">Claims &amp; Return Costs Funded</div>
+                        <div class="rc-metrics">
+                            <div class="rc-metric">
+                                <div class="rc-metric-label">Claims Funded</div>
+                                <div class="rc-metric-value" id="r-crcClaimsFunded">$0</div>
+                            </div>
+                            <div class="rc-metric">
+                                <div class="rc-metric-label">Returns Offset</div>
+                                <div class="rc-metric-value" id="r-crcReturnsOffset">$0</div>
+                                <div class="rc-cost-badges" id="r-crcBadges"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1217,6 +1251,24 @@
                         <div class="rc-metric" id="r-totalClaimsMetric">
                             <div class="rc-metric-label" id="r-totalClaimsLabel">Total Claims</div>
                             <div class="rc-metric-value" id="r-totalClaims">0</div>
+                        </div>
+                    </div>
+                    <!-- Protection + Returns: Returns Costs (matches the calc 1:1) -->
+                    <div class="rc-subsection" id="r-returnsCostSection" style="display:none;">
+                        <div class="rc-sub-label">Returns Costs</div>
+                        <div class="rc-metrics">
+                            <div class="rc-metric" id="r-rcLabelsMetric">
+                                <div class="rc-metric-label" id="r-rcLabelsLabel">Return Labels Cost</div>
+                                <div class="rc-metric-value" id="r-rcLabelsCost">$0</div>
+                            </div>
+                            <div class="rc-metric" id="r-rcPlatformMetric">
+                                <div class="rc-metric-label">Returns Platform Cost</div>
+                                <div class="rc-metric-value" id="r-rcPlatformCost">$0</div>
+                            </div>
+                            <div class="rc-metric">
+                                <div class="rc-metric-label">Total Returns Cost</div>
+                                <div class="rc-metric-value" id="r-rcTotalCost">$0</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1914,9 +1966,27 @@
             }
 
             // ── Populate Results ───────────────────────────────────────────────
-            const heroEl = document.getElementById('heroValue');
-            heroEl.textContent = fmtDollar(extraRevenue);
-            document.getElementById('heroSub').textContent = 'per ' + periodLabel;
+            // Hero = "Premiums You Keep": % headline + breakdown bubbles (mirrors the rep calc)
+            const _siFundedPctH = premiumPool > 0 ? ((siFundedReships + (p_guaranteeEnabled ? gSiFundedClaims : 0)) / premiumPool) * 100 : 0;
+            const _revSharePctH = premiumPool > 0 ? (revenueShareAmount / premiumPool) * 100 : 0;
+            const _returnsPctH  = (p_returnsEnabled && premiumPool > 0) ? (totalReturnsOffset / premiumPool) * 100 : 0;
+            const _cashbackPctH = (p_cashbackEnabled && premiumPool > 0) ? (cashbackRedeemed / premiumPool) * 100 : 0;
+            const _rsZeroH = revenueShare === 0;
+            document.getElementById('heroLabel').textContent = 'Premiums You Keep';
+            document.getElementById('heroValue').textContent = Math.round(percentOfPremiums) + '%';
+            document.getElementById('heroSub').textContent = fmtDollar(extraRevenue) + ' per ' + periodLabel;
+            const _setPct = (id, txt, show) => { const el = document.getElementById(id); if (el) { el.textContent = txt; el.style.display = show ? '' : 'none'; } };
+            if (p_returnsOffsetMode) {
+                _setPct('p-claimsImpactPct', '', false);
+                _setPct('p-revShareImpactPct', _revSharePctH.toFixed(1) + '% from rev share', !_rsZeroH);
+                _setPct('p-returnsOffsetImpactPct', _returnsPctH.toFixed(1) + '% from returns', true);
+                _setPct('p-cashbackImpactPct', '', false);
+            } else {
+                _setPct('p-claimsImpactPct', _siFundedPctH.toFixed(1) + '% from claims', true);
+                _setPct('p-revShareImpactPct', _revSharePctH.toFixed(1) + '% from rev share', !_rsZeroH);
+                _setPct('p-returnsOffsetImpactPct', _returnsPctH.toFixed(1) + '% from returns', p_returnsEnabled);
+                _setPct('p-cashbackImpactPct', _cashbackPctH.toFixed(1) + '% from cashback', p_cashbackEnabled);
+            }
 
             // Cost card
             if (p_hideCurrentCost) {
@@ -1953,30 +2023,73 @@
             document.getElementById('r-avgPremium').textContent = fmtDollarCents(avgPremium);
             updateExamplePremium();
 
-            // Returns block
-            if (p_returnsEnabled) {
-                document.getElementById('returnsResultBlock').style.display = '';
-                document.getElementById('r-siCoveredLabels').textContent = fmtDollar(siCoveredLabels);
-                document.getElementById('r-siCoveredPlatform').textContent = fmtDollar(siCoveredPlatform);
-                document.getElementById('r-totalReturnsOffset').textContent = fmtDollar(totalReturnsOffset);
+            // ── Returns: mirror the rep calc's cards 1:1 (Protection + Returns, non-offset) ──
+            {
+                const sv = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
                 const rc = p_returnsCoverage;
-                const showBoth = rc === 'default' || rc === 'all_labels_platform';
                 const showLbl  = rc !== 'platform_only';
                 const showPlat = rc === 'default' || rc === 'platform_only' || rc === 'all_labels_platform';
-                const sv = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
-                sv('r-siCoveredLabelsItem',   showLbl);
-                sv('r-siCoveredPlatformItem', showPlat);
-                sv('r-totalReturnsOffsetItem', showBoth);
+                const cardReturns = p_returnsEnabled && !p_returnsOffsetMode;
+
+                // Revenue card: per-claim metric is retired (never shown); "Total Funded" up top when returns
+                sv('r-siFundedClaimsMetric', false);
+                sv('r-totalClaimsFundedMetric', !p_returnsOffsetMode);
+                const tcfL = document.getElementById('r-totalClaimsFundedLabel');
+                if (cardReturns) {
+                    if (tcfL) tcfL.textContent = 'Total Funded';
+                    const rtcf = document.getElementById('r-totalClaimsFunded');
+                    if (rtcf) rtcf.textContent = fmtDollar(siFundedReships + totalReturnsOffset);
+                    document.getElementById('r-crcClaimsFunded').textContent = fmtDollar(siFundedReships);
+                    document.getElementById('r-crcReturnsOffset').textContent = fmtDollar(totalReturnsOffset);
+                    const badges = [];
+                    if (siCoveredLabels > 0)   badges.push('labels ' + fmtDollar(siCoveredLabels));
+                    if (siCoveredPlatform > 0) badges.push('portal ' + fmtDollar(siCoveredPlatform));
+                    document.getElementById('r-crcBadges').innerHTML = badges.map(t => '<span class="rc-cost-badge">' + t + '</span>').join('');
+                } else if (tcfL) {
+                    tcfL.textContent = 'Total Claims Funded';
+                    const rtcf = document.getElementById('r-totalClaimsFunded');
+                    if (rtcf) rtcf.textContent = fmtDollar(siFundedReships);
+                }
+                sv('r-crcSection', cardReturns);
+
+                // Cost card: Returns Costs breakdown (labels / platform / total)
+                sv('r-returnsCostSection', cardReturns);
+                if (cardReturns) {
+                    const rlcLabel = document.getElementById('r-rcLabelsLabel');
+                    const rlcVal   = document.getElementById('r-rcLabelsCost');
+                    if (showLbl) {
+                        if (rlcLabel) rlcLabel.textContent = 'Labels & Cost';
+                        if (rlcVal) rlcVal.textContent = fmtNum(Math.round(totalReturns)) + ' · ' + fmtDollar(returnLabelsCostTotal);
+                    } else {
+                        if (rlcLabel) rlcLabel.textContent = 'Return Labels Cost';
+                        if (rlcVal) rlcVal.textContent = fmtDollar(returnLabelsCostTotal);
+                    }
+                    document.getElementById('r-rcPlatformCost').textContent = fmtDollar(periodPlatformCost);
+                    document.getElementById('r-rcTotalCost').textContent = fmtDollar(totalReturnsCost);
+                    sv('r-rcLabelsMetric', showLbl);
+                    sv('r-rcPlatformMetric', showPlat);
+                }
+
+                // Standalone "Returns Savings" block: only used for No-Protection (offset) framing.
+                if (p_returnsEnabled && p_returnsOffsetMode) {
+                    document.getElementById('returnsResultBlock').style.display = '';
+                    document.getElementById('r-siCoveredLabels').textContent = fmtDollar(siCoveredLabels);
+                    document.getElementById('r-siCoveredPlatform').textContent = fmtDollar(siCoveredPlatform);
+                    document.getElementById('r-totalReturnsOffset').textContent = fmtDollar(totalReturnsOffset);
+                    sv('r-siCoveredLabelsItem',   showLbl);
+                    sv('r-siCoveredPlatformItem', showPlat);
+                    sv('r-totalReturnsOffsetItem', false);
+                } else {
+                    document.getElementById('returnsResultBlock').style.display = 'none';
+                }
             }
 
             // ── Returns Offset mode: relabel / restructure to the offset framing ──
             {
                 const on = p_returnsOffsetMode;
                 const sv = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
-                // Revenue card: drop the claims metrics (returns offset has none)
-                sv('r-siFundedClaimsMetric', !on);
-                sv('r-totalClaimsFundedMetric', !on);
-                // Cost card: drop claims metrics
+                // Revenue-card claims metrics are managed by the Returns block above.
+                // Cost card: drop claims metrics in offset mode (no protection claims)
                 sv('r-costPerReshipMetric', !on);
                 sv('r-totalClaimsMetric', !on);
                 // Key pills (labels/values/dual pill) are managed by pUpdateKeyPills().
