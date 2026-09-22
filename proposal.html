@@ -814,10 +814,17 @@
         .theme-midnight .header-view-selector select { background:#14141c; color:#e8e8ee; }
         /* inputs */
         .theme-midnight .field-group label, .theme-midnight .field-section-label { color:#d9d9e6; }
-        .theme-midnight input[type="text"], .theme-midnight select { background:#14141c !important; color:#e8e8ee !important; border-color:rgba(212,175,55,.25) !important; }
+        /* kintsugi-lightning fields (molten-gold seam) — matches the ROI calc it was built on */
+        .theme-midnight input[type="text"], .theme-midnight select {
+            background:linear-gradient(#0a0a12,#0a0a12) padding-box, linear-gradient(120deg,#3a2f10,#e9c46a 48%,#fff3c4 50%,#e9c46a 52%,#3a2f10) border-box !important;
+            border:1px solid transparent !important; color:#efe7cf !important; }
         .theme-midnight input::placeholder { color:#7c7660 !important; }
-        .theme-midnight .feature-section-title, .theme-midnight .add-inputs-details summary { color:#e9c46a; }
-        .theme-midnight .itype-btn { background:#14141c; color:#c9cbe0; }
+        .theme-midnight input:focus, .theme-midnight select:focus { box-shadow:0 0 0 2px rgba(233,196,106,.5) !important; }
+        .theme-midnight .feature-section-title { color:#e9c46a; }
+        .theme-midnight .itype-btn { background:#14141c; color:#c9cbe0; border-color:rgba(233,196,106,.28); }
+        /* Additional Inputs disclosure → dark gold-accented bar (matches the calc's mi-additional-toggle) */
+        .theme-midnight details.add-inputs-details { border-color:rgba(233,196,106,.28); }
+        .theme-midnight details.add-inputs-details > summary { background:linear-gradient(150deg,#191a22,#0b0c12); color:#e9c46a; }
         .theme-midnight .no-results-placeholder { color:#6a7290; }
         .theme-midnight .no-results-placeholder strong { color:#e9c46a; }
         /* hero (Net Benefit) — keep the brand gradient, add a gold edge */
