@@ -765,12 +765,18 @@
         .om-ex-in { width: 78px; font-size: 0.72em; padding: 3px 8px; border: 1px solid #d0d4e8; border-radius: 6px;
             text-align: center; font-family: inherit; background: #fff; color: #212529; }
         .om-ex-in:focus { outline: none; box-shadow: 0 0 0 2px rgba(102,117,255,0.35); }
-        /* Avg Premium is the right-most pill, so open the popup right-aligned (opens inward, never clips) */
-        .om-ex-pop { position: absolute; top: 100%; right: 0; left: auto; margin-top: 9px; z-index: 40;
+        /* Avg Premium is the left-most pill, so open the popup left-aligned (opens inward, never clips) */
+        .om-ex-pop { position: absolute; top: 100%; left: 0; right: auto; margin-top: 9px; z-index: 60;
             width: 240px; max-width: 78vw; background: #fff; border: 1px solid #e3e6f0; border-radius: 10px;
             box-shadow: 0 12px 32px rgba(30,36,60,.22); padding: 10px 11px; text-align: center; }
-        .om-ex-pop::before { content: ""; position: absolute; top: -6px; right: 46px; transform: rotate(45deg);
+        .om-ex-pop::before { content: ""; position: absolute; top: -6px; left: 46px; right: auto; transform: rotate(45deg);
             width: 11px; height: 11px; background: #fff; border-left: 1px solid #e3e6f0; border-top: 1px solid #e3e6f0; }
+        /* Keep the open popup and its pill above neighbouring result cards in every theme.
+           The container rule matters in Midnight, where .right-panel > * each get their own
+           z-index:2 stacking context — lift the whole pills row above the hero while probing. */
+        #avgPremiumPill { position: relative; }
+        #avgPremiumPill:focus-within { z-index: 60; }
+        .key-metrics:focus-within { position: relative; z-index: 60; }
         .om-ex-pop-hd { font-size: 0.56em; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #6c757d; margin-bottom: 5px; }
         .om-ex-pop-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; }
         .om-ex-pop-o { font-size: 0.82em; font-weight: 800; color: #26304f; font-variant-numeric: tabular-nums; }
