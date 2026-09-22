@@ -3882,6 +3882,14 @@
             if (typeof d.theme === 'string') applyTheme(d.theme);
             if (d.command === 'save') saveConfig();
             if (d.command === 'loadConfig' && d.name) loadSavedConfig(d.name);
+            if (d.command === 'deleteConfigs' && Array.isArray(d.names)) {
+                const configs = JSON.parse(localStorage.getItem('si_saved_configs') || '{}');
+                d.names.forEach(n => { delete configs[n]; });
+                localStorage.setItem('si_saved_configs', JSON.stringify(configs));
+                updateSavedConfigsUI();
+                _siEmitState();
+                return;
+            }
             calculate();
             _siEmitState();
         });
