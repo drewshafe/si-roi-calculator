@@ -104,7 +104,32 @@
           <label>Banner image URL</label>
           <input type="text" id="bannerUrl" placeholder="https://…/banner.jpg" spellcheck="false">
         </div>
-        <div class="hint">Paste image URLs (uploads aren't hosted yet — Brandfetch auto-fill is coming). The logo replaces the header mark; the banner sits atop the results.</div>
+        <div class="fld">
+          <label>Third image URL <span style="font-weight:400;color:var(--muted);">(badge / footer)</span></label>
+          <input type="text" id="img3Url" placeholder="https://…/badge.png" spellcheck="false">
+        </div>
+        <div class="hint">Paste image URLs (uploads aren't hosted yet — Brandfetch auto-fill is coming). The logo replaces the header mark; the banner sits atop the results; the third image sits at the bottom of the merchant input column.</div>
+        <div class="fld">
+          <label>Merchant input background</label>
+          <div class="blk-seg" id="ibgMode">
+            <button type="button" data-v="default" class="on">Default</button>
+            <button type="button" data-v="solid">Solid</button>
+            <button type="button" data-v="gradient">Gradient</button>
+          </div>
+          <div id="ibgSolidRow" class="fld-row" style="display:none;margin-top:7px;">
+            <input type="color" id="ibgColor" value="#1B1B1B">
+            <input type="text" id="ibgColorHex" value="#1B1B1B" spellcheck="false">
+          </div>
+          <div id="ibgGradRow" style="display:none;margin-top:7px;">
+            <div class="fld-row" style="align-items:center;">
+              <input type="color" id="ibgA" value="#1B1B1B" title="Start">
+              <input type="color" id="ibgB" value="#6675FF" title="Middle">
+              <input type="color" id="ibgC" value="#B7BFFF" title="End">
+              <input type="number" id="ibgAngle" value="90" min="0" max="360" style="width:58px;" title="Angle in degrees">
+              <span style="font-size:.7rem;color:var(--muted);">deg</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="grp">
         <div class="grp-h">Layout — drag to reorder, 👁 to show/hide</div>
@@ -146,6 +171,16 @@
   const proposalBase = () => new URL('proposal.html', location.href).href;
   const blockById = id => blocks.find(b => b.id === id);
 
+  let _ibgMode = 'default';
+  function computeInputBg() {
+    if (_ibgMode === 'solid') return $('ibgColorHex').value.trim() || '#1B1B1B';
+    if (_ibgMode === 'gradient') {
+      const a = $('ibgA').value, b = $('ibgB').value, c = $('ibgC').value;
+      const ang = parseInt($('ibgAngle').value, 10);
+      return `linear-gradient(${isNaN(ang) ? 90 : ang}deg, ${a} 0%, ${b} 60%, ${c} 100%)`;
+    }
+    return undefined;
+  }
   function cfg() {
     return {
       branding: {
@@ -153,6 +188,8 @@
         font: $('font').value || undefined,
         logoUrl: $('logoUrl').value.trim() || undefined,
         bannerUrl: $('bannerUrl').value.trim() || undefined,
+        img3Url: $('img3Url').value.trim() || undefined,
+        inputBg: computeInputBg(),
       },
       layout: layout,
       blocks: blocks,
@@ -190,6 +227,18 @@
   $('font').addEventListener('change', () => refresh(true));
   $('logoUrl').addEventListener('input', () => refresh(false));
   $('bannerUrl').addEventListener('input', () => refresh(false));
+  $('img3Url').addEventListener('input', () => refresh(false));
+  // Merchant input background: default / solid / gradient
+  document.querySelectorAll('#ibgMode button').forEach(btn => btn.addEventListener('click', () => {
+    _ibgMode = btn.dataset.v;
+    document.querySelectorAll('#ibgMode button').forEach(b => b.classList.toggle('on', b === btn));
+    $('ibgSolidRow').style.display = _ibgMode === 'solid' ? '' : 'none';
+    $('ibgGradRow').style.display  = _ibgMode === 'gradient' ? '' : 'none';
+    refresh(true);
+  }));
+  $('ibgColor').addEventListener('input', e => { $('ibgColorHex').value = e.target.value; refresh(true); });
+  $('ibgColorHex').addEventListener('input', e => { const v = e.target.value.trim(); if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('ibgColor').value = v; refresh(true); } else { refresh(false); } });
+  ['ibgA', 'ibgB', 'ibgC', 'ibgAngle'].forEach(id => $(id).addEventListener('input', () => refresh(true)));
 
   // ── Layout drag-and-drop ──
   let dragKey = null;

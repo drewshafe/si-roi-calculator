@@ -803,7 +803,10 @@
         /* ═══════════════ PROJECT MIDNIGHT — merchant view ═══════════════ */
         body.theme-midnight { background:#040406; }
         .theme-midnight .proposal-layout { background:#07070d; box-shadow:0 0 60px rgba(0,0,0,.7), 0 0 0 1px rgba(212,175,55,.22); }
-        .theme-midnight .left-panel { background:#0a0a12; border-right-color:rgba(212,175,55,.2); }
+        .theme-midnight .left-panel { background:linear-gradient(90deg,#1B1B1B 0%,#6675FF 60%,#B7BFFF 100%); border-right-color:rgba(212,175,55,.2); }
+        /* On the periwinkle end of the gradient the light labels need a touch more punch */
+        .theme-midnight .field-group label, .theme-midnight .feature-section-title, .theme-midnight .add-inputs-details > summary,
+        .theme-midnight .merchant-subtitle { text-shadow:0 1px 3px rgba(0,0,0,.55); }
         .theme-midnight .right-panel { background:#08080f; }
         .theme-midnight .proposal-header { background:#05050b; border-bottom-color:rgba(212,175,55,.5); }
         .theme-midnight .header-text, .theme-midnight .header-text * { color:#e8e8ee; }
@@ -2437,7 +2440,9 @@
         }
         function applyCustomBuild(urlPs) {
             let cfg = null;
-            try { const raw = urlPs.get('bld'); if (raw) cfg = JSON.parse(decodeURIComponent(raw)); } catch (e) { return; }
+            // URLSearchParams.get() already URL-decodes once; a second decodeURIComponent
+            // would throw on literal % in values (e.g. gradient "0%, 60%, 100%") and abort.
+            try { const raw = urlPs.get('bld'); if (raw) cfg = JSON.parse(raw); } catch (e) { return; }
             if (!cfg) return;
             const b = cfg.branding || {};
             if (b.font) {
@@ -2467,6 +2472,18 @@
                     '.proposal-header{border-bottom-color:' + a + ' !important;}' +
                     '.no-results-placeholder strong{color:' + a + ' !important;}';
                 document.head.appendChild(st);
+            }
+            // Merchant input-section background override (solid or gradient)
+            if (b.inputBg) { const lp = document.querySelector('.left-panel'); if (lp) lp.style.background = b.inputBg; }
+            // Third image — brand badge / footer at the bottom of the merchant input column
+            if (b.img3Url) {
+                const lp = document.querySelector('.left-panel');
+                if (lp && !document.getElementById('cb-img3')) {
+                    const img = document.createElement('img');
+                    img.id = 'cb-img3'; img.src = b.img3Url; img.alt = 'Brand image'; img.onerror = function(){ this.style.display = 'none'; };
+                    img.style.cssText = 'display:block;max-width:82%;margin:16px auto 6px;object-fit:contain;';
+                    lp.appendChild(img);
+                }
             }
             if (Array.isArray(cfg.layout) && cfg.layout.length) {
                 const MAP = {
