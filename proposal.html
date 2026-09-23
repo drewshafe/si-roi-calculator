@@ -967,7 +967,7 @@
                             <input type="text" id="p-arc" placeholder="e.g. 8">
                         </div>
                         <div class="field-group" id="p-rpc-group">
-                            <label for="p-rpc">Returns Platform Cost ($/mo)</label>
+                            <label for="p-rpc" id="p-rpc-label">Returns Platform Cost ($/mo)</label>
                             <input type="text" id="p-rpc" placeholder="e.g. 300">
                         </div>
                     </div>
@@ -1392,6 +1392,7 @@
         let _p_bd = { ready: false };
         let p_returnsEnabled    = false;
         let p_returnsCoverage   = 'default'; // default | platform_only | labels_protected | all_labels_platform | all_labels
+        let p_returnsProvider   = ''; // '' | 'AfterShip' | 'Loop' — relabels the returns platform cost field
         let p_cashbackEnabled   = false;
         let p_guaranteeEnabled  = false;
         let p_returnsOffsetMode = false;
@@ -1738,12 +1739,22 @@
             rescale('p-orders');
             if (p_claimsType === 'count') rescale('p-claims');
             if (p_returnsType === 'count') rescale('p-rr');
+            rescale('p-rpc'); // platform cost is period-denominated too
 
             const ordLbl = document.getElementById('p-orders-label');
             if (ordLbl) ordLbl.textContent = mode === 'annual' ? 'Annual Orders' : 'Monthly Orders';
+            pUpdatePlatformLabel(mode === 'annual');
             pSetClaimsType(p_claimsType);
             if (p_returnsEnabled) pSetReturnsType(p_returnsType);
             calculateProposal();
+        }
+
+        // Returns platform cost label — "[provider] Portal ($/mo|$/yr)" or the generic default.
+        function pUpdatePlatformLabel(isAnnual) {
+            const lbl = document.getElementById('p-rpc-label');
+            if (!lbl) return;
+            const unit = isAnnual ? '($/yr)' : '($/mo)';
+            lbl.textContent = (p_returnsProvider ? p_returnsProvider + ' Portal ' : 'Returns Platform Cost ') + unit;
         }
 
         // ── Template visibility ────────────────────────────────────────────────
@@ -1866,7 +1877,7 @@
                 ? (periodOrders > 0 ? returnsRaw / periodOrders : 0)
                 : returnsRaw / 100;
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('p-rpc').value)) || 0;
-            const periodPlatformCost  = viewMode === 'annual' ? monthlyPlatformCost * 12 : monthlyPlatformCost;
+            const periodPlatformCost  = monthlyPlatformCost; // entered per the selected view (parity with orders)
             const returnLabelCost = parseFloat(removeCommas(document.getElementById('p-arc')?.value)) || avgShipping;
 
             // Cashback
@@ -2615,6 +2626,8 @@
                 up('p-arc', 'arc');
                 if (urlPs.get('rtype')) pSetReturnsType(urlPs.get('rtype'));
                 if (urlPs.get('rc')) p_returnsCoverage = urlPs.get('rc');
+                if (urlPs.get('rpp') != null) p_returnsProvider = urlPs.get('rpp');
+                pUpdatePlatformLabel((urlPs.get('view') || 'monthly') === 'annual');
                 pApplyCoverageVisibility();
             }
             if (rom) { p_returnsOffsetMode = true; pApplyOffsetVisibility(); }

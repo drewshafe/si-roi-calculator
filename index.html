@@ -705,6 +705,9 @@
         .returns-offset-toggle-btn.active { background: #0ea5e9; color: white; }
         .returns-coverage-bar { width:100%; padding:8px 0 2px; border-top:1px solid #f0f0f0; margin-top:6px; }
         .rc-divider { font-size:0.67em; text-transform:uppercase; letter-spacing:0.05em; color:#aaa; margin-bottom:5px; padding:0 2px; }
+        .rc-divider-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .rc-provider { font-size:0.9em; padding:2px 6px; border:1px solid #dee2e6; border-radius:5px; background:#fff; color:#555; font-family:inherit; cursor:pointer; text-transform:none; letter-spacing:0; }
+        .theme-midnight .rc-provider { background:#14141c; color:#e8e8ee; border-color:rgba(212,175,55,.35); }
         .rc-buttons { display:flex; flex-wrap:wrap; gap:4px; }
         .rc-btn { font-size:0.71em; padding:3px 7px; border:1px solid #dee2e6; border-radius:4px; background:#f8f9fa; color:#555; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
         .rc-btn:hover { background:#e8f5e9; border-color:#a5d6a7; }
@@ -1309,11 +1312,18 @@
                     <input type="text" id="avgReturnCost" placeholder="$">
                 </div>
                 <div id="returnsPlatformGroup" class="input-group returns">
-                    <label for="returnsPlatformCost">Returns Platform Cost ($/mo)</label>
+                    <label for="returnsPlatformCost" id="returnsPlatformLabel">Returns Platform Cost ($/mo)</label>
                     <input type="text" id="returnsPlatformCost" placeholder="$">
                 </div>
                 <div class="returns-coverage-bar" id="returnsCoverageBar">
-                    <div class="rc-divider">Coverage Mode</div>
+                    <div class="rc-divider rc-divider-row">
+                        <span>Coverage Mode</span>
+                        <select id="returnsPlatformProvider" class="rc-provider" onchange="setReturnsProvider(this.value)" title="Returns platform provider">
+                            <option value="">Platform…</option>
+                            <option value="AfterShip">AfterShip</option>
+                            <option value="Loop">Loop</option>
+                        </select>
+                    </div>
                     <div class="rc-buttons">
                         <button class="rc-btn active" data-rc="default" onclick="setReturnsCoverage('default')">Portal + Opt-ins Offset</button>
                         <button class="rc-btn" data-rc="platform_only" onclick="setReturnsCoverage('platform_only')">Portal Offset</button>
@@ -1858,6 +1868,7 @@
     <script>
         let returnsEnabled      = false;
         let _returnsCoverage    = 'default'; // default | platform_only | labels_protected | all_labels_platform | all_labels
+        let _returnsProvider    = ''; // '' | 'AfterShip' | 'Loop' — returns platform provider (relabels the platform cost field)
         let cashbackEnabled     = false;
         let guaranteeEnabled    = false;
         let returnsOffsetMode   = false;
@@ -1898,6 +1909,17 @@
             calculate();
         }
 
+        // Returns platform provider (AfterShip / Loop) — relabels the platform cost field.
+        function setReturnsProvider(v) {
+            _returnsProvider = v || '';
+            const sel = document.getElementById('returnsPlatformProvider');
+            if (sel && sel.value !== _returnsProvider) sel.value = _returnsProvider;
+            try { localStorage.setItem('shipinsure_returnsProvider', _returnsProvider); } catch (e) {}
+            updateDynamicLabels();
+            calculate();
+            if (typeof _siEmitState === 'function') _siEmitState();
+        }
+
         function applyReturnsCoverageVisibility() {
             const m = _returnsCoverage;
             // Rate/return-cost inputs hidden for platform_only.
@@ -1931,6 +1953,10 @@
             document.querySelectorAll('.rc-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.rc === m);
             });
+            // Keep the platform-provider select + label in sync with current state
+            const _pp = document.getElementById('returnsPlatformProvider');
+            if (_pp && _pp.value !== _returnsProvider) _pp.value = _returnsProvider;
+            updateDynamicLabels();
 
             // Hide Total Returns metric when rate input is hidden (platform_only)
             const tmEl = document.getElementById('totalReturnsMetric');
@@ -1974,6 +2000,11 @@
             if (returnsLbl) {
                 if (_returnsType === 'pct') returnsLbl.textContent = 'Returns Rate %';
                 else returnsLbl.textContent = isAnn ? 'Annual Returns' : 'Monthly Returns';
+            }
+            const plLbl = document.getElementById('returnsPlatformLabel');
+            if (plLbl) {
+                const unit = isAnn ? '($/yr)' : '($/mo)';
+                plLbl.textContent = (_returnsProvider ? _returnsProvider + ' Portal ' : 'Returns Platform Cost ') + unit;
             }
         }
         let _bd = {};
@@ -2653,9 +2684,11 @@
 
             updateDynamicLabels();
             let periodOrders, periodPlatformCost;
+            // Platform cost is entered per the selected view (like orders) — the value is
+            // the period value directly, no ×12 conversion.
             if (timeframe === 'annual') {
                 periodOrders = ordersInput;
-                periodPlatformCost = monthlyPlatformCost * 12;
+                periodPlatformCost = monthlyPlatformCost;
                 document.getElementById('ordersCardLabel').textContent = 'Annual';
             } else {
                 periodOrders = ordersInput;
@@ -3147,6 +3180,7 @@
                     up('avgReturnCost', 'arc');
                     if (urlParams.get('rtype')) setReturnsType(urlParams.get('rtype'));
                     if (urlParams.get('rc')) _returnsCoverage = urlParams.get('rc');
+                    if (urlParams.get('rpp') != null) _returnsProvider = urlParams.get('rpp');
                     if (!returnsEnabled) toggleReturns();
                 }
                 // Apply coverage-mode input visibility for the loaded link (covers the
@@ -3198,6 +3232,7 @@
                 if (s('returnsPlatformCost')) document.getElementById('returnsPlatformCost').value = s('returnsPlatformCost');
                 if (s('returnsType')) setReturnsType(s('returnsType'));
                 if (s('returnsCoverage')) _returnsCoverage = s('returnsCoverage');
+                if (s('returnsProvider') != null) _returnsProvider = s('returnsProvider');
                 if (s('returnsEnabled') === '1') toggleReturns();
                 if (s('cashbackRate')) document.getElementById('cashbackRate').value = s('cashbackRate');
                 if (s('minCashback')) document.getElementById('minCashback').value = s('minCashback');
@@ -3260,6 +3295,7 @@
                 if (arcVal) params.set('arc', arcVal);
                 params.set('rtype', _returnsType);
                 if (_returnsCoverage !== 'default') params.set('rc', _returnsCoverage);
+                if (_returnsProvider) params.set('rpp', _returnsProvider);
             }
             if (cashbackEnabled) {
                 params.set('cbe', '1');
@@ -3342,6 +3378,7 @@
                 if (arcVal) params.set('arc', arcVal);
                 params.set('rtype', _returnsType);
                 if (_returnsCoverage !== 'default') params.set('rc', _returnsCoverage);
+                if (_returnsProvider) params.set('rpp', _returnsProvider);
             }
             if (cashbackEnabled) {
                 params.set('cbe', '1');
@@ -3570,6 +3607,8 @@
                 localStorage.removeItem('shipinsure_' + k);
             });
             _returnsCoverage = 'default';
+            _returnsProvider = '';
+            { const _pp = document.getElementById('returnsPlatformProvider'); if (_pp) _pp.value = ''; }
             if (returnsEnabled) toggleReturns();
             if (cashbackEnabled) toggleCashback();
             if (guaranteeEnabled) toggleGuarantee();
@@ -3771,6 +3810,7 @@
                 merchantName:    document.getElementById('merchantName').value,
                 siInputsVisible: document.getElementById('siInputsCheck').checked,
                 coverage:        _returnsCoverage,
+                returnsProvider: _returnsProvider,
                 currency:        SI_CURRENCY,
                 viewMode:        (document.getElementById('timeframe') || {}).value || 'monthly',
                 siNet:           (typeof _bd === 'object' && _bd) ? (_bd.siNetRetained || 0) : 0,
@@ -3877,6 +3917,7 @@
             if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
             if (typeof d.siInputsVisible === 'boolean') { document.getElementById('siInputsCheck').checked = d.siInputsVisible; toggleSiInputsVisibility(); }
             if (typeof d.coverage === 'string') setReturnsCoverage(d.coverage);
+            if (typeof d.returnsProvider === 'string' && d.returnsProvider !== _returnsProvider) setReturnsProvider(d.returnsProvider);
             if (typeof d.currency === 'string') setCurrency(d.currency, { silent: true });
             if ('upfrontTier' in d) _upfrontTier = (d.upfrontTier == null ? null : parseFloat(d.upfrontTier));
             if (typeof d.theme === 'string') applyTheme(d.theme);
