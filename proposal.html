@@ -2483,6 +2483,23 @@
                 const sc = document.getElementById('inputsSection'); if (sc) sc.style.background = b.inputBg;
                 const lp = document.querySelector('.left-panel'); if (lp) lp.style.background = b.inputBg;
             }
+            // Merchant input font & border styling (labels + fields inside the inputs card)
+            {
+                const rules = [];
+                const fieldSel = '#inputsSection .field-group input, #inputsSection .field-group select';
+                const labelSel = '#inputsSection .field-group label';
+                if (b.inputColor)  rules.push(labelSel + '{color:' + b.inputColor + ' !important;}' + fieldSel + '{color:' + b.inputColor + ' !important;}');
+                if (b.inputSize)   rules.push('#inputsSection .field-group{font-size:' + b.inputSize + 'em !important;}');
+                if (b.inputWeight) rules.push(labelSel + '{font-weight:' + b.inputWeight + ' !important;}');
+                if (b.inputBorderW != null && b.inputBorderW !== '') {
+                    const w = parseInt(b.inputBorderW, 10) || 0;
+                    const col = b.inputBorderColor || '#d0d4e8';
+                    rules.push(fieldSel + '{border:' + w + 'px solid ' + col + ' !important;}');
+                } else if (b.inputBorderColor) {
+                    rules.push(fieldSel + '{border-color:' + b.inputBorderColor + ' !important;}');
+                }
+                if (rules.length) { const si = document.createElement('style'); si.id = 'cb-inputstyle'; si.textContent = rules.join(''); document.head.appendChild(si); }
+            }
             if (Array.isArray(cfg.layout) && cfg.layout.length) {
                 const MAP = {
                     hero: document.querySelector('.hero-row'),

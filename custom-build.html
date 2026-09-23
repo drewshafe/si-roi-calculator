@@ -113,7 +113,7 @@
         </div>
         <div class="hint">Paste image URLs (uploads aren't hosted yet — Brandfetch auto-fill is coming). The logo replaces the header mark; the banner sits atop the results.</div>
         <div class="fld">
-          <label>Merchant input background</label>
+          <label>Merchant input font &amp; background</label>
           <div class="blk-seg" id="ibgMode">
             <button type="button" data-v="default" class="on">Default</button>
             <button type="button" data-v="solid">Solid</button>
@@ -130,6 +130,30 @@
               <input type="color" id="ibgC" value="#B7BFFF" title="End">
               <input type="number" id="ibgAngle" value="90" min="0" max="360" style="width:58px;" title="Angle in degrees">
               <span style="font-size:.7rem;color:var(--muted);">deg</span>
+            </div>
+          </div>
+          <div class="fld-row" style="align-items:center;gap:8px;margin-top:9px;">
+            <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:42px;">Text</span>
+            <input type="color" id="inpColor" value="#333333" title="Text colour">
+            <div class="blk-seg" id="inpSize">
+              <button type="button" data-v="" class="on" title="Default size">A</button>
+              <button type="button" data-v="0.9" title="Small">S</button>
+              <button type="button" data-v="1.15" title="Large">L</button>
+            </div>
+            <div class="blk-seg" id="inpWeight">
+              <button type="button" data-v="" class="on" title="Regular">Reg</button>
+              <button type="button" data-v="600" title="Medium">Med</button>
+              <button type="button" data-v="800" title="Bold">Bold</button>
+            </div>
+          </div>
+          <div class="fld-row" style="align-items:center;gap:8px;margin-top:6px;">
+            <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:42px;">Border</span>
+            <input type="color" id="inpBorderColor" value="#d0d4e8" title="Field border colour">
+            <div class="blk-seg" id="inpBorderW">
+              <button type="button" data-v="" class="on" title="Default">Def</button>
+              <button type="button" data-v="0" title="No border">None</button>
+              <button type="button" data-v="1">1px</button>
+              <button type="button" data-v="2">2px</button>
             </div>
           </div>
         </div>
@@ -175,6 +199,7 @@
   const blockById = id => blocks.find(b => b.id === id);
 
   let _ibgMode = 'default';
+  let _inpColorSet = false, _inpBorderSet = false, _inpSize = '', _inpWeight = '', _inpBorderW = '';
   function computeInputBg() {
     if (_ibgMode === 'solid') return $('ibgColorHex').value.trim() || '#1B1B1B';
     if (_ibgMode === 'gradient') {
@@ -193,6 +218,11 @@
         logoUrl: $('logoUrl').value.trim() || undefined,
         bannerUrl: $('bannerUrl').value.trim() || undefined,
         inputBg: computeInputBg(),
+        inputColor: _inpColorSet ? $('inpColor').value : undefined,
+        inputSize: _inpSize || undefined,
+        inputWeight: _inpWeight || undefined,
+        inputBorderW: _inpBorderW !== '' ? _inpBorderW : undefined,
+        inputBorderColor: _inpBorderSet ? $('inpBorderColor').value : undefined,
       },
       layout: layout,
       blocks: blocks,
@@ -249,6 +279,16 @@
   $('ibgColor').addEventListener('input', e => { $('ibgColorHex').value = e.target.value; refresh(true); });
   $('ibgColorHex').addEventListener('input', e => { const v = e.target.value.trim(); if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('ibgColor').value = v; refresh(true); } else { refresh(false); } });
   ['ibgA', 'ibgB', 'ibgC', 'ibgAngle'].forEach(id => $(id).addEventListener('input', () => refresh(true)));
+  // Merchant input font & border stylers
+  $('inpColor').addEventListener('input', () => { _inpColorSet = true; refresh(true); });
+  $('inpBorderColor').addEventListener('input', () => { _inpBorderSet = true; refresh(true); });
+  const segPick = (wrap, set) => document.querySelectorAll('#' + wrap + ' button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('#' + wrap + ' button').forEach(b => b.classList.toggle('on', b === btn));
+    set(btn.dataset.v); refresh(true);
+  }));
+  segPick('inpSize',    v => _inpSize = v);
+  segPick('inpWeight',  v => _inpWeight = v);
+  segPick('inpBorderW', v => _inpBorderW = v);
 
   // ── Layout drag-and-drop ──
   let dragKey = null;
