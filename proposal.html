@@ -2194,6 +2194,7 @@
                 percentOfPremiums: percentOfPremiums,
                 returnsEnabled: p_returnsEnabled,
                 returnsCoverage: p_returnsCoverage,
+                returnsProvider: p_returnsProvider,
                 returnsOffsetMode: p_returnsOffsetMode,
                 returnsRate: returnsRate,
                 totalReturnsOffset: (siCoveredLabels + siCoveredPlatform),
@@ -2394,20 +2395,31 @@
                 row('Protected Orders',   `${fn(d.orders)} × ${pct(d.attachP)}`,             fn(d.protectedOrders)) +
                 row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
                 row('Protected Claims',   `${fn(d.protectedOrders)} × ${pct(d.claimsP)}`,    fn(d.protectedClaims)) +
-                row('SI Funded Claim',    `${fn(d.protectedClaims)} claims × ${fcc(d.siClaimValue)}`, fc(d.siFundedReships)) +
-                (d.guaranteeEnabled ? row('SI Funded Guarantee', `${fn(d.gAdditionalClaims)} addl × ${fcc(d.siClaimValue)}`, fc(d.gSiFundedClaims)) : '') +
-                row('Post-Claim Balance', [
-                    'Premiums − SI Funded',
-                    d.guaranteeEnabled ? '− Guarantee Claims' : '',
-                    d.returnsEnabled  ? '− Return Labels' : '',
-                    d.cashbackEnabled ? '− Cashback Redeemed' : ''
-                ].filter(Boolean).join(' '), fc(d.postClaimBalance)) +
-                row('Rev Share', `${d.grossRevShare ? fc(d.premiumPool) : fc(d.postClaimBalance)} × ${pct(d.revShareP)}`, fc(d.revenueShareAmount));
+                row('Funded Claim Amount',`${fn(d.protectedClaims)} claims × ${fcc(d.siClaimValue)}`, fc(d.siFundedReships)) +
+                (d.guaranteeEnabled ? row('SI Funded Guarantee', `${fn(d.gAdditionalClaims)} addl × ${fcc(d.siClaimValue)}`, fc(d.gSiFundedClaims)) : '');
+            // Returns coverage — surfaced by mode, right after the funded claim and before the balance.
             if (d.returnsEnabled) {
-                revHTML +=
-                    row('SI Covered Labels',   'from premiums', fc(d.siCoveredLabels)) +
-                    row('SI Covered Platform', 'from premiums', fc(d.siCoveredPlatform));
+                const cov = d.returnsCoverage;
+                const allMode = (cov === 'all_labels' || cov === 'all_labels_platform');
+                const labelsCovered = (cov !== 'platform_only');
+                const platformCovered = (cov === 'default' || cov === 'platform_only' || cov === 'all_labels_platform');
+                const coveredReturns = Math.round(allMode ? d.totalReturns : (d.protectedOrders * d.returnsRate));
+                if (labelsCovered) {
+                    revHTML += row('Covered Returns', `${fn(allMode ? d.orders : d.protectedOrders)} × ${pct(d.returnsRate)}`, fn(coveredReturns));
+                    revHTML += row('Funded Label Amount', `${fn(coveredReturns)} × ${fcc(d.returnLabelCost)}`, fc(d.siCoveredLabels));
+                }
+                if (platformCovered) {
+                    const portalName = d.returnsProvider ? d.returnsProvider + ' Portal' : 'Returns Platform';
+                    revHTML += row('Funded ' + portalName + ' Amount', '', fc(d.siCoveredPlatform));
+                }
             }
+            const _pcb = [fc(d.premiumPool), '− ' + fc(d.siFundedReships)];
+            if (d.guaranteeEnabled) _pcb.push('− ' + fc(d.gSiFundedClaims));
+            if (d.returnsEnabled)   _pcb.push('− ' + fc(d.totalReturnsOffset));
+            if (d.cashbackEnabled)  _pcb.push('− ' + fc(d.cashbackRedeemed));
+            revHTML +=
+                row('Post-Claim Balance', _pcb.join(' '), fc(d.postClaimBalance)) +
+                row('Rev Share', `${d.grossRevShare ? fc(d.premiumPool) : fc(d.postClaimBalance)} × ${pct(d.revShareP)}`, fc(d.revenueShareAmount));
             if (d.cashbackEnabled) {
                 revHTML +=
                     row('Cashback Per Order', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
