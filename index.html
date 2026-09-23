@@ -3646,6 +3646,7 @@
                 if (val > 0) el.value = formatNumberWithCommas(String(Math.round(val * scale)));
             };
             rescale('annualOrders');
+            rescale('returnsPlatformCost'); // portal cost is period-denominated too (×12 → annual)
             if (_claimsType === 'count') rescale('claimsRate');
             if (_returnsType === 'count') rescale('returnsRate');
             calculate();
