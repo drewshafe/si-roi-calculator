@@ -104,11 +104,7 @@
           <label>Banner image URL</label>
           <input type="text" id="bannerUrl" placeholder="https://…/banner.jpg" spellcheck="false">
         </div>
-        <div class="fld">
-          <label>Third image URL <span style="font-weight:400;color:var(--muted);">(badge / footer)</span></label>
-          <input type="text" id="img3Url" placeholder="https://…/badge.png" spellcheck="false">
-        </div>
-        <div class="hint">Paste image URLs (uploads aren't hosted yet — Brandfetch auto-fill is coming). The logo replaces the header mark; the banner sits atop the results; the third image sits at the bottom of the merchant input column.</div>
+        <div class="hint">Paste image URLs (uploads aren't hosted yet — Brandfetch auto-fill is coming). The logo replaces the header mark; the banner sits atop the results.</div>
         <div class="fld">
           <label>Merchant input background</label>
           <div class="blk-seg" id="ibgMode">
@@ -188,7 +184,6 @@
         font: $('font').value || undefined,
         logoUrl: $('logoUrl').value.trim() || undefined,
         bannerUrl: $('bannerUrl').value.trim() || undefined,
-        img3Url: $('img3Url').value.trim() || undefined,
         inputBg: computeInputBg(),
       },
       layout: layout,
@@ -227,7 +222,6 @@
   $('font').addEventListener('change', () => refresh(true));
   $('logoUrl').addEventListener('input', () => refresh(false));
   $('bannerUrl').addEventListener('input', () => refresh(false));
-  $('img3Url').addEventListener('input', () => refresh(false));
   // Merchant input background: default / solid / gradient
   document.querySelectorAll('#ibgMode button').forEach(btn => btn.addEventListener('click', () => {
     _ibgMode = btn.dataset.v;

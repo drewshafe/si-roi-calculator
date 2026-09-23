@@ -2475,16 +2475,6 @@
             }
             // Merchant input-section background override (solid or gradient)
             if (b.inputBg) { const lp = document.querySelector('.left-panel'); if (lp) lp.style.background = b.inputBg; }
-            // Third image — brand badge / footer at the bottom of the merchant input column
-            if (b.img3Url) {
-                const lp = document.querySelector('.left-panel');
-                if (lp && !document.getElementById('cb-img3')) {
-                    const img = document.createElement('img');
-                    img.id = 'cb-img3'; img.src = b.img3Url; img.alt = 'Brand image'; img.onerror = function(){ this.style.display = 'none'; };
-                    img.style.cssText = 'display:block;max-width:82%;margin:16px auto 6px;object-fit:contain;';
-                    lp.appendChild(img);
-                }
-            }
             if (Array.isArray(cfg.layout) && cfg.layout.length) {
                 const MAP = {
                     hero: document.querySelector('.hero-row'),
