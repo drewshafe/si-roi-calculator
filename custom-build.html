@@ -78,12 +78,19 @@
       <div class="grp">
         <div class="grp-h">Merchant Branding</div>
         <div class="fld">
-          <label>Accent color</label>
+          <label>Accent 1 — highlights <span style="font-weight:400;color:var(--muted);">(Premiums box / buttons / text)</span></label>
           <div class="fld-row">
             <input type="color" id="accent" value="#6675ff">
             <input type="text" id="accentHex" value="#6675ff" spellcheck="false">
           </div>
           <div class="swatches" id="swatches"></div>
+        </div>
+        <div class="fld">
+          <label>Accent 2 — header background</label>
+          <div class="fld-row">
+            <input type="color" id="accent2" value="#2a2f45">
+            <input type="text" id="accent2Hex" value="#2a2f45" spellcheck="false">
+          </div>
         </div>
         <div class="fld">
           <label>Font</label>
@@ -181,6 +188,7 @@
     return {
       branding: {
         accent: $('accentHex').value.trim() || undefined,
+        accent2: _accent2Set ? ($('accent2Hex').value.trim() || undefined) : undefined,
         font: $('font').value || undefined,
         logoUrl: $('logoUrl').value.trim() || undefined,
         bannerUrl: $('bannerUrl').value.trim() || undefined,
@@ -218,6 +226,14 @@
   $('accentHex').addEventListener('input', e => {
     const v = e.target.value.trim();
     if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent').value = v; refresh(true); } else { refresh(false); }
+  });
+  // Accent 2 (header background) — only sent once the rep actually picks a colour,
+  // so default merchant links keep the theme's own header colour.
+  let _accent2Set = false;
+  $('accent2').addEventListener('input', e => { _accent2Set = true; $('accent2Hex').value = e.target.value; refresh(true); });
+  $('accent2Hex').addEventListener('input', e => {
+    const v = e.target.value.trim(); _accent2Set = true;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent2').value = v; refresh(true); } else { refresh(false); }
   });
   $('font').addEventListener('change', () => refresh(true));
   $('logoUrl').addEventListener('input', () => refresh(false));

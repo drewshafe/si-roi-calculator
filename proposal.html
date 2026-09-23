@@ -803,7 +803,9 @@
         /* ═══════════════ PROJECT MIDNIGHT — merchant view ═══════════════ */
         body.theme-midnight { background:#040406; }
         .theme-midnight .proposal-layout { background:#07070d; box-shadow:0 0 60px rgba(0,0,0,.7), 0 0 0 1px rgba(212,175,55,.22); }
-        .theme-midnight .left-panel { background:linear-gradient(90deg,#1B1B1B 0%,#6675FF 60%,#B7BFFF 100%); border-right-color:rgba(212,175,55,.2); }
+        .theme-midnight .left-panel { background:#0a0a12; border-right-color:rgba(212,175,55,.2); }
+        /* The inputs card is the visible input-editor surface, so the branded gradient lives here */
+        .theme-midnight #inputsSection { background:linear-gradient(90deg,#1B1B1B 0%,#6675FF 60%,#B7BFFF 100%); }
         /* On the periwinkle end of the gradient the light labels need a touch more punch */
         .theme-midnight .field-group label, .theme-midnight .feature-section-title, .theme-midnight .add-inputs-details > summary,
         .theme-midnight .merchant-subtitle { text-shadow:0 1px 3px rgba(0,0,0,.55); }
@@ -2473,8 +2475,14 @@
                     '.no-results-placeholder strong{color:' + a + ' !important;}';
                 document.head.appendChild(st);
             }
-            // Merchant input-section background override (solid or gradient)
-            if (b.inputBg) { const lp = document.querySelector('.left-panel'); if (lp) lp.style.background = b.inputBg; }
+            // Accent 2 — merchant header background
+            if (b.accent2) { const h = document.querySelector('.proposal-header'); if (h) h.style.background = b.accent2; }
+            // Merchant input-section background override (solid or gradient). The inputs card
+            // (#inputsSection) is the visible surface — the left panel sits behind it.
+            if (b.inputBg) {
+                const sc = document.getElementById('inputsSection'); if (sc) sc.style.background = b.inputBg;
+                const lp = document.querySelector('.left-panel'); if (lp) lp.style.background = b.inputBg;
+            }
             if (Array.isArray(cfg.layout) && cfg.layout.length) {
                 const MAP = {
                     hero: document.querySelector('.hero-row'),
