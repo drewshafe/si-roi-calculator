@@ -133,21 +133,15 @@
             </div>
           </div>
           <div class="fld-row" style="align-items:center;gap:8px;margin-top:9px;">
-            <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:42px;">Text</span>
-            <input type="color" id="inpColor" value="#333333" title="Text colour">
-            <div class="blk-seg" id="inpSize">
-              <button type="button" data-v="" class="on" title="Default size">A</button>
-              <button type="button" data-v="0.9" title="Small">S</button>
-              <button type="button" data-v="1.15" title="Large">L</button>
-            </div>
-            <div class="blk-seg" id="inpWeight">
-              <button type="button" data-v="" class="on" title="Regular">Reg</button>
-              <button type="button" data-v="600" title="Medium">Med</button>
-              <button type="button" data-v="800" title="Bold">Bold</button>
-            </div>
+            <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:74px;">Label Text</span>
+            <input type="color" id="inpLabelColor" value="#ffffff" title="Label text colour (defaults from Accent 2)">
           </div>
           <div class="fld-row" style="align-items:center;gap:8px;margin-top:6px;">
-            <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:42px;">Border</span>
+            <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:74px;">Input Text</span>
+            <input type="color" id="inpInputColor" value="#333333" title="Input text colour (defaults from Accent 2)">
+          </div>
+          <div class="fld-row" style="align-items:center;gap:8px;margin-top:6px;">
+            <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:74px;">Border</span>
             <input type="color" id="inpBorderColor" value="#d0d4e8" title="Field border colour">
             <div class="blk-seg" id="inpBorderW">
               <button type="button" data-v="" class="on" title="Default">Def</button>
@@ -199,7 +193,17 @@
   const blockById = id => blocks.find(b => b.id === id);
 
   let _ibgMode = 'default';
-  let _inpColorSet = false, _inpBorderSet = false, _inpSize = '', _inpWeight = '', _inpBorderW = '';
+  let _inpLabelSet = false, _inpInputSet = false, _inpBorderSet = false, _inpBorderW = '';
+  const _accent2Val = () => (_accent2Set ? $('accent2Hex').value.trim() : '');
+  function _isDark(hex) {
+    const h = (hex || '').replace('#', '');
+    if (h.length < 6) return false;
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
+  }
+  // Derived defaults from Accent 2 (used until the rep overrides them)
+  const labelColorDefault = () => { const a2 = _accent2Val(); return (a2 && _isDark(a2)) ? '#ffffff' : undefined; };
+  const inputColorDefault = () => _accent2Val() || undefined;
   function computeInputBg() {
     if (_ibgMode === 'solid') return $('ibgColorHex').value.trim() || '#1B1B1B';
     if (_ibgMode === 'gradient') {
@@ -207,7 +211,8 @@
       const ang = parseInt($('ibgAngle').value, 10);
       return `linear-gradient(${isNaN(ang) ? 90 : ang}deg, ${a} 0%, ${b} 60%, ${c} 100%)`;
     }
-    return undefined;
+    // Default background matches Accent 2 (when the rep has picked one)
+    return _accent2Val() || undefined;
   }
   function cfg() {
     return {
@@ -218,9 +223,8 @@
         logoUrl: $('logoUrl').value.trim() || undefined,
         bannerUrl: $('bannerUrl').value.trim() || undefined,
         inputBg: computeInputBg(),
-        inputColor: _inpColorSet ? $('inpColor').value : undefined,
-        inputSize: _inpSize || undefined,
-        inputWeight: _inpWeight || undefined,
+        inputLabelColor: _inpLabelSet ? $('inpLabelColor').value : labelColorDefault(),
+        inputInputColor: _inpInputSet ? $('inpInputColor').value : inputColorDefault(),
         inputBorderW: _inpBorderW !== '' ? _inpBorderW : undefined,
         inputBorderColor: _inpBorderSet ? $('inpBorderColor').value : undefined,
       },
@@ -258,12 +262,17 @@
     if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent').value = v; refresh(true); } else { refresh(false); }
   });
   // Accent 2 (header background) — only sent once the rep actually picks a colour,
-  // so default merchant links keep the theme's own header colour.
+  // so default merchant links keep the theme's own header colour. Picking it also
+  // drives the input background + label/input text defaults (until manually overridden).
   let _accent2Set = false;
-  $('accent2').addEventListener('input', e => { _accent2Set = true; $('accent2Hex').value = e.target.value; refresh(true); });
+  function _syncDerived() {
+    if (!_inpLabelSet) $('inpLabelColor').value = labelColorDefault() || '#333333';
+    if (!_inpInputSet) $('inpInputColor').value = inputColorDefault() || '#333333';
+  }
+  $('accent2').addEventListener('input', e => { _accent2Set = true; $('accent2Hex').value = e.target.value; _syncDerived(); refresh(true); });
   $('accent2Hex').addEventListener('input', e => {
     const v = e.target.value.trim(); _accent2Set = true;
-    if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent2').value = v; refresh(true); } else { refresh(false); }
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent2').value = v; _syncDerived(); refresh(true); } else { refresh(false); }
   });
   $('font').addEventListener('change', () => refresh(true));
   $('logoUrl').addEventListener('input', () => refresh(false));
@@ -280,14 +289,13 @@
   $('ibgColorHex').addEventListener('input', e => { const v = e.target.value.trim(); if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('ibgColor').value = v; refresh(true); } else { refresh(false); } });
   ['ibgA', 'ibgB', 'ibgC', 'ibgAngle'].forEach(id => $(id).addEventListener('input', () => refresh(true)));
   // Merchant input font & border stylers
-  $('inpColor').addEventListener('input', () => { _inpColorSet = true; refresh(true); });
+  $('inpLabelColor').addEventListener('input', () => { _inpLabelSet = true; refresh(true); });
+  $('inpInputColor').addEventListener('input', () => { _inpInputSet = true; refresh(true); });
   $('inpBorderColor').addEventListener('input', () => { _inpBorderSet = true; refresh(true); });
   const segPick = (wrap, set) => document.querySelectorAll('#' + wrap + ' button').forEach(btn => btn.addEventListener('click', () => {
     document.querySelectorAll('#' + wrap + ' button').forEach(b => b.classList.toggle('on', b === btn));
     set(btn.dataset.v); refresh(true);
   }));
-  segPick('inpSize',    v => _inpSize = v);
-  segPick('inpWeight',  v => _inpWeight = v);
   segPick('inpBorderW', v => _inpBorderW = v);
 
   // ── Layout drag-and-drop ──

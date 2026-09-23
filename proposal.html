@@ -2488,9 +2488,8 @@
                 const rules = [];
                 const fieldSel = '#inputsSection .field-group input, #inputsSection .field-group select';
                 const labelSel = '#inputsSection .field-group label';
-                if (b.inputColor)  rules.push(labelSel + '{color:' + b.inputColor + ' !important;}' + fieldSel + '{color:' + b.inputColor + ' !important;}');
-                if (b.inputSize)   rules.push('#inputsSection .field-group{font-size:' + b.inputSize + 'em !important;}');
-                if (b.inputWeight) rules.push(labelSel + '{font-weight:' + b.inputWeight + ' !important;}');
+                if (b.inputLabelColor) rules.push(labelSel + '{color:' + b.inputLabelColor + ' !important;}');
+                if (b.inputInputColor) rules.push(fieldSel + '{color:' + b.inputInputColor + ' !important;}');
                 if (b.inputBorderW != null && b.inputBorderW !== '') {
                     const w = parseInt(b.inputBorderW, 10) || 0;
                     const col = b.inputBorderColor || '#d0d4e8';
