@@ -2278,24 +2278,25 @@
             const totalFunded = (d.extraRevenue || 0) - revShare;
             const hasRevShare = (d.revShareP || 0) > 0;
             const funded = [];
-            if (!d.returnsOffsetMode) funded.push(`<div class="er-line"><span class="er-k">Claims</span><span class="er-v">${fc(claims)}</span></div>`);
+            if (!d.returnsOffsetMode) funded.push({ name: 'Claims Funded', html: `<div class="er-line"><span class="er-k">Claims</span><span class="er-v">${fc(claims)}</span></div>` });
             if (d.returnsEnabled) {
                 const badges = [];
                 if ((d.siCoveredLabels || 0) > 0)   badges.push('labels ' + fc(d.siCoveredLabels));
                 if ((d.siCoveredPlatform || 0) > 0) badges.push((d.returnsProvider ? d.returnsProvider.toLowerCase() : 'portal') + ' ' + fc(d.siCoveredPlatform));
                 const bhtml = badges.length ? `<span class="er-badges">${badges.map(t => `<span class="er-badge">${t}</span>`).join('')}</span>` : '';
-                funded.push(`<div class="er-line"><span class="er-k">Returns Offset${bhtml}</span><span class="er-v">${fc(returnsOffset)}</span></div>`);
+                funded.push({ name: 'Returns Offset', html: `<div class="er-line"><span class="er-k">Returns Offset${bhtml}</span><span class="er-v">${fc(returnsOffset)}</span></div>` });
             }
-            if (d.cashbackEnabled) funded.push(`<div class="er-line"><span class="er-k">Cashback Rewards <span class="er-sub">(est. redeemed)</span></span><span class="er-v">${fc(cashback)}</span></div>`);
+            if (d.cashbackEnabled) funded.push({ name: 'Cashback Rewards', html: `<div class="er-line"><span class="er-k">Cashback Rewards <span class="er-sub">(est. redeemed)</span></span><span class="er-v">${fc(cashback)}</span></div>` });
             let html = '';
             if (hasRevShare) html += `<div class="er-revshare"><span class="er-k">Revenue Share</span><span class="er-v">${fc(revShare)}</span></div>`;
             // Only show a TOTAL when 2+ funded lines make it non-redundant.
             const totalHtml = funded.length >= 2 ? `<span class="er-fh-total">TOTAL = ${fc(totalFunded)}</span>` : '';
             html += `<div class="er-funded-head"><span class="er-fh-lbl">Funded by Premiums</span>${totalHtml}</div>`;
-            html += funded.join('');
+            html += funded.map(f => f.html).join('');
             el.innerHTML = html;
             const sub = document.getElementById('p-erValueSub');
-            if (sub) sub.textContent = hasRevShare ? '(Total Funded + Revenue Share)' : '(Total Funded)';
+            const fundedName = funded.length >= 2 ? 'Total Funded' : (funded[0] ? funded[0].name : 'Total Funded');
+            if (sub) sub.textContent = hasRevShare ? `(${fundedName} + Revenue Share)` : `(${fundedName})`;
         }
 
         // ── Key Metric pills — mode-aware content (order: AVG/SI Premium ·
