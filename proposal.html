@@ -2598,6 +2598,19 @@
                     if (!el || !parent || !anchor) return;
                     parent.insertBefore(el, anchor);
                     el.setAttribute('data-cb-hidden', visible ? '' : '1');
+                    // Per-section style (Custom Build → Style → Layout): background + border.
+                    const st = (typeof item === 'object') ? item.style : null;
+                    if (st) {
+                        // For the hero, paint the inner gradient box, not the flex row wrapper.
+                        const target = (key === 'hero') ? (el.querySelector('.result-hero:not(.upfront-hero)') || el) : el;
+                        if (st.bg) target.style.setProperty('background', st.bg, 'important');
+                        if (st.bw != null && st.bw !== '') {
+                            const w = parseInt(st.bw, 10) || 0;
+                            target.style.setProperty('border', w + 'px solid ' + (st.bc || '#e3e6f0'), 'important');
+                        } else if (st.bc) {
+                            target.style.setProperty('border-color', st.bc, 'important');
+                        }
+                    }
                 });
             }
         }

@@ -202,12 +202,11 @@
   let baseParams = DEFAULT_BASE;
 
   const SECTIONS = [
-    { k: 'metrics',   label: 'Key Metric Pills' },
-    { k: 'hero',      label: 'Net Benefit Hero' },
-    { k: 'cards',     label: 'Revenue / Cost Cards' },
+    { k: 'metrics',   label: 'Key Metric Pills', styleable: true },
+    { k: 'hero',      label: 'Net Benefit Hero', styleable: true },
+    { k: 'cards',     label: 'Revenue / Cost Cards', styleable: true },
     { k: 'returns',   label: 'Returns Savings' },
     { k: 'cashback',  label: 'Cashback' },
-    { k: 'guarantee', label: 'Guarantee' },
   ];
   const SWATCHES = ['#6675ff','#1f9d63','#e0007a','#c0641a','#0f8f56','#2a2f45','#d4af37','#7c3aed'];
 
@@ -215,6 +214,7 @@
   let blocks = [];          // [{ id, heading, body, style:{align,color,size,weight,bw,bc,radius,pad,margin} }]
   let _blkSeq = 0;
   let _openBlk = null;      // id of the block whose inline editor is expanded
+  let _openSec = null;      // key of the section whose style editor is expanded
 
   const $ = id => document.getElementById(id);
   const proposalBase = () => new URL('proposal.html', location.href).href;
@@ -342,14 +342,19 @@
       row.className = 'lay-item' + (item.v ? '' : ' hidden') + (blk ? ' is-block' : '');
       row.draggable = true;
       row.dataset.k = item.k;
+      const styleable = !!(meta && meta.styleable);
       row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name">' + label + '</span>' +
                       (blk ? '<button class="lay-mini blk-edit-btn" title="Edit block">✎</button>' : '') +
+                      (styleable ? '<button class="lay-mini sec-edit-btn" title="Style">✎</button>' : '') +
                       '<button class="lay-eye" title="Show / hide">' + (item.v ? '👁' : '🚫') + '</button>' +
                       (blk ? '<button class="lay-mini blk-del-btn" title="Delete block">🗑</button>' : '');
       row.querySelector('.lay-eye').addEventListener('click', e => {
         e.stopPropagation();
         item.v = !item.v; renderLayout(); refresh(true);
       });
+      if (styleable) {
+        row.querySelector('.sec-edit-btn').addEventListener('click', e => { e.stopPropagation(); _openSec = (_openSec === item.k) ? null : item.k; renderLayout(); });
+      }
       if (blk) {
         row.querySelector('.blk-edit-btn').addEventListener('click', e => { e.stopPropagation(); _openBlk = (_openBlk === item.k) ? null : item.k; renderLayout(); });
         row.querySelector('.blk-del-btn').addEventListener('click', e => {
@@ -375,7 +380,31 @@
       });
       list.appendChild(row);
       if (blk && _openBlk === item.k) list.appendChild(buildBlockEditor(blk));
+      if (styleable && _openSec === item.k) list.appendChild(buildSectionEditor(item));
     });
+  }
+
+  // Inline style editor for a result section: background + border.
+  function buildSectionEditor(item) {
+    const st = item.style || (item.style = {});
+    const wrap = document.createElement('div');
+    wrap.className = 'blk-edit';
+    wrap.innerHTML =
+      '<div class="blk-ctrls">' +
+        '<div class="c"><label>Background</label><input type="color" class="se-bg" value="' + (st.bg || '#ffffff') + '"></div>' +
+        '<div class="c"><label>Border color</label><input type="color" class="se-bc" value="' + (st.bc || '#e3e6f0') + '"></div>' +
+        '<div class="c"><label>Border px</label><div class="blk-seg se-bw"><button data-v="">Def</button><button data-v="0">0</button><button data-v="1">1</button><button data-v="2">2</button></div></div>' +
+      '</div>' +
+      '<button type="button" class="cb-btn ghost se-clear" style="background:#f4f5fb;color:var(--muted);border:1px solid var(--line);">Clear section style</button>';
+    const q = s => wrap.querySelector(s);
+    q('.se-bg').addEventListener('input', e => { st.bg = e.target.value; refresh(true); });
+    q('.se-bc').addEventListener('input', e => { st.bc = e.target.value; refresh(true); });
+    wrap.querySelectorAll('.se-bw button').forEach(b => {
+      if ((st.bw || '') === b.dataset.v && (st.bw != null)) b.classList.add('on');
+      b.addEventListener('click', () => { wrap.querySelectorAll('.se-bw button').forEach(x => x.classList.remove('on')); b.classList.add('on'); st.bw = b.dataset.v; refresh(true); });
+    });
+    q('.se-clear').addEventListener('click', () => { delete item.style; renderLayout(); refresh(true); });
+    return wrap;
   }
 
   // Inline editor for a text block: content + per-element type & border controls.
