@@ -25,6 +25,15 @@
   .preview iframe{ width:100%; height:100%; border:0; display:block; }
   .grp{ margin-bottom:20px; }
   .grp-h{ font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .cb-grp-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .cb-hidename{ display:flex; align-items:center; gap:6px; font-size:.58rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .cb-section{ border:1px solid var(--line); border-radius:8px; margin-bottom:8px; overflow:hidden; background:#fff; }
+  .cb-section>summary{ padding:9px 12px; cursor:pointer; font-size:.72rem; font-weight:800; color:var(--ink); background:#f5f6fb; list-style:none; user-select:none; }
+  .cb-section>summary::-webkit-details-marker{ display:none; }
+  .cb-section>summary::before{ content:'▸ '; color:var(--muted); }
+  .cb-section[open]>summary::before{ content:'▾ '; }
+  .cb-section-body{ padding:10px 12px; }
+  .cb-sub-h{ font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; }
   .fld{ margin-bottom:11px; }
   .fld label{ display:block; font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:4px; }
   .fld input[type=text], .fld select{ width:100%; font-family:inherit; font-size:.85rem; padding:7px 9px; border:1px solid #d0d4e8; border-radius:7px; background:#fff; color:var(--ink); }
@@ -76,7 +85,15 @@
   <main>
     <div class="editor">
       <div class="grp">
-        <div class="grp-h">Merchant Branding</div>
+        <div class="grp-h cb-grp-head">
+          <span>Merchant Branding 1</span>
+          <label class="cb-hidename">Hide Name?
+            <span class="blk-seg" id="hideNameSeg">
+              <button type="button" data-v="0" class="on">No</button>
+              <button type="button" data-v="1">Yes</button>
+            </span>
+          </label>
+        </div>
         <div class="fld">
           <label>Accent 1 — highlights <span style="font-weight:400;color:var(--muted);">(Premiums box / buttons / text)</span></label>
           <div class="fld-row">
@@ -112,6 +129,12 @@
           <input type="text" id="bannerUrl" placeholder="https://…/banner.jpg" spellcheck="false">
         </div>
         <div class="hint">Paste image URLs (uploads aren't hosted yet — Brandfetch auto-fill is coming). The logo replaces the header mark; the banner sits atop the results.</div>
+      </div>
+      <div class="grp">
+        <div class="grp-h">Merchant Branding 2</div>
+        <details class="cb-section">
+          <summary>Style → Merchant Input</summary>
+          <div class="cb-section-body">
         <div class="fld">
           <label>Merchant input font &amp; background</label>
           <div class="blk-seg" id="ibgMode">
@@ -151,12 +174,17 @@
             </div>
           </div>
         </div>
-      </div>
-      <div class="grp">
-        <div class="grp-h">Layout — drag to reorder, 👁 to show/hide</div>
+          </div>
+        </details>
+        <details class="cb-section">
+          <summary>Style → Layout</summary>
+          <div class="cb-section-body">
+            <div class="cb-sub-h">Layout — drag to reorder, 👁 to show/hide</div>
         <div class="lay-list" id="layList"></div>
         <button class="cb-btn ghost" id="addBlock" style="margin-top:9px;width:100%;background:#eef1ff;color:var(--accent);border:1px dashed var(--accent);">➕ Add text block</button>
-        <div class="hint">Feature sections (Returns, Cashback, Guarantee) only appear when that feature is on in the underlying calc. Text blocks you add render in the proposal at their position.</div>
+        <div class="hint">Feature sections (Returns, Cashback) only appear when that feature is on in the underlying calc. Text blocks you add render in the proposal at their position.</div>
+          </div>
+        </details>
       </div>
       <div class="cb-linkout">
         <label style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Shareable link</label>
@@ -194,6 +222,7 @@
 
   let _ibgMode = 'default';
   let _inpLabelSet = false, _inpInputSet = false, _inpBorderSet = false, _inpBorderW = '';
+  let _hideName = '';
   const _accent2Val = () => (_accent2Set ? $('accent2Hex').value.trim() : '');
   function _isDark(hex) {
     const h = (hex || '').replace('#', '');
@@ -219,6 +248,7 @@
       branding: {
         accent: $('accentHex').value.trim() || undefined,
         accent2: _accent2Set ? ($('accent2Hex').value.trim() || undefined) : undefined,
+        hideName: _hideName === '1' ? 1 : undefined,
         font: $('font').value || undefined,
         logoUrl: $('logoUrl').value.trim() || undefined,
         bannerUrl: $('bannerUrl').value.trim() || undefined,
@@ -297,6 +327,7 @@
     set(btn.dataset.v); refresh(true);
   }));
   segPick('inpBorderW', v => _inpBorderW = v);
+  segPick('hideNameSeg', v => _hideName = v);
 
   // ── Layout drag-and-drop ──
   let dragKey = null;

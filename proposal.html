@@ -2636,7 +2636,10 @@
 
             // Merchant name — when present, the view selector moves below it
             // instead of sitting to the right of the logo.
-            if (urlPs.get('mname')) {
+            // Hide Name? (Custom Build) — when a logo carries the brand name, suppress the text name.
+            let _cbHideName = false;
+            try { const _bld = urlPs.get('bld'); if (_bld) _cbHideName = !!(JSON.parse(_bld).branding || {}).hideName; } catch (e) {}
+            if (urlPs.get('mname') && !_cbHideName) {
                 const sub = document.getElementById('merchantSubtitle');
                 sub.textContent = urlPs.get('mname');
                 sub.style.display = '';
