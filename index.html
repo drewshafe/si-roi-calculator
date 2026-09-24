@@ -1203,12 +1203,6 @@
                      alt="ShipInsure" class="logo-img"
                      onerror="this.style.display='none'">
             </div>
-            <div class="badge-area" id="badgeArea">
-                <div class="badge-pill" id="ppBadge"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/protectionbadges.png" alt="Protection" onerror="this.closest('.badge-pill').style.display='none'"></div>
-                <div class="badge-pill" id="rBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/returnbadges.png"  alt="Returns" onerror="this.closest('.badge-pill').style.display='none'"></div>
-                <div class="badge-pill" id="cbBadge" style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cashbackbadges.png" alt="Cashback" onerror="this.closest('.badge-pill').style.display='none'"></div>
-                <div class="badge-pill" id="gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png" alt="Guarantee" onerror="this.closest('.badge-pill').style.display='none'"></div>
-            </div>
             <div class="controls-area">
                 <button type="button" id="mnAnimBtn" onclick="mnToggleAnimate()" title="Animate the Midnight background" aria-pressed="false"><span class="mn-dot"></span>Animate</button>
                 <div class="view-selector">
@@ -1718,9 +1712,6 @@
                 <button id="cashbackToggle" class="cashback-toggle-btn">
                     <span>＋</span> Customer Cashback
                 </button>
-                <button id="guaranteeToggle" class="guarantee-toggle-btn">
-                    <span>＋</span> Guarantee
-                </button>
                 <button id="hideCostToggle" class="hide-cost-btn" onclick="toggleCurrentCost()">
                     <span>◌</span> Hide Current Cost
                 </button>
@@ -1979,13 +1970,7 @@
             calculate();
         }
 
-        function updateBadges() {
-            // ppBadge: base protection badge — hidden only in Returns Offset mode (rbadge takes over)
-            document.getElementById('ppBadge').style.display  = returnsOffsetMode ? 'none' : '';
-            document.getElementById('rBadge').style.display   = (returnsEnabled || returnsOffsetMode) ? '' : 'none';
-            document.getElementById('cbBadge').style.display  = cashbackEnabled ? '' : 'none';
-            document.getElementById('gBadge').style.display   = guaranteeEnabled ? '' : 'none';
-        }
+        function updateBadges() { /* logo badges removed — the pct-lines convey the same info */ }
 
         function updateDynamicLabels() {
             const isAnn = document.getElementById('timeframe').value === 'annual';
@@ -2418,8 +2403,9 @@
         }
 
         function toggleGuarantee() {
-            guaranteeEnabled = !guaranteeEnabled;
             const btn = document.getElementById('guaranteeToggle');
+            if (!btn) { guaranteeEnabled = false; return; } // Guarantee feature retired
+            guaranteeEnabled = !guaranteeEnabled;
             const gInputs = document.getElementById('guaranteeInputs');
             const gClaimInput = document.getElementById('guaranteeClaimRateInput');
             if (guaranteeEnabled) {
@@ -3674,7 +3660,7 @@
         document.getElementById('returnsOffsetModeToggle').addEventListener('click', toggleReturnsOffsetMode);
         document.getElementById('returnsToggle').addEventListener('click', toggleReturns);
         document.getElementById('cashbackToggle').addEventListener('click', toggleCashback);
-        document.getElementById('guaranteeToggle').addEventListener('click', toggleGuarantee);
+        { const _gt = document.getElementById('guaranteeToggle'); if (_gt) _gt.addEventListener('click', toggleGuarantee); }
         document.getElementById('claimResolution').addEventListener('change', function() {
             setClaimResolution(this.value);
         });

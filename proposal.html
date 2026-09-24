@@ -1206,12 +1206,6 @@
                     <div class="impact-pct-line" id="p-cashbackImpactPct" style="display:none;">0% from cashback</div>
                 </div>
                 <div class="hero-sub" id="heroSub">per year</div>
-                <div class="hero-badge-area" id="heroBadgeArea" style="display:none;">
-                    <div class="hero-badge-pill" id="p-ppBadge"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/protectionbadges.png" alt="Protection" onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
-                    <div class="hero-badge-pill" id="p-rBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/returnbadges.png"  alt="Returns"    onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
-                    <div class="hero-badge-pill" id="p-cbBadge" style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/cashbackbadges.png" alt="Cashback"   onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
-                    <div class="hero-badge-pill" id="p-gBadge"  style="display:none;"><img src="https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/guarbadge.png"      alt="Guarantee"  onerror="this.closest('.hero-badge-pill').style.display='none'"></div>
-                </div>
             </div>
             <!-- Upfront Rev Share Payment — shown only when the link carried ?upf=. Display-only. -->
             <div class="result-hero upfront-hero" id="p-upfrontHero" style="display:none;">
@@ -2627,7 +2621,7 @@
             // Feature sections
             const re   = urlPs.get('re')   === '1' || urlPs.get('rr') || urlPs.get('rpc');
             const cbe  = urlPs.get('cbe')  === '1' || urlPs.get('cb');
-            const guar = urlPs.get('guar') === '1';
+            const guar = false; // Guarantee feature retired
             const rom  = urlPs.get('rom')  === '1';
 
             if (re || rom) {
@@ -2678,14 +2672,7 @@
 
         });
 
-        function updateProposalBadges() {
-            const sd = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
-            sd('heroBadgeArea', true);
-            sd('p-ppBadge',  !p_returnsOffsetMode);
-            sd('p-rBadge',   p_returnsEnabled || p_returnsOffsetMode);
-            sd('p-cbBadge',  p_cashbackEnabled);
-            sd('p-gBadge',   p_guaranteeEnabled);
-        }
+        function updateProposalBadges() { /* logo badges removed — the pct-lines convey the same info */ }
 
         // ── Logo dropdown ────────────────────────────────────────────────────────
         function saveProposalLink() {
