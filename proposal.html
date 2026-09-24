@@ -452,6 +452,30 @@
 
         .rc-total.negative { color: #dc3545; }
         .rc-total.positive { color: #28a745; }
+        .er-value-row .rc-total { margin-bottom: 0; }
+
+        /* Extra Revenue — optimized single-stack layout */
+        .er-value-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+        .er-value-sub { font-size: 0.7em; font-weight: 600; color: #8a93a5; }
+        .er-revshare { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eef0f6; }
+        .er-revshare .er-k { font-size: 0.78em; font-weight: 800; color: #26304f; }
+        .er-revshare .er-v { font-size: 0.9em; font-weight: 800; color: #28a745; font-variant-numeric: tabular-nums; }
+        .er-funded-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 9px 0 4px; }
+        .er-funded-head .er-fh-lbl { font-size: 0.6em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #8a93a5; }
+        .er-funded-head .er-fh-total { font-size: 0.64em; font-weight: 800; color: #26304f; font-variant-numeric: tabular-nums; }
+        .er-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px dashed #eef0f6; }
+        .er-line:last-child { border-bottom: none; }
+        .er-line .er-k { font-size: 0.76em; font-weight: 700; color: #26304f; }
+        .er-line .er-sub { font-size: 0.64em; font-weight: 600; color: #8a93a5; margin-left: 6px; }
+        .er-line .er-v { font-size: 0.84em; font-weight: 800; color: #212529; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .er-badges { display: inline-flex; gap: 4px; margin-left: 6px; }
+        .er-badge { font-size: 0.56em; font-weight: 700; color: #4a5fc1; background: #eef0fb; border-radius: 12px; padding: 1px 7px; white-space: nowrap; }
+        .theme-midnight .er-value-sub, .theme-midnight .er-funded-head .er-fh-lbl { color: #9a9ab0; }
+        .theme-midnight .er-revshare .er-k, .theme-midnight .er-funded-head .er-fh-total, .theme-midnight .er-line .er-k { color: #f2eede; }
+        .theme-midnight .er-revshare, .theme-midnight .er-line { border-bottom-color: rgba(212,175,55,.14); }
+        .theme-midnight .er-line .er-v { color: #efe7cf; }
+        .theme-midnight .er-revshare .er-v { color: #2ee6a0; }
+        .theme-midnight .er-badge { color: #e9c46a; background: rgba(233,196,106,.14); }
 
         .rc-metrics {
             display: flex;
@@ -1220,7 +1244,12 @@
                 <!-- Revenue card -->
                 <div class="result-card-positive">
                     <div class="rc-label">Extra Revenue With ShipInsure</div>
-                    <div class="rc-total positive" id="r-extraRevenue">$0</div>
+                    <div class="er-value-row">
+                        <div class="rc-total positive" id="r-extraRevenue">$0</div>
+                        <div class="er-value-sub" id="p-erValueSub">(Total Funded + Revenue Share)</div>
+                    </div>
+                    <div id="p-erBody"></div>
+                    <div id="p-erLegacy" style="display:none;">
                     <div class="rc-metrics">
                         <div class="rc-metric" id="r-siFundedClaimsMetric">
                             <div class="rc-metric-label">SI Funded Cost Per Claim</div>
@@ -1250,6 +1279,7 @@
                             </div>
                         </div>
                     </div>
+                    </div><!-- /p-erLegacy -->
                 </div>
                 <!-- Cost card (hidden if hcc=1) -->
                 <div class="result-card-negative" id="costCard">
@@ -2217,6 +2247,7 @@
             if (document.getElementById('p-bdBody').classList.contains('visible')) renderPBreakdown();
             renderPFlows();
             pUpdateKeyPills();
+            renderPExtraRevenueCard();
             // Show/hide cost column based on p_hideCurrentCost
             const pBdCostCol = document.getElementById('p-bdCostCol');
             if (pBdCostCol) pBdCostCol.style.display = p_hideCurrentCost ? 'none' : '';
@@ -2233,6 +2264,34 @@
             const rs = document.getElementById('resultsSection');
             rs.classList.add('visible');
             document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Extra Revenue With ShipInsure — optimized single-stack layout (merchant view).
+        function renderPExtraRevenueCard() {
+            const d = _p_bd; if (!d.ready) return;
+            const el = document.getElementById('p-erBody'); if (!el) return;
+            const fc = v => fmtDollar(v);
+            const revShare = d.revenueShareAmount || 0;
+            const claims = d.siFundedReships || 0;
+            const returnsOffset = d.returnsEnabled ? (d.totalReturnsOffset || 0) : 0;
+            const cashback = d.cashbackEnabled ? (d.cashbackRedeemed || 0) : 0;
+            const totalFunded = (d.extraRevenue || 0) - revShare;
+            const hasRevShare = (d.revShareP || 0) > 0;
+            let html = '';
+            if (hasRevShare) html += `<div class="er-revshare"><span class="er-k">Revenue Share</span><span class="er-v">${fc(revShare)}</span></div>`;
+            html += `<div class="er-funded-head"><span class="er-fh-lbl">Funded by Premiums</span><span class="er-fh-total">TOTAL = ${fc(totalFunded)}</span></div>`;
+            if (!d.returnsOffsetMode) html += `<div class="er-line"><span class="er-k">Claims</span><span class="er-v">${fc(claims)}</span></div>`;
+            if (d.returnsEnabled) {
+                const badges = [];
+                if ((d.siCoveredLabels || 0) > 0)   badges.push('labels ' + fc(d.siCoveredLabels));
+                if ((d.siCoveredPlatform || 0) > 0) badges.push((d.returnsProvider ? d.returnsProvider.toLowerCase() : 'portal') + ' ' + fc(d.siCoveredPlatform));
+                const bhtml = badges.length ? `<span class="er-badges">${badges.map(t => `<span class="er-badge">${t}</span>`).join('')}</span>` : '';
+                html += `<div class="er-line"><span class="er-k">Returns Offset${bhtml}</span><span class="er-v">${fc(returnsOffset)}</span></div>`;
+            }
+            if (d.cashbackEnabled) html += `<div class="er-line"><span class="er-k">Cashback Rewards <span class="er-sub">(est. redeemed)</span></span><span class="er-v">${fc(cashback)}</span></div>`;
+            el.innerHTML = html;
+            const sub = document.getElementById('p-erValueSub');
+            if (sub) sub.textContent = hasRevShare ? '(Total Funded + Revenue Share)' : '(Total Funded)';
         }
 
         // ── Key Metric pills — mode-aware content (order: AVG/SI Premium ·
@@ -2416,7 +2475,7 @@
                 row('Rev Share', `${d.grossRevShare ? fc(d.premiumPool) : fc(d.postClaimBalance)} × ${pct(d.revShareP)}`, fc(d.revenueShareAmount));
             if (d.cashbackEnabled) {
                 revHTML +=
-                    row('Cashback Per Order', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
+                    row('Avg Cashback Reward', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
                     row('SI Cashback Funded', `${fn(d.protectedOrders)} × ${fcc(d.cashbackPerOrder)}`, fc(d.siSponsoredCashbackTotal)) +
                     row('Est. Cashback Redeemed', `${fc(d.siSponsoredCashbackTotal)} × ${pct(d.cashbackRedemptionRate)}`, fc(d.cashbackRedeemed)) +
                     row('Repeat Revenue Driven', `(${fc(d.cashbackRedeemed)} ÷ ${fcc(d.cashbackPerOrder)}) × ${fcc(d.aov)}`, fc(d.totalCashbackValueTotal));

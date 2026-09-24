@@ -465,6 +465,29 @@
         .card-total.negative { color: #dc3545; }
         .card-total.positive { color: #28a745; }
 
+        /* Extra Revenue — optimized single-stack layout */
+        .er-value-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 2px 0 8px; }
+        .er-value-sub { font-size: 0.72em; font-weight: 600; color: #8a93a5; }
+        .er-revshare { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eef0f6; }
+        .er-revshare .er-k { font-size: 0.8em; font-weight: 800; color: #26304f; }
+        .er-revshare .er-v { font-size: 0.92em; font-weight: 800; color: #28a745; font-variant-numeric: tabular-nums; }
+        .er-funded-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 9px 0 4px; }
+        .er-funded-head .er-fh-lbl { font-size: 0.62em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #8a93a5; }
+        .er-funded-head .er-fh-total { font-size: 0.66em; font-weight: 800; color: #26304f; font-variant-numeric: tabular-nums; }
+        .er-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px dashed #eef0f6; }
+        .er-line:last-child { border-bottom: none; }
+        .er-line .er-k { font-size: 0.78em; font-weight: 700; color: #26304f; }
+        .er-line .er-sub { font-size: 0.66em; font-weight: 600; color: #8a93a5; margin-left: 6px; }
+        .er-line .er-v { font-size: 0.86em; font-weight: 800; color: #212529; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .er-badges { display: inline-flex; gap: 4px; margin-left: 6px; }
+        .er-badge { font-size: 0.58em; font-weight: 700; color: #4a5fc1; background: #eef0fb; border-radius: 12px; padding: 1px 7px; white-space: nowrap; }
+        .theme-midnight .er-value-sub, .theme-midnight .er-funded-head .er-fh-lbl { color: #9a9ab0; }
+        .theme-midnight .er-revshare .er-k, .theme-midnight .er-funded-head .er-fh-total, .theme-midnight .er-line .er-k { color: #f2eede; }
+        .theme-midnight .er-revshare, .theme-midnight .er-line { border-bottom-color: rgba(212,175,55,.14); }
+        .theme-midnight .er-line .er-v { color: #efe7cf; }
+        .theme-midnight .er-revshare .er-v { color: #2ee6a0; }
+        .theme-midnight .er-badge { color: #e9c46a; background: rgba(233,196,106,.14); }
+
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
@@ -1527,8 +1550,13 @@
                 <div class="result-card positive">
                     <div class="card-header">
                         <h3>Extra Revenue With ShipInsure</h3>
-                        <div class="card-total positive" id="extraRevenue">$0</div>
                     </div>
+                    <div class="er-value-row">
+                        <div class="card-total positive" id="extraRevenue">$0</div>
+                        <div class="er-value-sub" id="erValueSub">(Total Funded + Revenue Share)</div>
+                    </div>
+                    <div id="erBody"></div>
+                    <div id="erLegacy" style="display:none;">
                     <div class="metrics-grid" id="mainRevenueGrid">
                         <div class="metric-item">
                             <h4 id="mainFundedLabel">Claims Funded</h4>
@@ -1597,6 +1625,7 @@
                             </div>
                         </div>
                     </div>
+                    </div><!-- /erLegacy -->
                 </div>
 
                 <!-- Right: Current Cost Without ShipInsure -->
@@ -3039,7 +3068,7 @@
                 premiumPool, siFundedReships, postClaimBalance, revenueShareAmount, extraRevenue,
                 percentOfPremiums, siFundedPct, revenueSharePct,
                 avgShipping,
-                returnsEnabled, totalReturns, returnLabelsCostTotal, periodPlatformCost,
+                returnsEnabled, returnsOffsetMode, totalReturns, returnLabelsCostTotal, periodPlatformCost,
                 totalReturnsCost, siCoveredLabels, siCoveredPlatform, totalReturnsOffset,
                 returnsRate, returnsOffsetPct, returnLabelCost,
                 returnsCoverage: _returnsCoverage, returnsProvider: _returnsProvider,
@@ -3051,6 +3080,7 @@
                 grossRevShare: _grossRevShare
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
+            renderExtraRevenueCard();
             renderFlows();
             updateCompactOutputs(returnsEnabled);
             renderUpfrontBubble();
@@ -3429,6 +3459,36 @@
         }
 
         // ── Billing Explained / Backend Flow — narrative click-throughs off the calc's live metrics ──
+        // Extra Revenue With ShipInsure — optimized single-stack layout, rendered from _bd.
+        function renderExtraRevenueCard() {
+            const d = _bd; if (!d.ready) return;
+            const el = document.getElementById('erBody'); if (!el) return;
+            const fc = v => formatCurrency(v);
+            const revShare = d.revenueShareAmount || 0;
+            const claims = d.siFundedReships || 0;
+            const returnsOffset = d.returnsEnabled ? (d.totalReturnsOffset || 0) : 0;
+            const cashback = d.cashbackEnabled ? (d.cashbackRedeemed || 0) : 0;
+            // Total Funded = everything funded from premiums (extra revenue minus the rev-share cut).
+            // Using this identity keeps the TOTAL in step with the lines shown in every mode.
+            const totalFunded = (d.extraRevenue || 0) - revShare;
+            const hasRevShare = (d.revShareP || 0) > 0;
+            let html = '';
+            if (hasRevShare) html += `<div class="er-revshare"><span class="er-k">Revenue Share</span><span class="er-v">${fc(revShare)}</span></div>`;
+            html += `<div class="er-funded-head"><span class="er-fh-lbl">Funded by Premiums</span><span class="er-fh-total">TOTAL = ${fc(totalFunded)}</span></div>`;
+            if (!d.returnsOffsetMode) html += `<div class="er-line"><span class="er-k">Claims</span><span class="er-v">${fc(claims)}</span></div>`;
+            if (d.returnsEnabled) {
+                const badges = [];
+                if ((d.siCoveredLabels || 0) > 0)   badges.push('labels ' + fc(d.siCoveredLabels));
+                if ((d.siCoveredPlatform || 0) > 0) badges.push((d.returnsProvider ? d.returnsProvider.toLowerCase() : 'portal') + ' ' + fc(d.siCoveredPlatform));
+                const bhtml = badges.length ? `<span class="er-badges">${badges.map(t => `<span class="er-badge">${t}</span>`).join('')}</span>` : '';
+                html += `<div class="er-line"><span class="er-k">Returns Offset${bhtml}</span><span class="er-v">${fc(returnsOffset)}</span></div>`;
+            }
+            if (d.cashbackEnabled) html += `<div class="er-line"><span class="er-k">Cashback Rewards <span class="er-sub">(est. redeemed)</span></span><span class="er-v">${fc(cashback)}</span></div>`;
+            el.innerHTML = html;
+            const sub = document.getElementById('erValueSub');
+            if (sub) sub.textContent = hasRevShare ? '(Total Funded + Revenue Share)' : '(Total Funded)';
+        }
+
         function toggleFlow(btn, which) {
             const body = document.getElementById(which + 'Body');
             const arrow = document.getElementById(which + 'Arrow');
@@ -3556,7 +3616,7 @@
                 row('Rev Share',         `${d.grossRevShare ? fc(d.premiumPool) : fc(d.postClaimBalance)} × ${pct(d.revShareP)}`,  fc(d.revenueShareAmount));
             if (d.cashbackEnabled) {
                 revHTML +=
-                    row('Cashback Per Order', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
+                    row('Avg Cashback Reward', `max(${fcc(d.aov)} × ${pct(d.cashbackRate)}, $${d.minCashback})`, fcc(d.cashbackPerOrder)) +
                     row('SI Cashback Funded', `${fn(d.protectedOrders)} × ${fcc(d.cashbackPerOrder)}`, fc(d.siSponsoredCashbackTotal)) +
                     row('Est. Cashback Redeemed', `${fc(d.siSponsoredCashbackTotal)} × ${pct(d.cashbackRedemptionRate)}`, fc(d.cashbackRedeemed)) +
                     row('Repeat Revenue Driven', `(${fc(d.cashbackRedeemed)} ÷ ${fcc(d.cashbackPerOrder)}) redemptions × ${fcc(d.aov)}`, fc(d.totalCashbackValueTotal));
