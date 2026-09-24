@@ -2750,26 +2750,41 @@
                 calculateProposal();
             }
 
+            // Live recalc — results update as inputs are edited; no need to click Calculate ROI.
+            const inputsSec = document.getElementById('inputsSection');
+            if (inputsSec) {
+                inputsSec.addEventListener('input', () => calculateProposal());
+                inputsSec.addEventListener('change', () => calculateProposal());
+            }
         });
 
         function updateProposalBadges() { /* logo badges removed — the pct-lines convey the same info */ }
 
         // ── Logo dropdown ────────────────────────────────────────────────────────
         function saveProposalLink() {
+            // Start from the current params (preserves feature flags: re, cbe, rom, rc, rpp,
+            // upf, hcc, mname, theme, bld…) and overwrite every editable value with what's
+            // currently in the form, so the copied link reflects all edits.
             const p = new URLSearchParams(window.location.search);
-            const inputMap = {
-                orders: 'p-orders', aov: 'p-aov', claims: 'p-claims',
-                cogs:   'p-cogs',   aship: 'p-aship', cs: 'p-cs',
-                share:  'p-share',  attach: 'p-attach', premium: 'p-premium',
-                template: 'p-template'
-            };
-            for (const [key, id] of Object.entries(inputMap)) {
-                const el = document.getElementById(id);
-                if (el) p.set(key, removeCommas(el.value));
-            }
+            const set = (key, id) => { const el = document.getElementById(id); if (el && el.value.trim() !== '') p.set(key, removeCommas(el.value)); };
+            // Primary + additional inputs
+            set('orders', 'p-orders'); set('aov', 'p-aov'); set('claims', 'p-claims');
+            set('premium', 'p-premium'); set('attach', 'p-attach'); set('share', 'p-share');
+            set('cogs', 'p-cogs'); set('aship', 'p-aship'); set('cs', 'p-cs');
+            // Returns (arc doubles as the return-label cost)
+            set('rr', 'p-rr'); set('arc', 'p-arc'); set('rpc', 'p-rpc');
+            { const arc = document.getElementById('p-arc'); if (arc && arc.value.trim() !== '') p.set('rlc', removeCommas(arc.value)); }
+            // Cashback
+            set('cb', 'p-cb'); set('mincb', 'p-mincb'); set('cbrr', 'p-cbrr');
+            // Template, input types, claim resolution, view
+            { const t = document.getElementById('p-template'); if (t) p.set('template', t.value); }
             p.set('cogstype',   p_cogsType);
             p.set('claimstype', p_claimsType);
+            p.set('rtype',      p_returnsType);
             p.set('cr',         p_claimResolution);
+            { const v = document.getElementById('p-view'); if (v) p.set('view', v.value); }
+            // Keep the displayed avg premium in step with the current premium/template.
+            if (typeof _p_bd === 'object' && _p_bd && _p_bd.avgPremium != null) p.set('avg_premium', (Math.round(_p_bd.avgPremium * 100) / 100).toString());
             if (SI_CURRENCY !== 'USD') p.set('cur', SI_CURRENCY);
             const url = location.origin + location.pathname + '?' + p.toString();
             const btn = document.getElementById('p-save-link-btn');
