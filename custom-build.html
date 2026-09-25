@@ -81,6 +81,7 @@
   .lb-swatch{ border:2px solid transparent; box-shadow:0 0 0 1px #d5d9f0; }
   .lb-swatch.active{ border-color:#6675ff; box-shadow:0 0 0 2px #6675ff; }
 </style>
+<script src="sb.js"></script>
 </head>
 <body>
   <header class="cbh">
@@ -92,6 +93,7 @@
       <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
       <button class="cb-btn ghost" id="loadBase">Load</button>
       <button class="cb-btn" id="copyLink">📋 Copy Custom Link</button>
+      <button class="cb-btn" id="cloudSaveBtn" title="Save to your cloud folder; logo uploaded to storage so the link stays short">☁ Cloud Save</button>
     </div>
   </header>
   <main>
@@ -767,6 +769,48 @@
     navigator.clipboard && navigator.clipboard.writeText(url);
     const btn = $('copyLink'); const old = btn.textContent; btn.textContent = '✓ Copied';
     setTimeout(() => btn.textContent = old, 1400);
+  });
+
+  // ── Cloud Save: store the build in the rep's folder, upload the logo to
+  // storage (so the shared link is a short ?id= instead of a huge data URL). ──
+  async function _cbEnsureSignedIn() {
+    const u = await SIsb.currentUser();
+    if (u) return u;
+    const email = prompt('Sign in to save to the cloud.\nEnter your ShipInsure email — we\'ll send a magic link:');
+    if (!email) return null;
+    const { error } = await SIsb.signInMagic(email.trim());
+    if (error) { alert('Could not send the link: ' + error.message); return null; }
+    alert('Magic link sent to ' + email.trim() + '.\nOpen it (same browser), then click ☁ Cloud Save again.');
+    return null;
+  }
+  let _cbCloudId = null;
+  $('cloudSaveBtn').addEventListener('click', async () => {
+    if (!window.SIsb) { alert('Cloud module not loaded.'); return; }
+    const btn = $('cloudSaveBtn'); const old = btn.textContent;
+    const bp = new URLSearchParams(baseParams);
+    const merchant = (bp.get('mname') || '').trim();
+    if (!merchant) { alert('Add a merchant name (mname) to the base link first.'); return; }
+    btn.textContent = '☁ …';
+    try {
+      const u = await _cbEnsureSignedIn();
+      if (!u) { btn.textContent = old; return; }
+      // Upload the uploaded/lock-built logo to storage → short public URL.
+      let logoUrl;
+      if (_logoImg) { try { logoUrl = await SIsb.uploadLogo(_logoImg); } catch (e) { alert('Logo upload failed: ' + e.message); btn.textContent = old; return; } }
+      // Store the params + custom-build config; the logo lives in storage (logo_path),
+      // so no #cbimg hash is needed and the link stays short.
+      const data = { q: baseParams + '&bld=' + encodeURIComponent(JSON.stringify(cfg())), hash: '' };
+      const res = await SIsb.saveConfig({ id: _cbCloudId || undefined, merchant: merchant, kind: 'proposal', title: merchant, data: data, logoUrl: logoUrl });
+      _cbCloudId = res.id;
+      const link = proposalBase() + '?id=' + res.id + '&t=' + res.edit_token;
+      try { await navigator.clipboard.writeText(link); } catch (e) {}
+      $('linkOut').value = link;
+      btn.textContent = '✓ Saved + link copied';
+      setTimeout(() => { btn.textContent = old; }, 2600);
+    } catch (e) {
+      btn.textContent = old;
+      alert('Cloud save failed: ' + (e && e.message ? e.message : e));
+    }
   });
 
   // Seed from an incoming ?base= or existing query (lets the hub pass the current link)
