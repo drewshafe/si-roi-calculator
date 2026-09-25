@@ -30,7 +30,9 @@
   async function currentUser() { const c = await client(); const { data } = await c.auth.getUser(); return data ? data.user : null; }
   async function signInMagic(email) {
     const c = await client();
-    return c.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.href.split('#')[0] } });
+    // Public signups are disabled — only already-invited reps can sign in, so don't
+    // attempt to create a user (that would be rejected). Existing users get a link.
+    return c.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false, emailRedirectTo: location.href.split('#')[0] } });
   }
   async function signOut() { const c = await client(); return c.auth.signOut(); }
 
