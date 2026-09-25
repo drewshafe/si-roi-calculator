@@ -2733,6 +2733,22 @@
             }
             if (rom) { p_returnsOffsetMode = true; pApplyOffsetVisibility(); }
             { const pe = document.getElementById('p-premium'); if (pe) pe.addEventListener('input', () => { if (p_returnsOffsetMode) _pRoSiPremiumManual = true; }); }
+            // Returns Offset ("No Protection"): SI Premium ($) auto-tracks ½ Avg Return
+            // Cost unless set by hand. That "manual" intent isn't saved, so on load
+            // _pRoApplyAutoPremium() would snap the saved value (e.g. $3.98) back to ½
+            // Avg Return Cost (e.g. $5) — and the merchant then can't change it because
+            // every recalc re-snaps it. Re-assert the saved premium and, when it differs
+            // from the auto value, keep it pinned as a manual override so it survives.
+            if (rom) {
+                const _savedPrem = urlPs.get('premium');
+                if (_savedPrem !== null && _savedPrem !== '') {
+                    document.getElementById('p-premium').value = _savedPrem;
+                    const _pv = parseFloat(removeCommas(_savedPrem));
+                    const _arc = parseFloat(removeCommas(urlPs.get('arc') || ''));
+                    const _half = (!isNaN(_arc) && _arc > 0) ? +(_arc / 2).toFixed(2) : 0;
+                    if (!isNaN(_pv) && _pv !== _half) _pRoSiPremiumManual = true;
+                }
+            }
 
             if (cbe) {
                 p_cashbackEnabled = true;
