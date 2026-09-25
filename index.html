@@ -3226,12 +3226,12 @@
                         if (!isNaN(_pv) && _pv !== _half) _roSiPremiumManual = true;
                     }
                 }
-                if (urlParams.get('cbe') === '1' || urlParams.get('cb') || urlParams.get('cbpc')) {
-                    if (urlParams.get('cb'))   document.getElementById('cashbackRate').value = urlParams.get('cb');
-                    if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
-                    if (urlParams.get('cbrr')) document.getElementById('cashbackRedemptionRate').value = urlParams.get('cbrr');
-                    if (!cashbackEnabled) toggleCashback();
-                }
+                // Only enable cashback when it was explicitly on (cbe=1) — not just
+                // because a cb value rides along in the link. Still restore the values.
+                if (urlParams.get('cb'))   document.getElementById('cashbackRate').value = urlParams.get('cb');
+                if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
+                if (urlParams.get('cbrr')) document.getElementById('cashbackRedemptionRate').value = urlParams.get('cbrr');
+                if (urlParams.get('cbe') === '1' && !cashbackEnabled) toggleCashback();
                 if (urlParams.get('guar') === '1') {
                     if (!guaranteeEnabled) toggleGuarantee();
                     if (urlParams.get('gcr')) document.getElementById('guaranteeClaimRateInput').value = urlParams.get('gcr');

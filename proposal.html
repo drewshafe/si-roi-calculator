@@ -2749,7 +2749,9 @@
 
             // Feature sections
             const re   = urlPs.get('re')   === '1' || urlPs.get('rr') || urlPs.get('rpc');
-            const cbe  = urlPs.get('cbe')  === '1' || urlPs.get('cb');
+            // Enable cashback ONLY when explicitly on (cbe=1) — not just because a cb
+            // value rides along in the link (older links carry cb without the flag).
+            const cbe  = urlPs.get('cbe')  === '1';
             const guar = false; // Guarantee feature retired
             const rom  = urlPs.get('rom')  === '1';
 
