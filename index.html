@@ -3203,6 +3203,22 @@
                 // Apply coverage-mode input visibility for the loaded link (covers the
                 // Returns Offset case where returns was already force-enabled above).
                 applyReturnsCoverageVisibility();
+                // Returns Offset ("No Protection"): the SI Premium ($) auto-tracks ½ Avg
+                // Return Cost unless the rep set it by hand. That "manual" intent lives in
+                // a runtime flag that isn't saved, so on reload calculate() would snap the
+                // rep's value (e.g. $3.98) back to ½ Avg Return Cost (e.g. $5). Re-assert
+                // the saved premium and, when it differs from the auto value, keep it
+                // pinned as a manual override so it survives the reload.
+                if (urlParams.get('rom') === '1') {
+                    const _savedPrem = urlParams.get('premium');
+                    if (_savedPrem !== null && _savedPrem !== '') {
+                        document.getElementById('protectionPremium').value = _savedPrem;
+                        const _pv = parseFloat(removeCommas(_savedPrem));
+                        const _arc = parseFloat(removeCommas(urlParams.get('arc') || ''));
+                        const _half = (!isNaN(_arc) && _arc > 0) ? +(_arc / 2).toFixed(2) : 0;
+                        if (!isNaN(_pv) && _pv !== _half) _roSiPremiumManual = true;
+                    }
+                }
                 if (urlParams.get('cbe') === '1' || urlParams.get('cb') || urlParams.get('cbpc')) {
                     if (urlParams.get('cb'))   document.getElementById('cashbackRate').value = urlParams.get('cb');
                     if (urlParams.get('mincb')) document.getElementById('minCashback').value = urlParams.get('mincb');
