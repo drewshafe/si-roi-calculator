@@ -190,6 +190,16 @@
           </div>
         </details>
       </div>
+      <div class="grp">
+        <div class="grp-h">Presets</div>
+        <div class="fld-row" style="gap:6px;">
+          <input type="text" id="presetName" placeholder="Preset name…" style="flex:1;font-family:inherit;font-size:.8rem;padding:6px 8px;border:1px solid #d0d4e8;border-radius:6px;">
+          <button type="button" class="cb-btn" id="savePreset">Save</button>
+        </div>
+        <label class="cb-hidename" style="margin-top:6px;justify-content:flex-start;"><input type="checkbox" id="presetLayoutOnly" style="margin-right:6px;"> Layout only (exclude branding)</label>
+        <div class="cb-preset-list" id="presetList"></div>
+        <div class="hint">Presets save your layout, section styles, card rows &amp; hero options (and branding unless "Layout only"). Stored in this browser.</div>
+      </div>
       <div class="cb-linkout">
         <label style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Shareable link</label>
         <textarea id="linkOut" readonly></textarea>
@@ -519,8 +529,96 @@
     if (seed) { try { $('baseLink').value = decodeURIComponent(seed); loadBase(); } catch(e){} }
   })();
 
+  // ── Presets (save / load editor configurations) ──
+  const CB_PRESET_KEY = 'si_cb_presets';
+  const getPresets = () => { try { return JSON.parse(localStorage.getItem(CB_PRESET_KEY) || '[]'); } catch (e) { return []; } };
+  const setPresets = arr => { try { localStorage.setItem(CB_PRESET_KEY, JSON.stringify(arr)); } catch (e) {} };
+
+  function cbSnapshot() {
+    return {
+      branding: {
+        accentHex: $('accentHex').value, accent2Hex: $('accent2Hex').value, accent2Set: _accent2Set,
+        font: $('font').value, logoUrl: $('logoUrl').value, bannerUrl: $('bannerUrl').value,
+        ibgMode: _ibgMode, ibgColorHex: $('ibgColorHex').value,
+        ibgA: $('ibgA').value, ibgB: $('ibgB').value, ibgC: $('ibgC').value, ibgAngle: $('ibgAngle').value,
+        inpLabelColor: $('inpLabelColor').value, inpLabelSet: _inpLabelSet,
+        inpInputColor: $('inpInputColor').value, inpInputSet: _inpInputSet,
+        inpBorderColor: $('inpBorderColor').value, inpBorderSet: _inpBorderSet, inpBorderW: _inpBorderW,
+        hideName: _hideName,
+      },
+      layout: JSON.parse(JSON.stringify(layout)),
+      blocks: JSON.parse(JSON.stringify(blocks)),
+    };
+  }
+
+  function cbRestore(snap, includeBranding) {
+    if (snap.layout) layout = JSON.parse(JSON.stringify(snap.layout));
+    if (Array.isArray(snap.blocks)) {
+      blocks = JSON.parse(JSON.stringify(snap.blocks));
+      _blkSeq = blocks.reduce((m, b) => Math.max(m, parseInt(String(b.id).replace(/\D/g, ''), 10) || 0), 0);
+    }
+    _openSec = null; _openBlk = null;
+    if (includeBranding && snap.branding) {
+      const b = snap.branding;
+      const setv = (id, v) => { const e = $(id); if (e && v != null) e.value = v; };
+      setv('accentHex', b.accentHex); setv('accent', b.accentHex);
+      setv('accent2Hex', b.accent2Hex); setv('accent2', b.accent2Hex); _accent2Set = !!b.accent2Set;
+      setv('font', b.font); setv('logoUrl', b.logoUrl); setv('bannerUrl', b.bannerUrl);
+      _ibgMode = b.ibgMode || 'default';
+      setv('ibgColorHex', b.ibgColorHex); setv('ibgColor', b.ibgColorHex);
+      setv('ibgA', b.ibgA); setv('ibgB', b.ibgB); setv('ibgC', b.ibgC); setv('ibgAngle', b.ibgAngle);
+      document.querySelectorAll('#ibgMode button').forEach(x => x.classList.toggle('on', x.dataset.v === _ibgMode));
+      $('ibgSolidRow').style.display = _ibgMode === 'solid' ? '' : 'none';
+      $('ibgGradRow').style.display  = _ibgMode === 'gradient' ? '' : 'none';
+      setv('inpLabelColor', b.inpLabelColor); _inpLabelSet = !!b.inpLabelSet;
+      setv('inpInputColor', b.inpInputColor); _inpInputSet = !!b.inpInputSet;
+      setv('inpBorderColor', b.inpBorderColor); _inpBorderSet = !!b.inpBorderSet; _inpBorderW = b.inpBorderW || '';
+      document.querySelectorAll('#inpBorderW button').forEach(x => x.classList.toggle('on', x.dataset.v === _inpBorderW));
+      _hideName = b.hideName || '';
+      document.querySelectorAll('#hideNameSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === (_hideName || '0')));
+    }
+    renderSwatches(); renderLayout(); refresh(true);
+  }
+
+  function renderPresetList() {
+    const el = $('presetList'); if (!el) return;
+    const items = getPresets();
+    if (!items.length) { el.innerHTML = '<div class="hint" style="opacity:.7;">No saved presets yet.</div>'; return; }
+    el.innerHTML = '';
+    items.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid var(--line);';
+      const tag = p.branding ? '' : ' <span style="font-size:.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;">· layout</span>';
+      row.innerHTML = '<span style="flex:1;font-size:.8rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+        (p.name || 'Untitled').replace(/</g, '&lt;') + tag + '</span>' +
+        '<button type="button" class="cb-btn ghost pr-load" style="padding:4px 10px;font-size:.72rem;">Load</button>' +
+        '<button type="button" class="lay-mini pr-del" title="Delete">🗑</button>';
+      row.querySelector('.pr-load').addEventListener('click', () => { cbRestore(p, !!p.branding); });
+      row.querySelector('.pr-del').addEventListener('click', () => { const arr = getPresets(); arr.splice(i, 1); setPresets(arr); renderPresetList(); });
+      el.appendChild(row);
+    });
+  }
+
+  $('savePreset').addEventListener('click', () => {
+    const name = ($('presetName').value || '').trim();
+    if (!name) { $('presetName').focus(); return; }
+    const layoutOnly = $('presetLayoutOnly').checked;
+    const snap = cbSnapshot();
+    snap.name = name;
+    if (layoutOnly) snap.branding = null;
+    const arr = getPresets();
+    const existing = arr.findIndex(p => (p.name || '').toLowerCase() === name.toLowerCase());
+    if (existing >= 0) arr[existing] = snap; else arr.push(snap);
+    setPresets(arr);
+    $('presetName').value = '';
+    renderPresetList();
+    const btn = $('savePreset'); const old = btn.textContent; btn.textContent = '✓ Saved';
+    setTimeout(() => btn.textContent = old, 1400);
+  });
+
   renderSwatches();
   renderLayout();
+  renderPresetList();
   refresh(true);
 </script>
 </body>
