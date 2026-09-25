@@ -2548,6 +2548,15 @@
                 document.body.style.fontFamily = "'" + b.font + "', system-ui, sans-serif";
             }
             if (b.logoUrl) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = b.logoUrl; lg.style.display = ''; } }
+            // Uploaded / lock-built logo travels in the URL hash (#cbimg=) so it isn't
+            // capped by query-string limits. When present it overrides the Logo URL.
+            try {
+                const _hm = (location.hash || '').match(/[#&]cbimg=([^&]+)/);
+                if (_hm) {
+                    const _imgs = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(_hm[1])))));
+                    if (_imgs && _imgs.logo) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = _imgs.logo; lg.style.display = ''; lg.onerror = null; } }
+                }
+            } catch (e) {}
             if (b.bannerUrl) {
                 const rp = document.querySelector('.right-panel');
                 if (rp && !document.getElementById('cb-banner')) {
@@ -2817,7 +2826,9 @@
             // Keep the displayed avg premium in step with the current premium/template.
             if (typeof _p_bd === 'object' && _p_bd && _p_bd.avgPremium != null) p.set('avg_premium', (Math.round(_p_bd.avgPremium * 100) / 100).toString());
             if (SI_CURRENCY !== 'USD') p.set('cur', SI_CURRENCY);
-            const url = location.origin + location.pathname + '?' + p.toString();
+            // Preserve the hash payload (e.g. #cbimg= uploaded/lock-built logo) so the
+            // merchant's copied link keeps the branding image.
+            const url = location.origin + location.pathname + '?' + p.toString() + (location.hash || '');
             const btn = document.getElementById('p-save-link-btn');
             navigator.clipboard.writeText(url).then(() => {
                 btn.textContent = '✓ Copied!';
