@@ -401,6 +401,11 @@
         '<div class="c"><label>Border px</label><div class="blk-seg se-bw"><button data-v="">Def</button><button data-v="0">0</button><button data-v="1">1</button><button data-v="2">2</button></div></div>' +
       '</div>';
     if (item.k === 'cards') inner += '<div class="blk-sub" style="margin-top:6px;">Card Rows — order &amp; show/hide</div><div class="se-rows"></div>';
+    if (item.k === 'hero') inner +=
+      '<div class="se-row" style="margin-top:6px;"><span class="se-row-name">Sub line ($/period)</span>' +
+        '<div class="blk-seg se-hero-sub"><button data-v="0">Show</button><button data-v="1">Hide</button></div></div>' +
+      '<div class="se-row"><span class="se-row-name">Show $ of avg premium</span>' +
+        '<div class="blk-seg se-hero-pp"><button data-v="0">Off</button><button data-v="1">On</button></div></div>';
     inner += '<button type="button" class="cb-btn ghost se-clear" style="background:#f4f5fb;color:var(--muted);border:1px solid var(--line);">Clear section style</button>';
     wrap.innerHTML = inner;
     const q = s => wrap.querySelector(s);
@@ -426,6 +431,13 @@
         });
       };
       drawRows();
+    }
+    if (item.k === 'hero') {
+      const segInit = (sel, on) => { wrap.querySelectorAll(sel + ' button').forEach(b => { b.classList.toggle('on', (b.dataset.v === '1') === !!on); b.addEventListener('click', () => { wrap.querySelectorAll(sel + ' button').forEach(x => x.classList.remove('on')); b.classList.add('on'); }); }); };
+      segInit('.se-hero-sub', st.subHidden);
+      wrap.querySelectorAll('.se-hero-sub button').forEach(b => b.addEventListener('click', () => { st.subHidden = b.dataset.v === '1'; refresh(true); }));
+      segInit('.se-hero-pp', st.perPremium);
+      wrap.querySelectorAll('.se-hero-pp button').forEach(b => b.addEventListener('click', () => { st.perPremium = b.dataset.v === '1'; refresh(true); }));
     }
     q('.se-clear').addEventListener('click', () => { delete item.style; renderLayout(); refresh(true); });
     return wrap;

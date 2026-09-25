@@ -343,6 +343,7 @@
             line-height: 1;
             margin-bottom: 4px;
         }
+        .hero-value .hero-value-sub { font-size: 0.4em; font-weight: 700; opacity: 0.85; white-space: nowrap; }
 
         .hero-sub {
             font-size: 0.78em;
@@ -2022,8 +2023,18 @@
             const _cashbackPctH = (p_cashbackEnabled && premiumPool > 0) ? (cashbackRedeemed / premiumPool) * 100 : 0;
             const _rsZeroH = revenueShare === 0;
             document.getElementById('heroLabel').textContent = 'Premiums You Keep';
-            document.getElementById('heroValue').textContent = Math.round(percentOfPremiums) + '%';
-            document.getElementById('heroSub').textContent = fmtDollar(extraRevenue) + ' per ' + periodLabel;
+            // Hero value: % kept, optionally with the per-premium amount it equates to (Custom Build).
+            let _heroValHtml = Math.round(percentOfPremiums) + '%';
+            if (window._cbHeroPerPremium && avgPremium > 0) {
+                const _kept = (percentOfPremiums / 100) * avgPremium;
+                _heroValHtml += ' <span class="hero-value-sub">(' + fmtDollarCents(_kept) + ' of ' + fmtDollarCents(avgPremium) + ')</span>';
+            }
+            document.getElementById('heroValue').innerHTML = _heroValHtml;
+            const _heroSubEl = document.getElementById('heroSub');
+            if (_heroSubEl) {
+                _heroSubEl.textContent = fmtDollar(extraRevenue) + ' per ' + periodLabel;
+                _heroSubEl.style.display = window._cbHeroSubHidden ? 'none' : '';
+            }
             const _setPct = (id, txt, show) => { const el = document.getElementById(id); if (el) { el.textContent = txt; el.style.display = show ? '' : 'none'; } };
             if (p_returnsOffsetMode) {
                 _setPct('p-claimsImpactPct', '', false);
@@ -2607,6 +2618,8 @@
                     const st = (typeof item === 'object') ? item.style : null;
                     // Revenue/Cost card rows — order + show/hide of value / rev share / funded.
                     if (key === 'cards' && st && Array.isArray(st.rows)) window._cbCardRows = st.rows;
+                    // Net Benefit Hero options — hide the sub line / show per-premium amount.
+                    if (key === 'hero' && st) { window._cbHeroSubHidden = !!st.subHidden; window._cbHeroPerPremium = !!st.perPremium; }
                     if (st) {
                         // For the hero, paint the inner gradient box, not the flex row wrapper.
                         const target = (key === 'hero') ? (el.querySelector('.result-hero:not(.upfront-hero)') || el) : el;
