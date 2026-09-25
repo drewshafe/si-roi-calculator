@@ -1215,6 +1215,7 @@
         .theme-midnight #mnAnimBtn .mn-dot { width:8px; height:8px; border-radius:50%; background:#5e6577; transition:all .25s; }
         .theme-midnight #mnAnimBtn.on .mn-dot { background:#e9c46a; box-shadow:0 0 9px #e9c46a; }
     </style>
+    <script src="sb.js"></script>
 </head>
 <body>
     <div class="container">
@@ -1725,6 +1726,8 @@
                         <button class="load-config-btn" id="loadConfigBtn" onclick="toggleSavedConfigs(event)">📂 Saved <span id="savedCount">0</span></button>
                         <div id="savedConfigsList" class="saved-configs-list" style="display:none;"></div>
                     </div>
+                    <button class="save-config-btn" id="cloudSaveBtn" onclick="siCloudSave()" title="Save to the cloud and get a short shareable link">☁ Cloud Save</button>
+                    <span id="cloudStatus" style="font-size:0.62rem;color:#9aa1b2;white-space:nowrap;"></span>
                 </div>
                 <label class="view-inputs-label" style="margin-right:4px;">
                     <input type="checkbox" id="siInputsCheck" checked onchange="toggleSiInputsVisibility()">
@@ -3757,11 +3760,78 @@
         const gClaimInputEl = document.getElementById('guaranteeClaimRateInput');
         if (gClaimInputEl) gClaimInputEl.addEventListener('input', calculate);
 
-        loadSavedValues();
-        toggleProtectionPremiumVisibility();
-        updateBadges();
-        calculate();
-        updateSavedConfigsUI();
+        // ── Tier 2: cloud save (short ?id= links) ────────────────────────────
+        let _siCloudId = null;   // set after a save/load so re-saving updates the same row
+        async function siRefreshCloudUI() {
+            const st = document.getElementById('cloudStatus');
+            if (!window.SIsb || !st) return;
+            try {
+                const u = await SIsb.currentUser();
+                st.textContent = u ? ('☁ ' + u.email) : '';
+                if (window._SI_LOADED_ID) _siCloudId = window._SI_LOADED_ID;
+            } catch (e) {}
+        }
+        async function siEnsureSignedIn() {
+            const u = await SIsb.currentUser();
+            if (u) return u;
+            const email = prompt('Sign in to save to the cloud.\nEnter your ShipInsure email — we\'ll send a magic link:');
+            if (!email) return null;
+            const { error } = await SIsb.signInMagic(email.trim());
+            if (error) { alert('Could not send the link: ' + error.message); return null; }
+            alert('Magic link sent to ' + email.trim() + '.\nOpen it (same browser), then click ☁ Cloud Save again.');
+            return null;
+        }
+        async function siCloudSave() {
+            if (!window.SIsb) { alert('Cloud module not loaded.'); return; }
+            const btn = document.getElementById('cloudSaveBtn');
+            const merchant = (document.getElementById('merchantName') || {}).value || '';
+            if (!merchant.trim()) { alert('Enter a merchant name first.'); return; }
+            const old = btn.textContent; btn.textContent = '☁ …';
+            try {
+                const u = await siEnsureSignedIn();
+                if (!u) { btn.textContent = old; return; }
+                // Store the exact query the existing loaders understand, plus any hash.
+                const full = new URL(buildRepLink());
+                const data = { q: full.search.replace(/^\?/, ''), hash: full.hash || '' };
+                const res = await SIsb.saveConfig({ id: _siCloudId || undefined, merchant: merchant.trim(), kind: 'roi', title: merchant.trim(), data: data });
+                _siCloudId = res.id;
+                // Keep the short id in the address bar so re-saves target the same row.
+                history.replaceState('', '', location.pathname + '?id=' + res.id);
+                // Merchant proposal link = short id + edit token for save-back.
+                const merchantLink = new URL('proposal.html', location.href).href + '?id=' + res.id + '&t=' + res.edit_token;
+                try { await navigator.clipboard.writeText(merchantLink); } catch (e) {}
+                btn.textContent = '✓ Saved + link copied';
+                setTimeout(() => { btn.textContent = '☁ Cloud Save'; }, 2600);
+                siRefreshCloudUI();
+            } catch (e) {
+                btn.textContent = old;
+                alert('Cloud save failed: ' + (e && e.message ? e.message : e));
+            }
+        }
+
+        // Tier 2: expand a short ?id= cloud link into real params before loading.
+        // Links without ?id= are untouched (existing behavior preserved).
+        async function siHydrateFromId() {
+            const ps = new URLSearchParams(location.search);
+            const id = ps.get('id');
+            if (!id || !window.SIsb) return false;
+            try {
+                const row = await SIsb.loadConfig(id);
+                const d = (row && row.data) || {};
+                window._SI_LOADED_ID = id;
+                if (d.q != null) history.replaceState('', '', location.pathname + '?' + d.q + (d.hash || ''));
+                return true;
+            } catch (e) { console.warn('[SI] load-by-id failed:', e && e.message); return false; }
+        }
+        (async function initApp() {
+            await siHydrateFromId();
+            loadSavedValues();
+            toggleProtectionPremiumVisibility();
+            updateBadges();
+            calculate();
+            updateSavedConfigsUI();
+            siRefreshCloudUI();
+        })();
 
         // Paste a calculator link (index.html or proposal.html) and load its
         // params into this page's own Master Calculator view — reloads with

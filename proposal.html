@@ -911,6 +911,7 @@
         .theme-midnight #mnAnimBtn .mn-dot { width:7px; height:7px; border-radius:50%; background:#5e6577; }
         .theme-midnight #mnAnimBtn.on .mn-dot { background:#e9c46a; box-shadow:0 0 8px #e9c46a; }
     </style>
+    <script src="sb.js"></script>
 </head>
 <body>
     <div class="proposal-layout">
@@ -2664,10 +2665,31 @@
             return d;
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        // Tier 2: if the link is a short ?id= (a cloud-saved config), fetch the row
+        // and expand it into the real params/hash BEFORE the normal loader runs. Any
+        // link without ?id= is untouched, so every existing link keeps working.
+        async function siHydrateFromId() {
+            const ps = new URLSearchParams(location.search);
+            const id = ps.get('id');
+            if (!id || !window.SIsb) return false;
+            try {
+                const row = await SIsb.loadConfig(id);
+                const d = (row && row.data) || {};
+                window._SI_LOADED_ID = id;
+                window._SI_EDIT_TOKEN = ps.get('t') || null;
+                if (row && row.logo_path) window._SI_LOGO_URL = row.logo_path;
+                if (d.q != null) history.replaceState('', '', location.pathname + '?' + d.q + (d.hash || ''));
+                return true;
+            } catch (e) { console.warn('[SI] load-by-id failed:', e && e.message); return false; }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await siHydrateFromId();
             const urlPs = new URLSearchParams(window.location.search);
             if (urlPs.get('theme') === 'midnight') document.body.classList.add('theme-midnight');
             applyCustomBuild(urlPs);
+            // A cloud-stored logo (Supabase Storage) overrides any param/hash logo.
+            if (window._SI_LOGO_URL) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = window._SI_LOGO_URL; lg.style.display = ''; lg.onerror = null; } }
 
             // Helper: set field value
             const up = (id, key, fmt) => {
