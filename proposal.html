@@ -1160,6 +1160,7 @@
             <div class="calc-btn-wrap">
                 <button class="calc-btn" id="calcBtn" onclick="calculateProposal()">Calculate ROI &rarr;</button>
                 <button id="p-save-link-btn" onclick="saveProposalLink()" style="margin-top:8px;width:100%;padding:9px;border:1px solid #d0d4ff;border-radius:9px;background:#f4f5ff;color:#6675ff;font-size:0.82em;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copy Link</button>
+                <button id="p-cloud-update-btn" onclick="siMerchantUpdate()" style="display:none;margin-top:8px;width:100%;padding:9px;border:none;border-radius:9px;background:linear-gradient(135deg,#1f9d63,#0f8f56);color:#fff;font-size:0.82em;font-weight:800;cursor:pointer;font-family:inherit;">💾 Save changes</button>
             </div>
         </div><!-- /inputsSection -->
         </div><!-- /left-panel -->
@@ -2690,6 +2691,8 @@
             applyCustomBuild(urlPs);
             // A cloud-stored logo (Supabase Storage) overrides any param/hash logo.
             if (window._SI_LOGO_URL) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = window._SI_LOGO_URL; lg.style.display = ''; lg.onerror = null; } }
+            // Opened via a cloud link that carries an edit token → offer merchant save-back.
+            if (window._SI_EDIT_TOKEN) { const ub = document.getElementById('p-cloud-update-btn'); if (ub) ub.style.display = ''; }
 
             // Helper: set field value
             const up = (id, key, fmt) => {
@@ -2823,39 +2826,55 @@
         function updateProposalBadges() { /* logo badges removed — the pct-lines convey the same info */ }
 
         // ── Logo dropdown ────────────────────────────────────────────────────────
-        function saveProposalLink() {
-            // Start from the current params (preserves feature flags: re, cbe, rom, rc, rpp,
-            // upf, hcc, mname, theme, bld…) and overwrite every editable value with what's
-            // currently in the form, so the copied link reflects all edits.
+        // Collect the current form state into a URLSearchParams the loaders understand.
+        // Shared by Copy Link and the cloud merchant save-back.
+        function siCollectProposalParams() {
             const p = new URLSearchParams(window.location.search);
             const set = (key, id) => { const el = document.getElementById(id); if (el && el.value.trim() !== '') p.set(key, removeCommas(el.value)); };
-            // Primary + additional inputs
             set('orders', 'p-orders'); set('aov', 'p-aov'); set('claims', 'p-claims');
             set('premium', 'p-premium'); set('attach', 'p-attach'); set('share', 'p-share');
             set('cogs', 'p-cogs'); set('aship', 'p-aship'); set('cs', 'p-cs');
-            // Returns (arc doubles as the return-label cost)
             set('rr', 'p-rr'); set('arc', 'p-arc'); set('rpc', 'p-rpc');
             { const arc = document.getElementById('p-arc'); if (arc && arc.value.trim() !== '') p.set('rlc', removeCommas(arc.value)); }
-            // Cashback
             set('cb', 'p-cb'); set('mincb', 'p-mincb'); set('cbrr', 'p-cbrr');
-            // Template, input types, claim resolution, view
             { const t = document.getElementById('p-template'); if (t) p.set('template', t.value); }
-            p.set('cogstype',   p_cogsType);
-            p.set('claimstype', p_claimsType);
-            p.set('rtype',      p_returnsType);
-            p.set('cr',         p_claimResolution);
+            p.set('cogstype', p_cogsType); p.set('claimstype', p_claimsType);
+            p.set('rtype', p_returnsType); p.set('cr', p_claimResolution);
             { const v = document.getElementById('p-view'); if (v) p.set('view', v.value); }
-            // Keep the displayed avg premium in step with the current premium/template.
             if (typeof _p_bd === 'object' && _p_bd && _p_bd.avgPremium != null) p.set('avg_premium', (Math.round(_p_bd.avgPremium * 100) / 100).toString());
             if (SI_CURRENCY !== 'USD') p.set('cur', SI_CURRENCY);
-            // Preserve the hash payload (e.g. #cbimg= uploaded/lock-built logo) so the
-            // merchant's copied link keeps the branding image.
+            // A short ?id= link was expanded in place at load, so strip the transient keys.
+            p.delete('id'); p.delete('t');
+            return p;
+        }
+        function saveProposalLink() {
+            // Overwrite every editable value with what's currently in the form so the
+            // copied link reflects all edits; preserve the hash payload (e.g. #cbimg=).
+            const p = siCollectProposalParams();
             const url = location.origin + location.pathname + '?' + p.toString() + (location.hash || '');
             const btn = document.getElementById('p-save-link-btn');
             navigator.clipboard.writeText(url).then(() => {
                 btn.textContent = '✓ Copied!';
                 setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2200);
             }).catch(() => { prompt('Copy this link:', url); });
+        }
+
+        // Merchant save-back: writes the current edits to the SAME cloud row via the
+        // edit-token carried in the link (no login). The rep sees it in their folder.
+        async function siMerchantUpdate() {
+            const btn = document.getElementById('p-cloud-update-btn');
+            if (!window.SIsb || !window._SI_LOADED_ID || !window._SI_EDIT_TOKEN) { alert('This link can\'t be saved back.'); return; }
+            const p = siCollectProposalParams();
+            const data = { q: p.toString(), hash: location.hash || '' };
+            const old = btn.textContent; btn.textContent = '💾 Saving…';
+            try {
+                await SIsb.updateByToken(window._SI_LOADED_ID, window._SI_EDIT_TOKEN, data);
+                btn.textContent = '✓ Saved';
+                setTimeout(() => { btn.textContent = '💾 Save changes'; }, 2200);
+            } catch (e) {
+                btn.textContent = old;
+                alert('Could not save changes: ' + (e && e.message ? e.message : e));
+            }
         }
 
 

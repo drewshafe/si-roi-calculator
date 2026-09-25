@@ -1727,6 +1727,10 @@
                         <div id="savedConfigsList" class="saved-configs-list" style="display:none;"></div>
                     </div>
                     <button class="save-config-btn" id="cloudSaveBtn" onclick="siCloudSave()" title="Save to the cloud and get a short shareable link">☁ Cloud Save</button>
+                    <div class="saved-configs-wrapper">
+                        <button class="load-config-btn" id="cloudFoldersBtn" onclick="siToggleFolders(event)" title="Your cloud-saved calculators">☁ Folders</button>
+                        <div id="cloudFoldersList" class="saved-configs-list" style="display:none;"></div>
+                    </div>
                     <span id="cloudStatus" style="font-size:0.62rem;color:#9aa1b2;white-space:nowrap;"></span>
                 </div>
                 <label class="view-inputs-label" style="margin-right:4px;">
@@ -3807,6 +3811,42 @@
                 btn.textContent = old;
                 alert('Cloud save failed: ' + (e && e.message ? e.message : e));
             }
+        }
+
+        // ── Tier 2: cloud Folders (rep's saved configs, grouped by merchant) ──
+        function _siEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+        async function siToggleFolders(e) {
+            if (e) e.stopPropagation();
+            const list = document.getElementById('cloudFoldersList');
+            const willOpen = (list.style.display === 'none' || !list.style.display);
+            if (!willOpen) { list.style.display = 'none'; return; }
+            list.style.display = '';
+            list.innerHTML = '<div style="padding:10px;font-size:.7rem;color:#9aa1b2;">Loading…</div>';
+            try {
+                const u = await SIsb.currentUser();
+                if (!u) { list.innerHTML = '<div style="padding:10px;font-size:.7rem;color:#9aa1b2;">Sign in first (click ☁ Cloud Save).</div>'; return; }
+                siRenderFolders(await SIsb.listConfigs());
+            } catch (err) { list.innerHTML = '<div style="padding:10px;font-size:.7rem;color:#c0392b;">' + _siEsc(err && err.message || String(err)) + '</div>'; }
+            setTimeout(() => { document.addEventListener('click', function h(ev) { if (!list.contains(ev.target) && ev.target.id !== 'cloudFoldersBtn') { list.style.display = 'none'; document.removeEventListener('click', h); } }); }, 10);
+        }
+        function siRenderFolders(rows) {
+            const list = document.getElementById('cloudFoldersList');
+            if (!rows || !rows.length) { list.innerHTML = '<div style="padding:10px;font-size:.7rem;color:#9aa1b2;">No saved calculators yet.</div>'; return; }
+            const groups = {};
+            rows.forEach(r => { const m = r.merchant || '—'; (groups[m] = groups[m] || []).push(r); });
+            let html = '';
+            Object.keys(groups).sort().forEach(m => {
+                html += '<div style="padding:6px 10px;font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9aa1b2;background:#f7f8fc;">' + _siEsc(m) + '</div>';
+                groups[m].forEach(r => {
+                    const date = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                    const edited = r.updated_by === 'merchant' ? ' · ✎ merchant' : '';
+                    html += '<div class="scl-item" data-id="' + _siEsc(r.id) + '" style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-top:1px solid #eef0f6;">'
+                        + '<span style="flex:1;font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _siEsc(r.title || r.merchant || r.id) + '</span>'
+                        + '<span style="font-size:.58rem;color:#adb5bd;white-space:nowrap;">' + date + edited + '</span></div>';
+                });
+            });
+            list.innerHTML = html;
+            list.querySelectorAll('.scl-item').forEach(it => it.addEventListener('click', () => { location.href = location.pathname + '?id=' + it.dataset.id; }));
         }
 
         // Tier 2: expand a short ?id= cloud link into real params before loading.
