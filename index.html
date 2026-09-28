@@ -1713,7 +1713,7 @@
         <div class="si-inputs-section">
             <div class="si-inputs-header">
                 <span class="si-inputs-title">ShipInsure Inputs</span>
-                <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end;margin-right:10px;">
+                <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end;margin-right:10px;flex-wrap:wrap;">
                     <input type="text" id="merchantName" class="merchant-input" placeholder="Merchant name...">
                     <button class="save-config-btn" onclick="saveConfig()">💾 Save</button>
                     <div class="saved-configs-wrapper">
@@ -3822,13 +3822,22 @@
                 groups[m].forEach(r => {
                     const date = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
                     const edited = r.updated_by === 'merchant' ? ' · ✎ merchant' : '';
-                    html += '<div class="scl-item" data-id="' + _siEsc(r.id) + '" style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-top:1px solid #eef0f6;">'
-                        + '<span style="flex:1;font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _siEsc(r.title || r.merchant || r.id) + '</span>'
-                        + '<span style="font-size:.58rem;color:#adb5bd;white-space:nowrap;">' + date + edited + '</span></div>';
+                    html += '<div class="scl-item" data-id="' + _siEsc(r.id) + '" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid #eef0f6;">'
+                        + '<span class="scl-open" title="Open the branded proposal in a new window" style="flex:1;font-size:.76rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _siEsc(r.title || r.merchant || r.id) + '</span>'
+                        + '<span style="font-size:.58rem;color:#adb5bd;white-space:nowrap;">' + date + edited + '</span>'
+                        + '<button class="scl-edit" title="Edit this config in the calculator" style="font-size:.7rem;background:#f4f5ff;border:1px solid #c8ccff;border-radius:5px;padding:2px 6px;cursor:pointer;color:#6675ff;">✎</button></div>';
                 });
             });
             list.innerHTML = html;
-            list.querySelectorAll('.scl-item').forEach(it => it.addEventListener('click', () => { location.href = location.pathname + '?id=' + it.dataset.id; }));
+            const proposalUrl = id => new URL('proposal.html', location.href).href + '?id=' + id;
+            list.querySelectorAll('.scl-item').forEach(it => {
+                const id = it.dataset.id;
+                // Primary: open the fully branded merchant proposal in a NEW window
+                // (don't reformat the current calc / hub iframe in place).
+                it.querySelector('.scl-open').addEventListener('click', () => { window.open(proposalUrl(id), '_blank', 'noopener'); });
+                // Secondary: load it back into this calculator to edit.
+                it.querySelector('.scl-edit').addEventListener('click', e => { e.stopPropagation(); location.href = location.pathname + '?id=' + id; });
+            });
         }
 
         // Tier 2: expand a short ?id= cloud link into real params before loading.
