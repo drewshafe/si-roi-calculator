@@ -531,6 +531,18 @@
             color: #6c757d;
             margin-bottom: 3px;
         }
+        /* Paired rows inside a pill (Volume / Protected / SI Funded), matching the rep calc */
+        .kmp-pair { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 1px 2px; }
+        .kmp-pk { font-size: 0.62em; font-weight: 700; color: #8a93a5; }
+        .kmp-pv { font-size: 0.98em; font-weight: 800; color: #1f2430; }
+        .kmp-pv.sm { font-size: 0.82em; color: #4a4f5e; }
+        .kmp-primary { border: 1px solid rgba(31,157,99,0.35); }
+        .kmp-primary .kmp-label { color: #1f9d63; }
+        .kmp-primary .kmp-pv { color: #1f9d63; }
+        .theme-midnight .kmp-pk { color: #9aa1b2; }
+        .theme-midnight .kmp-pv { color: #f2eede; }
+        .theme-midnight .kmp-primary { border-color: rgba(40,167,69,0.4); }
+        .theme-midnight .kmp-primary .kmp-label, .theme-midnight .kmp-primary .kmp-pv { color: #4ade80; }
 
         .kmp-value {
             font-size: 1.05em;
@@ -1181,6 +1193,12 @@
 
             <!-- Key Metrics row (above the Net Benefit hero) -->
             <div class="key-metrics">
+                <!-- 0. Volume (protection-only): total claims (+ returns) for the period -->
+                <div class="key-metric-pill kmp-primary" id="p-volumePill" style="display:none;">
+                    <div class="kmp-label" id="p-volumeLabel">Monthly</div>
+                    <div class="kmp-pair"><span class="kmp-pk">Claims →</span><span class="kmp-pv" id="p-volumeClaims">0</span></div>
+                    <div class="kmp-pair" id="p-volumeReturnsRow" style="display:none;"><span class="kmp-pk">Returns →</span><span class="kmp-pv sm" id="p-volumeReturns">0</span></div>
+                </div>
                 <!-- 1. Avg / SI Premium (with outlier-order probe) -->
                 <div class="key-metric-pill" id="avgPremiumPill">
                     <div class="kmp-label" id="p-avgPremiumLabel">Avg Premium</div>
@@ -1196,8 +1214,8 @@
                         </div>
                     </div>
                 </div>
-                <!-- 2. Protected Orders / Opt-in Orders -->
-                <div class="key-metric-pill">
+                <!-- 2. Protected Orders / Opt-in Orders (returns & offset modes only) -->
+                <div class="key-metric-pill" id="p-ordersPill">
                     <div class="kmp-label" id="r-protectedOrdersLabel">Protected Orders</div>
                     <div class="kmp-value" id="r-protectedOrders">0</div>
                     <div class="kmp-sub" id="r-attachRate">0% attach rate</div>
@@ -1213,6 +1231,12 @@
                     <div class="kmp-value" id="r-protectedDualValue">0</div>
                     <div class="kmp-sub" id="r-protectedDualSub">Orders / Claims</div>
                     <div class="kmp-value" id="r-protectedClaims" style="display:none;">0</div>
+                </div>
+                <!-- 4b. SI Funded (protection-only): total funded + avg per claim -->
+                <div class="key-metric-pill" id="p-siFundedPill" style="display:none;">
+                    <div class="kmp-label">SI Funded</div>
+                    <div class="kmp-pair"><span class="kmp-pk">Total →</span><span class="kmp-pv" id="p-siFundedTotal">$0</span></div>
+                    <div class="kmp-pair"><span class="kmp-pk">Avg Claim →</span><span class="kmp-pv sm" id="p-siFundedAvg">$0</span></div>
                 </div>
                 <!-- 5. Post-Claim / Post-Offset Balance -->
                 <div class="key-metric-pill">
@@ -2317,6 +2341,23 @@
             const off = d.returnsOffsetMode;
             const cov = d.returnsCoverage;
             const nb = v => fmtNum(Math.round(v || 0));
+            const svp = (el, show) => { if (el) el.style.display = show ? '' : 'none'; };
+
+            // Protection-only (no returns, no offset) mirrors the rep calc's combined
+            // strip: Volume(Claims) · Avg Premium · Premiums · Protected(Orders/Claims)
+            // · SI Funded(Total/Avg) · Post-Claim — and drops the Orders+attach box.
+            const protectionOnly = !d.returnsEnabled && !off;
+            svp(document.getElementById('p-volumePill'), protectionOnly);
+            svp(document.getElementById('p-siFundedPill'), protectionOnly);
+            svp(document.getElementById('p-ordersPill'), !protectionOnly);
+            if (protectionOnly) {
+                const vlbl = document.getElementById('p-volumeLabel');
+                if (vlbl) vlbl.textContent = (((document.getElementById('p-view') || {}).value) === 'annual') ? 'Annual' : 'Monthly';
+                const vc = document.getElementById('p-volumeClaims'); if (vc) vc.textContent = nb(d.totalClaims);
+                svp(document.getElementById('p-volumeReturnsRow'), false);
+                const sft = document.getElementById('p-siFundedTotal'); if (sft) sft.textContent = fmtDollar(d.siFundedReships || 0);
+                const sfa = document.getElementById('p-siFundedAvg'); if (sfa) sfa.textContent = fmtDollarCents(d.siClaimValue || 0);
+            }
 
             // Pill 2 — Protected Orders vs Opt-in Orders
             const ordLbl = document.getElementById('r-protectedOrdersLabel');
@@ -2329,7 +2370,6 @@
             const claims     = d.protectedClaims || 0;
             const protReturns = (d.protectedOrders || 0) * (d.returnsRate || 0);
             const allReturns  = d.totalReturns || 0;
-            const svp = (el, show) => { if (el) el.style.display = show ? '' : 'none'; };
             if (off) {
                 // No Protection → single "Covered" (returns offset count)
                 const covered = (cov === 'platform_only' || cov === 'all_labels' || cov === 'all_labels_platform') ? allReturns : protReturns;
