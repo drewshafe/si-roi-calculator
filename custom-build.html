@@ -754,11 +754,23 @@
   function loadBase() {
     const raw = ($('baseLink').value || '').trim();
     if (!raw) return;
-    let search = '';
-    try { search = new URL(raw).search.replace(/^\?/, ''); } catch (e) { search = raw.replace(/^\?/, ''); }
-    // strip any existing bld so we don't nest
-    const p = new URLSearchParams(search); p.delete('bld');
+    let search = '', hash = '';
+    try { const u = new URL(raw); search = u.search.replace(/^\?/, ''); hash = u.hash || ''; }
+    catch (e) { const hi = raw.indexOf('#'); hash = hi >= 0 ? raw.slice(hi) : ''; search = (hi >= 0 ? raw.slice(0, hi) : raw).replace(/^[^?]*\??/, ''); }
+    const p = new URLSearchParams(search);
+    const bldRaw = p.get('bld');
+    p.delete('bld');
     if (p.toString()) baseParams = p.toString();
+    // If the pasted link carries branding (bld), IMPORT it into the editor — this is
+    // how you reuse a merchant's branding on a new plan/scenario. Then it's a fresh
+    // (unsaved) branded build, so a Cloud Save creates a NEW config under that merchant.
+    // A link with no bld just refreshes the data and keeps the current branding.
+    if (bldRaw) {
+      const snap = _snapFromBld(bldRaw);
+      if (snap) cbRestore(snap, true);
+      try { const m = hash.match(/[#&]cbimg=([^&]+)/); if (m) { const o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); if (o && o.logo) { _logoImg = o.logo; _renderLogoThumb(); } } } catch (e) {}
+      _cbCloudId = null;
+    }
     refresh(true);
   }
   $('loadBase').addEventListener('click', loadBase);
