@@ -804,7 +804,11 @@
       if (!u) { btn.textContent = old; return; }
       let logoUrl;
       if (_logoImg) { try { logoUrl = await SIsb.uploadLogo(_logoImg); } catch (e) { alert('Logo upload failed: ' + e.message); btn.textContent = old; return; } }
-      const data = { q: baseParams + '&bld=' + encodeURIComponent(JSON.stringify(cfg())), hash: '' };
+      // Store the exact editor snapshot too, so Custom Build can re-open this config
+      // fully branded (the bld param alone can't be reversed into the gradient/input
+      // stylers). Strip the inline logo data URL — the logo lives in storage.
+      const _snap = cbSnapshot(); if (_snap.branding) _snap.branding.logoImg = '';
+      const data = { q: baseParams + '&bld=' + encodeURIComponent(JSON.stringify(cfg())), hash: '', cb: _snap };
       const res = await SIsb.saveConfig({ id: _cbCloudId || undefined, merchant: merchant, kind: 'proposal', title: merchant, data: data, logoUrl: logoUrl });
       _cbCloudId = res.id;
       const link = proposalBase() + '?id=' + res.id + '&t=' + res.edit_token;
@@ -820,8 +824,50 @@
   $('cloudSaveBtn').addEventListener('click', () => cbCloudSaveAndCopy($('cloudSaveBtn'), '☁ Cloud Save'));
 
   // Seed from an incoming ?base= or existing query (lets the hub pass the current link)
-  (function initFromQuery(){
+  // Best-effort branding snapshot from a bld param (for configs saved before we
+  // started storing the exact editor snapshot). Gradient input backgrounds can't be
+  // reversed, so they fall back to default; everything else restores.
+  function _snapFromBld(bldRaw) {
+    if (!bldRaw) return null;
+    let bld; try { bld = JSON.parse(bldRaw); } catch (e) { return null; }
+    const b = bld.branding || {};
+    const solid = (typeof b.inputBg === 'string' && /^#[0-9a-fA-F]{6}$/.test(b.inputBg));
+    return {
+      branding: {
+        accentHex: b.accent, accent2Hex: b.accent2, accent2Set: !!b.accent2,
+        font: b.font, logoUrl: b.logoUrl, bannerUrl: b.bannerUrl,
+        hideName: b.hideName ? '1' : '',
+        ibgMode: solid ? 'solid' : 'default', ibgColorHex: solid ? b.inputBg : '#1B1B1B',
+        inpLabelColor: b.inputLabelColor, inpLabelSet: b.inputLabelColor != null,
+        inpInputColor: b.inputInputColor, inpInputSet: b.inputInputColor != null,
+        inpBorderColor: b.inputBorderColor, inpBorderSet: b.inputBorderColor != null,
+        inpBorderW: b.inputBorderW || '', logoImg: ''
+      },
+      layout: bld.layout || [], blocks: bld.blocks || []
+    };
+  }
+
+  (async function initFromQuery(){
     const q = new URLSearchParams(location.search);
+    const id = q.get('id');
+    // Open a saved cloud config fully branded (restores branding + layout + logo +
+    // base data). Re-saving updates that same config.
+    if (id && window.SIsb) {
+      try {
+        const row = await SIsb.loadConfig(id);
+        const d = (row && row.data) || {};
+        const ps = new URLSearchParams(d.q || '');
+        const snap = d.cb || _snapFromBld(ps.get('bld'));
+        ps.delete('bld');
+        baseParams = ps.toString() || DEFAULT_BASE;
+        $('baseLink').value = proposalBase() + '?' + baseParams;
+        if (snap) cbRestore(snap, true);
+        if (row.logo_path) { _logoImg = row.logo_path; _renderLogoThumb(); }
+        _cbCloudId = id;
+        refresh(true);
+        return;
+      } catch (e) { console.warn('[CB] load id failed:', e && e.message); }
+    }
     const seed = q.get('base');
     if (seed) { try { $('baseLink').value = decodeURIComponent(seed); loadBase(); } catch(e){} }
   })();
