@@ -764,7 +764,13 @@
   $('loadBase').addEventListener('click', loadBase);
   $('baseLink').addEventListener('keydown', e => { if (e.key === 'Enter') loadBase(); });
 
-  $('copyLink').addEventListener('click', () => {
+  // Copy Custom Link. An uploaded/lock-built logo is ~8–15KB; embedding it in the
+  // URL hash makes a huge link that Slack/email/Aligned truncate on paste (dropping
+  // the image). So when a logo image is present, route through the cloud for a SHORT
+  // ?id= link with the logo in storage — paste-safe. No image → the self-contained
+  // hash/param link is small and fine.
+  $('copyLink').addEventListener('click', async () => {
+    if (_logoImg && window.SIsb) { await cbCloudSaveAndCopy($('copyLink'), '📋 Copy Custom Link'); return; }
     const url = buildUrl();
     navigator.clipboard && navigator.clipboard.writeText(url);
     const btn = $('copyLink'); const old = btn.textContent; btn.textContent = '✓ Copied';
@@ -780,13 +786,15 @@
     if (!email) return null;
     const { error } = await SIsb.signInMagic(email.trim());
     if (error) { alert('Could not send the link: ' + error.message); return null; }
-    alert('Magic link sent to ' + email.trim() + '.\nOpen it (same browser), then click ☁ Cloud Save again.');
+    alert('Magic link sent to ' + email.trim() + '.\nOpen it (same browser), then click the button again.');
     return null;
   }
   let _cbCloudId = null;
-  $('cloudSaveBtn').addEventListener('click', async () => {
+  // Shared by ☁ Cloud Save and by Copy Custom Link (when a logo image is embedded):
+  // sign in, upload the logo to storage, save the config, and copy a short ?id= link.
+  async function cbCloudSaveAndCopy(btn, restoreLabel) {
     if (!window.SIsb) { alert('Cloud module not loaded.'); return; }
-    const btn = $('cloudSaveBtn'); const old = btn.textContent;
+    const old = restoreLabel || btn.textContent;
     const bp = new URLSearchParams(baseParams);
     const merchant = (bp.get('mname') || '').trim();
     if (!merchant) { alert('Add a merchant name (mname) to the base link first.'); return; }
@@ -794,11 +802,8 @@
     try {
       const u = await _cbEnsureSignedIn();
       if (!u) { btn.textContent = old; return; }
-      // Upload the uploaded/lock-built logo to storage → short public URL.
       let logoUrl;
       if (_logoImg) { try { logoUrl = await SIsb.uploadLogo(_logoImg); } catch (e) { alert('Logo upload failed: ' + e.message); btn.textContent = old; return; } }
-      // Store the params + custom-build config; the logo lives in storage (logo_path),
-      // so no #cbimg hash is needed and the link stays short.
       const data = { q: baseParams + '&bld=' + encodeURIComponent(JSON.stringify(cfg())), hash: '' };
       const res = await SIsb.saveConfig({ id: _cbCloudId || undefined, merchant: merchant, kind: 'proposal', title: merchant, data: data, logoUrl: logoUrl });
       _cbCloudId = res.id;
@@ -811,7 +816,8 @@
       btn.textContent = old;
       alert('Cloud save failed: ' + (e && e.message ? e.message : e));
     }
-  });
+  }
+  $('cloudSaveBtn').addEventListener('click', () => cbCloudSaveAndCopy($('cloudSaveBtn'), '☁ Cloud Save'));
 
   // Seed from an incoming ?base= or existing query (lets the hub pass the current link)
   (function initFromQuery(){
