@@ -1272,6 +1272,23 @@
                     <label for="attachRate">Attach Rate %</label>
                     <input type="text" id="attachRate" placeholder="0" value="68">
                 </div>
+                <!-- Hybrid Coverage only: how much of the NON-opted volume the merchant covers -->
+                <div class="input-group" id="hybridCoveredGroup" style="display:none;">
+                    <label for="hybridCovered" title="Of orders where the customer does NOT opt in, the % the merchant pays to cover">% Non-Opted Covered</label>
+                    <input type="text" id="hybridCovered" placeholder="100" value="100" oninput="calculate()">
+                </div>
+                <!-- Hybrid Coverage only: optional cart-value ruleset for merchant-covered orders -->
+                <div class="input-group" id="hybridRulesToggleGroup" style="display:none;">
+                    <label class="view-inputs-label" style="white-space:nowrap;"><input type="checkbox" id="hybridRulesCheck" onchange="toggleHybridRules()"> Add Rules?</label>
+                </div>
+                <div class="input-group" id="hybridRuleMinGroup" style="display:none;">
+                    <label for="hybridRuleMin" title="Only cover non-opted orders with a subtotal ABOVE this (blank = no minimum)">Order $ &gt;</label>
+                    <input type="text" id="hybridRuleMin" placeholder="(any)" oninput="calculate()">
+                </div>
+                <div class="input-group" id="hybridRuleMaxGroup" style="display:none;">
+                    <label for="hybridRuleMax" title="Only cover non-opted orders with a subtotal BELOW this (blank = no maximum)">Order $ &lt;</label>
+                    <input type="text" id="hybridRuleMax" placeholder="(any)" oninput="calculate()">
+                </div>
                 <div class="input-group">
                     <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
                     <input type="text" id="annualOrders" placeholder="0">
@@ -1310,7 +1327,7 @@
 
             <!-- Merchant Inputs — Group 2: ShipInsure terms -->
             <div class="inputs-row" id="secondaryInputsRow">
-                <div class="input-group">
+                <div class="input-group" id="revShareGroup">
                     <label for="revenueShare" id="revShareLabel">Rev Share % (net claims)</label>
                     <input type="text" id="revenueShare" placeholder="0">
                 </div>
@@ -1450,7 +1467,7 @@
                     </div>
                 </div>
                 <div class="output-metric" id="premiumsMetric">
-                    <div class="om-label">Premiums</div>
+                    <div class="om-label" id="premiumsMetricLabel">Premiums</div>
                     <div class="om-value" id="premiumsPaid">$0</div>
                 </div>
                 <div class="output-metric box-combined-only" id="protectedOrdersMetric">
@@ -1524,7 +1541,7 @@
             <!-- Blue % of premiums you keep — centered above the two cards -->
             <div class="revenue-impact-row">
                 <div class="revenue-impact-box">
-                    <div class="impact-label">Premiums You Keep</div>
+                    <div class="impact-label" id="impactLabel">Premiums You Keep</div>
                     <div class="impact-value" id="percentOfPremiums">0%</div>
                     <div class="impact-breakdown">
                         <div class="impact-pct-line" id="claimsImpactPct">0% from claims</div>
@@ -1766,6 +1783,10 @@
                     <select id="pricingTemplate">
                         <option value="percentage">%-Based</option>
                         <option value="flat_dollar">$-Based</option>
+                        <optgroup label="Coverage Models">
+                        <option value="full_coverage">Full Coverage (merchant-paid)</option>
+                        <option value="hybrid_coverage">Hybrid Coverage</option>
+                        </optgroup>
                         <optgroup label="Percentage-Based">
                         <option value="p_1.0_0.98">1.0% &middot; Min $0.98</option>
                         <option value="p_1.25_0.98">1.25% &middot; Min $0.98</option>
@@ -2277,22 +2298,57 @@
             return 'percentage';
         }
 
+        // Coverage model helpers: Full = merchant pays 100% (no attach/rev share);
+        // Hybrid = opt-in + merchant covers a % of non-opted (no rev share).
+        function _coverageType(t) {
+            t = t || (document.getElementById('pricingTemplate') || {}).value;
+            return t === 'full_coverage' ? 'full' : t === 'hybrid_coverage' ? 'hybrid' : 'standard';
+        }
+        function toggleHybridRules() {
+            const on = !!(document.getElementById('hybridRulesCheck') || {}).checked;
+            const cov = _coverageType();
+            const show = on && cov === 'hybrid';
+            const mn = document.getElementById('hybridRuleMinGroup'); if (mn) mn.style.display = show ? '' : 'none';
+            const mx = document.getElementById('hybridRuleMaxGroup'); if (mx) mx.style.display = show ? '' : 'none';
+            calculate();
+        }
+        // Persist Hybrid-only inputs (% of non-opted covered + optional cart-$ ruleset)
+        // into a share/save link so full/hybrid calcs round-trip.
+        function _setHybridParams(params) {
+            if (_coverageType() !== 'hybrid') return;
+            const gv = id => ((document.getElementById(id) || {}).value || '').trim();
+            params.set('hyc', removeCommas(gv('hybridCovered')) || '100');
+            if ((document.getElementById('hybridRulesCheck') || {}).checked) {
+                params.set('hyr', '1');
+                const mn = removeCommas(gv('hybridRuleMin')), mx = removeCommas(gv('hybridRuleMax'));
+                if (mn) params.set('hrmin', mn);
+                if (mx) params.set('hrmax', mx);
+            }
+        }
         function toggleProtectionPremiumVisibility() {
             const template = document.getElementById('pricingTemplate').value;
+            const cov = _coverageType(template);
             const premiumGroup = document.getElementById('protectionPremiumGroup');
             const premiumLabel = document.getElementById('protectionPremiumLabel');
-            if (template === 'percentage') {
-                premiumGroup.style.display = 'block';
-                premiumLabel.textContent = 'SI Premium %';
-            } else if (template === 'flat_dollar') {
-                premiumGroup.style.display = 'block';
-                premiumLabel.textContent = 'SI Premium $';
-            } else {
-                premiumGroup.style.display = 'none';
-            }
-            // Min $ floor only applies to %-based pricing.
+            // Full/Hybrid price the premium the %-of-AOV way (with the Min $ floor).
+            const isPct = (template === 'percentage' || cov !== 'standard');
+            if (isPct) { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium %'; }
+            else if (template === 'flat_dollar') { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium $'; }
+            else { premiumGroup.style.display = 'none'; }
+            // Min $ floor applies to %-based pricing (incl. Full/Hybrid).
             const minWrap = document.getElementById('minPremiumWrapper');
-            if (minWrap) minWrap.style.display = (template === 'percentage') ? '' : 'none';
+            if (minWrap) minWrap.style.display = isPct ? '' : 'none';
+            // Attach Rate: hidden for Full (no opt-in); shown for Hybrid + standard.
+            const setDisp = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
+            setDisp('attachRateGroup', cov !== 'full');
+            // Rev Share: hidden for Full and Hybrid (merchant-paid coverage).
+            setDisp('revShareGroup', cov === 'standard');
+            setDisp('secondaryInputsRow', cov === 'standard');
+            // Hybrid-only inputs.
+            setDisp('hybridCoveredGroup', cov === 'hybrid');
+            setDisp('hybridRulesToggleGroup', cov === 'hybrid');
+            if (cov !== 'hybrid') { setDisp('hybridRuleMinGroup', false); setDisp('hybridRuleMaxGroup', false); }
+            else { toggleHybridRules(); }
         }
 
         // ── Currency ─────────────────────────────────────────────────────
@@ -2636,6 +2692,7 @@
             _roApplyAutoPremium();
             const timeframe = document.getElementById('timeframe').value;
             const pricingTemplate = document.getElementById('pricingTemplate').value;
+            const cov = _coverageType(pricingTemplate);   // 'standard' | 'full' | 'hybrid'
             const ordersInput = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             const avgShipping   = parseFloat(removeCommas(document.getElementById('avgShipping').value)) || 0;
@@ -2643,7 +2700,8 @@
             const revenueShare = parseFloat(removeCommas(document.getElementById('revenueShare').value)) / 100 || 0;
             const attachRate = parseFloat(removeCommas(document.getElementById('attachRate').value)) / 100 || 0;
             const protectionPremiumRaw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
-            const protectionPremium = pricingTemplate === 'percentage' ? protectionPremiumRaw / 100 : protectionPremiumRaw;
+            // Full/Hybrid price the premium as %-of-AOV, same as %-Based.
+            const protectionPremium = (pricingTemplate === 'percentage' || cov !== 'standard') ? protectionPremiumRaw / 100 : protectionPremiumRaw;
             const monthlyPlatformCost = parseFloat(removeCommas(document.getElementById('returnsPlatformCost').value)) || 0;
             const cashbackRate        = (parseFloat(removeCommas(document.getElementById('cashbackRate').value)) || 5) / 100;
             const minCashback         = parseFloat(removeCommas(document.getElementById('minCashback').value)) || 5;
@@ -2720,17 +2778,34 @@
                 ? (periodOrders > 0 ? returnsRaw / periodOrders : 0)
                 : returnsRaw / 100;
 
-            const protectedOrders = periodOrders * attachRate;
             // Optional $ floor on %-based pricing (blank = premium is true to the %).
             const minPremiumFloor = parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0;
             let avgPremium;
-            if (pricingTemplate === 'percentage') {
+            if (pricingTemplate === 'percentage' || cov !== 'standard') {
                 avgPremium = Math.max(avgOrderValue * protectionPremium, minPremiumFloor);
             } else if (pricingTemplate === 'flat_dollar') {
                 avgPremium = protectionPremium;
             } else {
                 avgPremium = getTieredPremium(avgOrderValue, pricingTemplate);
             }
+            // Coverage split — which orders are covered and who pays the premium.
+            //  Full   : merchant pays 100% (no opt-in).
+            //  Hybrid : customers opt in (attach); merchant covers a % of the non-opted.
+            //  Standard: only the opted-in orders (customers pay).
+            const _optInOrders = periodOrders * attachRate;
+            let protectedOrders, merchantCoveredOrders;
+            if (cov === 'full') {
+                merchantCoveredOrders = periodOrders;
+                protectedOrders = periodOrders;
+            } else if (cov === 'hybrid') {
+                const _pctNon = (parseFloat(removeCommas((document.getElementById('hybridCovered') || {}).value || '')) || 0) / 100;
+                merchantCoveredOrders = periodOrders * (1 - attachRate) * _pctNon;
+                protectedOrders = _optInOrders + merchantCoveredOrders;
+            } else {
+                merchantCoveredOrders = 0;
+                protectedOrders = _optInOrders;
+            }
+            const merchantPremiumCost = merchantCoveredOrders * avgPremium;
 
             const totalClaims = periodOrders * claimsRate;
             const claimsOffset = protectedOrders * claimsRate;
@@ -2808,10 +2883,15 @@
                 - (guaranteeEnabled ? gSiFundedClaims : 0)
                 - (returnsEnabled  ? siCoveredLabels + siCoveredPlatform : 0)
                 - (cashbackEnabled ? cashbackRedeemed : 0);
-            const revenueShareAmount = _grossRevShare ? premiumPool * revenueShare : Math.max(0, postClaimBalance) * revenueShare;
+            // Full/Hybrid are merchant-paid coverage — no rev share.
+            const revenueShareAmount = (cov !== 'standard') ? 0 : (_grossRevShare ? premiumPool * revenueShare : Math.max(0, postClaimBalance) * revenueShare);
             const claimsExtra = siFundedReships + revenueShareAmount;
 
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
+            // Coverage-model value: claim losses the merchant avoids across covered orders,
+            // minus the premium the merchant itself pays (Full/Hybrid).
+            const coveredClaimLossAvoided = claimsOffset * costPerReship;
+            const netSavings = coveredClaimLossAvoided - merchantPremiumCost;
             const extraRevenue = claimsExtra
                 + (guaranteeEnabled ? gSiFundedClaims   : 0)
                 + (returnsEnabled  ? totalReturnsOffset : 0)
@@ -3078,10 +3158,42 @@
                 cashbackRedeemed, totalCashbackValueTotal, cashbackPct,
                 cashbackRate, minCashback, cashbackRedemptionRate,
                 guaranteeEnabled, gClaimsRate, gAdditionalClaims, gSiFundedClaims,
-                grossRevShare: _grossRevShare
+                grossRevShare: _grossRevShare,
+                coverageType: cov, merchantCoveredOrders, merchantPremiumCost, coveredClaimLossAvoided, netSavings
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
             renderExtraRevenueCard();
+            // ── Full / Hybrid Coverage: recast the outputs as cost-vs-savings ──
+            const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+            const setHtml = (id, h) => { const e = document.getElementById(id); if (e) e.innerHTML = h; };
+            // Reset the coverage relabels to their standard defaults first (so switching
+            // back from Full/Hybrid restores them); the block below re-applies for coverage.
+            setTxt('premiumsMetricLabel', 'Premiums');
+            setTxt('impactLabel', 'Premiums You Keep');
+            { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Extra Revenue With ShipInsure'; }
+            if (cov === 'standard') {
+                const _sub = document.getElementById('revenueImpactSub'); if (_sub) _sub.style.display = 'none';
+                if (!returnsOffsetMode) { ['claimsImpactPct', 'revShareImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ''; }); }
+            }
+            if (cov !== 'standard') {
+                // "Premiums" box → the premium the MERCHANT pays.
+                setTxt('premiumsMetricLabel', 'Premium Cost');
+                setTxt('premiumsPaid', formatCurrency(merchantPremiumCost));
+                { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) _pcb.textContent = ''; }
+                // Hero → Net Savings (claim costs SI covers − premium the merchant pays).
+                setTxt('impactLabel', 'Net Savings With ShipInsure');
+                setTxt('percentOfPremiums', formatCurrency(netSavings));
+                ['claimsImpactPct', 'revShareImpactPct', 'returnsOffsetImpactPct', 'cashbackImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+                { const _sub = document.getElementById('revenueImpactSub'); if (_sub) { _sub.style.display = ''; _sub.textContent = (coveredClaimLossAvoided > 0 ? Math.round((netSavings / coveredClaimLossAvoided) * 100) + '% of covered claim costs saved' : ''); } }
+                { const _psub = document.getElementById('premiumsBadgeSub'); if (_psub) _psub.style.display = 'none'; }
+                // Green card → savings breakdown (no rev share / extra revenue framing).
+                { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Net Savings With ShipInsure'; }
+                setTxt('extraRevenue', formatCurrency(netSavings));
+                setTxt('erValueSub', '(Claim costs covered − premium cost)');
+                setHtml('erBody',
+                    '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;"><span style="color:#6c757d;font-weight:700;">Claim costs covered</span><span style="font-weight:800;color:#28a745;">' + formatCurrency(coveredClaimLossAvoided) + '</span></div>' +
+                    '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;border-top:1px solid #eef0f6;"><span style="color:#6c757d;font-weight:700;">ShipInsure premium cost' + (cov === 'hybrid' ? ' (non-opted)' : '') + '</span><span style="font-weight:800;color:#dc3545;">−' + formatCurrency(merchantPremiumCost) + '</span></div>');
+            }
             renderFlows();
             updateCompactOutputs(returnsEnabled);
             renderUpfrontBubble();
@@ -3179,6 +3291,13 @@
                 if (urlParams.get('minp') !== null) document.getElementById('minPremium').value = urlParams.get('minp');
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
                 document.getElementById('pricingTemplate').value = normalizeTemplate(urlParams.get('template') || 'percentage');
+                // Hybrid Coverage inputs
+                if (urlParams.get('hyc') !== null) { const el = document.getElementById('hybridCovered'); if (el) el.value = urlParams.get('hyc'); }
+                if (urlParams.get('hyr') === '1') {
+                    const chk = document.getElementById('hybridRulesCheck'); if (chk) chk.checked = true;
+                    if (urlParams.get('hrmin') !== null) { const el = document.getElementById('hybridRuleMin'); if (el) el.value = urlParams.get('hrmin'); }
+                    if (urlParams.get('hrmax') !== null) { const el = document.getElementById('hybridRuleMax'); if (el) el.value = urlParams.get('hrmax'); }
+                }
                 if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
                 if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 if (urlParams.get('cr')) setClaimResolution(urlParams.get('cr'));
@@ -3284,7 +3403,7 @@
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             let avgPremiumValue = 0;
-            if (pricingTemplate === 'percentage') {
+            if (pricingTemplate === 'percentage' || _coverageType(pricingTemplate) !== 'standard') {
                 const pp = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
                 avgPremiumValue = Math.max(avgOrderValue * pp, parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0);
             } else if (pricingTemplate === 'flat_dollar') {
@@ -3346,6 +3465,7 @@
             // Hide Current Cost / Gross Rev Share toggles
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
+            _setHybridParams(params);
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
             // Carry the Project Midnight theme through to the merchant view.
             if (document.body.classList.contains('theme-midnight')) params.set('theme', 'midnight');
@@ -3368,7 +3488,7 @@
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             let avgPremiumValue = 0;
-            if (pricingTemplate === 'percentage') {
+            if (pricingTemplate === 'percentage' || _coverageType(pricingTemplate) !== 'standard') {
                 const pp = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) / 100 || 0;
                 avgPremiumValue = Math.max(avgOrderValue * pp, parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0);
             } else if (pricingTemplate === 'flat_dollar') {
@@ -3429,6 +3549,7 @@
             // Hide Current Cost / Gross Rev Share toggles
             if (_hideCurrentCost) params.set('hcc', '1');
             if (_grossRevShare)   params.set('grs', '1');
+            _setHybridParams(params);
             if (SI_CURRENCY !== 'USD') params.set('cur', SI_CURRENCY);
             // Carry the Project Midnight theme through to the merchant view.
             if (document.body.classList.contains('theme-midnight')) params.set('theme', 'midnight');
