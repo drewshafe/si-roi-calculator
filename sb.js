@@ -59,6 +59,7 @@
       updated_by: 'rep', updated_at: new Date().toISOString()
     };
     if (cfg.logoUrl != null) row.logo_path = cfg.logoUrl;
+    if (cfg.merchant_ref != null) row.merchant_ref = cfg.merchant_ref;
     const q = c.from('configs');
     const res = cfg.id
       ? await q.update(row).eq('id', cfg.id).select('id, edit_token').single()
@@ -69,15 +70,48 @@
   async function loadConfig(id) {
     const c = await client();
     const { data, error } = await c.from('configs')
-      .select('id, merchant, kind, title, data, logo_path, updated_by, updated_at').eq('id', id).single();
+      .select('id, merchant, merchant_ref, kind, title, data, logo_path, updated_by, updated_at').eq('id', id).single();
     if (error) throw error;
     return data;
   }
   async function listConfigs() {
     const c = await client();
     const { data, error } = await c.from('configs')
-      .select('id, merchant, kind, title, logo_path, updated_by, updated_at')
+      .select('id, merchant, merchant_ref, kind, title, logo_path, updated_by, updated_at')
       .order('merchant', { ascending: true }).order('updated_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ── Merchants (folder-level branding; single source for all scenarios) ──
+  // bld = cfg() output (for rendering), cb = cbSnapshot() (for editing), logo in storage.
+  async function saveMerchant(m) {
+    const c = await client();
+    const row = { name: m.name || '', bld: m.bld || {}, cb: m.cb || {}, updated_at: new Date().toISOString() };
+    if (m.logoUrl != null) row.logo_path = m.logoUrl;
+    let id = m.id;
+    if (!id && m.name) { const ex = await getMerchantByName(m.name); if (ex) id = ex.id; }
+    const q = c.from('merchants');
+    const res = id ? await q.update(row).eq('id', id).select('id').single()
+                   : await q.insert(row).select('id').single();
+    if (res.error) throw res.error;
+    return res.data;
+  }
+  async function getMerchant(id) {
+    const c = await client();
+    const { data, error } = await c.from('merchants').select('id, name, bld, cb, logo_path, updated_at').eq('id', id).single();
+    if (error) throw error;
+    return data;
+  }
+  async function getMerchantByName(name) {
+    const c = await client();
+    const { data, error } = await c.from('merchants').select('id, name, bld, cb, logo_path').ilike('name', name).limit(1);
+    if (error) throw error;
+    return (data && data[0]) || null;
+  }
+  async function listMerchants() {
+    const c = await client();
+    const { data, error } = await c.from('merchants').select('id, name, logo_path, updated_at').order('name', { ascending: true });
     if (error) throw error;
     return data || [];
   }
@@ -92,6 +126,7 @@
 
   window.SIsb = {
     URL: SB_URL, client, currentUser, signInMagic, signOut,
-    uploadLogo, saveConfig, loadConfig, listConfigs, updateByToken, deleteConfig
+    uploadLogo, saveConfig, loadConfig, listConfigs, updateByToken, deleteConfig,
+    saveMerchant, getMerchant, getMerchantByName, listMerchants
   };
 })();

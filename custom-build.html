@@ -93,7 +93,8 @@
       <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
       <button class="cb-btn ghost" id="loadBase">Load</button>
       <button class="cb-btn" id="copyLink">📋 Copy Custom Link</button>
-      <button class="cb-btn" id="cloudSaveBtn" title="Save to your cloud folder; logo uploaded to storage so the link stays short">☁ Cloud Save</button>
+      <button class="cb-btn" id="cloudSaveBtn" title="Save this scenario to the merchant's cloud folder (updates it if already saved)">☁ Cloud Save</button>
+      <button class="cb-btn" id="cloudSaveNewBtn" title="Save as a NEW scenario under the same merchant (e.g. Protection + Returns)">☁ Save as New</button>
     </div>
   </header>
   <main>
@@ -801,9 +802,27 @@
     alert('Magic link sent to ' + email.trim() + '.\nOpen it (same browser), then click the button again.');
     return null;
   }
-  let _cbCloudId = null;
+  let _cbCloudId = null;     // the scenario (config) being edited
+  let _cbMerchantId = null;  // the merchant folder this build belongs to
+  // Name a scenario from its plan options so a merchant folder can hold several.
+  function _scenarioLabel(params) {
+    const p = new URLSearchParams(params || '');
+    if (p.get('rom') === '1') return 'No Protection (Returns)';
+    let s = 'Protection';
+    if (p.get('re') === '1') s += ' + Returns';
+    if (p.get('cbe') === '1') s += ' + Cashback';
+    return s;
+  }
+  // Does the current build carry real branding (vs. plain defaults)? Guards against
+  // a bare scenario save wiping an existing merchant folder's branding.
+  function _cbHasBranding() {
+    return _accent2Set || !!_logoImg || !!$('logoUrl').value.trim() || !!$('bannerUrl').value.trim()
+      || _ibgMode !== 'default' || ($('accentHex').value || '').toLowerCase() !== '#6675ff'
+      || (Array.isArray(layout) && layout.some(l => l.style));
+  }
   // Shared by ☁ Cloud Save and by Copy Custom Link (when a logo image is embedded):
-  // sign in, upload the logo to storage, save the config, and copy a short ?id= link.
+  // sign in, upsert the MERCHANT folder branding (single source), save this SCENARIO
+  // (params only) referencing it, and copy a short ?id= link.
   async function cbCloudSaveAndCopy(btn, restoreLabel) {
     if (!window.SIsb) { alert('Cloud module not loaded.'); return; }
     const old = restoreLabel || btn.textContent;
@@ -816,12 +835,19 @@
       if (!u) { btn.textContent = old; return; }
       let logoUrl;
       if (_logoImg) { try { logoUrl = await SIsb.uploadLogo(_logoImg); } catch (e) { alert('Logo upload failed: ' + e.message); btn.textContent = old; return; } }
-      // Store the exact editor snapshot too, so Custom Build can re-open this config
-      // fully branded (the bld param alone can't be reversed into the gradient/input
-      // stylers). Strip the inline logo data URL — the logo lives in storage.
-      const _snap = cbSnapshot(); if (_snap.branding) _snap.branding.logoImg = '';
-      const data = { q: baseParams + '&bld=' + encodeURIComponent(JSON.stringify(cfg())), hash: '', cb: _snap };
-      const res = await SIsb.saveConfig({ id: _cbCloudId || undefined, merchant: merchant, kind: 'proposal', title: merchant, data: data, logoUrl: logoUrl });
+      // 1) Merchant folder branding (single source for all its scenarios).
+      const _mkSnap = () => { const s = cbSnapshot(); if (s.branding) s.branding.logoImg = ''; return s; };
+      let mrow;
+      if (_cbHasBranding()) {
+        mrow = await SIsb.saveMerchant({ id: _cbMerchantId || undefined, name: merchant, bld: cfg(), cb: _mkSnap(), logoUrl: logoUrl });
+      } else {
+        // No real branding in this build — don't overwrite an existing folder's branding.
+        mrow = (await SIsb.getMerchantByName(merchant)) || await SIsb.saveMerchant({ name: merchant, bld: cfg(), cb: _mkSnap(), logoUrl: logoUrl });
+      }
+      _cbMerchantId = mrow.id;
+      // 2) This scenario: params only — branding comes from the merchant folder.
+      const data = { q: baseParams, hash: '' };
+      const res = await SIsb.saveConfig({ id: _cbCloudId || undefined, merchant: merchant, merchant_ref: mrow.id, kind: 'proposal', title: _scenarioLabel(baseParams), data: data });
       _cbCloudId = res.id;
       const link = proposalBase() + '?id=' + res.id + '&t=' + res.edit_token;
       try { await navigator.clipboard.writeText(link); } catch (e) {}
@@ -834,6 +860,9 @@
     }
   }
   $('cloudSaveBtn').addEventListener('click', () => cbCloudSaveAndCopy($('cloudSaveBtn'), '☁ Cloud Save'));
+  // Save as a NEW scenario under the same merchant folder (keeps the merchant + its
+  // branding; creates a fresh config for this plan).
+  $('cloudSaveNewBtn').addEventListener('click', () => { _cbCloudId = null; cbCloudSaveAndCopy($('cloudSaveNewBtn'), '☁ Save as New'); });
 
   // Seed from an incoming ?base= or existing query (lets the hub pass the current link)
   // Best-effort branding snapshot from a bld param (for configs saved before we
@@ -869,12 +898,18 @@
         const row = await SIsb.loadConfig(id);
         const d = (row && row.data) || {};
         const ps = new URLSearchParams(d.q || '');
-        const snap = d.cb || _snapFromBld(ps.get('bld'));
-        ps.delete('bld');
+        const bldRaw = ps.get('bld'); ps.delete('bld');
         baseParams = ps.toString() || DEFAULT_BASE;
         $('baseLink').value = proposalBase() + '?' + baseParams;
+        // Prefer the MERCHANT folder's branding (single source); fall back to any
+        // branding stored on the config itself (older / non-merchant configs).
+        let snap = null, logo = row.logo_path;
+        if (row.merchant_ref) {
+          try { const m = await SIsb.getMerchant(row.merchant_ref); if (m) { snap = m.cb; logo = m.logo_path; _cbMerchantId = m.id; } } catch (e) {}
+        }
+        if (!snap) snap = d.cb || _snapFromBld(bldRaw);
         if (snap) cbRestore(snap, true);
-        if (row.logo_path) { _logoImg = row.logo_path; _renderLogoThumb(); }
+        if (logo) { _logoImg = logo; _renderLogoThumb(); }
         _cbCloudId = id;
         refresh(true);
         return;
