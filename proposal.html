@@ -978,11 +978,11 @@
                         <label for="p-premium" id="p-premium-label">SI Premium %</label>
                         <input type="text" id="p-premium" placeholder="3.00" value="3.00">
                     </div>
-                    <div class="field-group">
+                    <div class="field-group" id="p-attach-group">
                         <label for="p-attach">Attach Rate %</label>
                         <input type="text" id="p-attach" placeholder="68" value="68">
                     </div>
-                    <div class="field-group">
+                    <div class="field-group" id="p-share-group">
                         <label for="p-share" id="p-share-label">Revenue Share %</label>
                         <input type="text" id="p-share" placeholder="25" value="25">
                     </div>
@@ -1071,6 +1071,8 @@
             <select id="p-template" style="display:none;">
                 <option value="percentage">%-Based</option>
                 <option value="flat_dollar">$-Based</option>
+                <option value="full_coverage">Full Coverage</option>
+                <option value="hybrid_coverage">Hybrid Coverage</option>
                         <optgroup label="Percentage-Based">
                         <option value="p_1.0_0.98">1.0% &middot; Min $0.98</option>
                         <option value="p_1.25_0.98">1.25% &middot; Min $0.98</option>
@@ -1222,7 +1224,7 @@
                 </div>
                 <!-- 3. Premiums -->
                 <div class="key-metric-pill">
-                    <div class="kmp-label">Premiums</div>
+                    <div class="kmp-label" id="p-premiumsLabel">Premiums</div>
                     <div class="kmp-value" id="r-totalPremiums">$0</div>
                 </div>
                 <!-- 4. Protected (dual) / Covered -->
@@ -1270,7 +1272,7 @@
             <div class="result-cards-row" id="resultCardsRow">
                 <!-- Revenue card -->
                 <div class="result-card-positive">
-                    <div class="rc-label">Extra Revenue With ShipInsure</div>
+                    <div class="rc-label" id="p-erLabel">Extra Revenue With ShipInsure</div>
                     <div id="p-erBody"></div>
                     <div id="p-erLegacy" style="display:none;">
                     <div class="rc-metrics">
@@ -1805,14 +1807,19 @@
         // ── Template visibility ────────────────────────────────────────────────
         function updatePremiumVisibility() {
             const template = document.getElementById('p-template').value;
+            const cov = template === 'full_coverage' ? 'full' : template === 'hybrid_coverage' ? 'hybrid' : 'standard';
             const wrap = document.getElementById('p-premium-wrap');
             const lbl = document.getElementById('p-premium-label');
-            if (template === 'percentage' || template === 'flat_dollar') {
+            if (template === 'percentage' || template === 'flat_dollar' || cov !== 'standard') {
                 wrap.classList.add('visible');
                 lbl.textContent = template === 'flat_dollar' ? 'SI Premium $' : 'SI Premium %';
             } else {
                 wrap.classList.remove('visible');
             }
+            // Coverage models are merchant-paid: hide Attach (Full) and Rev Share (Full+Hybrid).
+            const sd = (id, show) => { const e = document.getElementById(id); if (e) e.style.display = show ? '' : 'none'; };
+            sd('p-attach-group', cov !== 'full');
+            sd('p-share-group', cov === 'standard');
         }
 
         // ── Returns Offset mode (merchant view) ──────────────────────────────────
@@ -1898,6 +1905,12 @@
             const revenueShare   = (parseFloat(removeCommas(document.getElementById('p-share').value)) || 25) / 100;
             const attachRate     = (parseFloat(removeCommas(document.getElementById('p-attach').value)) || 68) / 100;
             const template       = document.getElementById('p-template').value;
+            // Coverage models (Full / Hybrid) — merchant-paid, time-savings focus.
+            const pCov = template === 'full_coverage' ? 'full' : template === 'hybrid_coverage' ? 'hybrid' : 'standard';
+            const _tsHandle  = parseFloat(removeCommas(urlParams.get('ht') || '')) || 7;
+            const _tsAgent   = parseFloat(removeCommas(urlParams.get('ar') || '')) || 25;
+            const _tsDeflect = (parseFloat(removeCommas(urlParams.get('df') || '')) || 62) / 100;
+            const _hyc       = (urlParams.get('hyc') !== null ? (parseFloat(removeCommas(urlParams.get('hyc'))) || 0) : 100) / 100;
             const premiumRaw     = parseFloat(removeCommas(document.getElementById('p-premium').value)) || 3;
             const cogsRaw        = parseFloat(removeCommas(document.getElementById('p-cogs').value)) || 0;
             const claimsRaw      = parseFloat(removeCommas(document.getElementById('p-claims').value)) || 0;
@@ -1933,7 +1946,7 @@
             // Premium per order (%-based pricing can carry a $ floor via the minp param)
             const _minPremiumFloor = parseFloat((new URLSearchParams(window.location.search).get('minp')) || '') || 0;
             let avgPremium = 0;
-            if (template === 'percentage') {
+            if (template === 'percentage' || pCov !== 'standard') {
                 avgPremium = Math.max(avgOrderValue * (premiumRaw / 100), _minPremiumFloor);
             } else if (template === 'flat_dollar') {
                 avgPremium = premiumRaw;
@@ -1942,17 +1955,30 @@
             }
             _cashbackPerOrderCached = 0;
 
-            const protectedOrders  = periodOrders * attachRate;
+            // Coverage split: who is covered + who pays. For coverage models the per-claim
+            // CS cost is DERIVED from handle-time × agent-rate (Avg Ticket Cost is retired).
+            const csPerTicket = (pCov !== 'standard') ? (_tsHandle / 60) * _tsAgent : csCostPerClaim;
+            const _optIn = periodOrders * attachRate;
+            let protectedOrders, merchantCoveredOrders;
+            if (pCov === 'full') { merchantCoveredOrders = periodOrders; protectedOrders = periodOrders; }
+            else if (pCov === 'hybrid') { merchantCoveredOrders = periodOrders * (1 - attachRate) * _hyc; protectedOrders = _optIn + merchantCoveredOrders; }
+            else { merchantCoveredOrders = 0; protectedOrders = _optIn; }
+            const merchantPremiumCost = merchantCoveredOrders * avgPremium;
             const totalClaims      = periodOrders * claimsRate;
             const claimsOffset     = protectedOrders * claimsRate;
-            const costPerReship    = (avgOrderValue * cogsPercent) + avgShipping + csCostPerClaim;
-            const csShippingCost   = totalClaims * (csCostPerClaim + avgShipping);
+            const costPerReship    = (avgOrderValue * cogsPercent) + avgShipping + csPerTicket;
+            const csShippingCost   = totalClaims * (csPerTicket + avgShipping);
             const cogsAmount       = totalClaims * (avgOrderValue * cogsPercent);
             const lostRevenue      = csShippingCost + cogsAmount;
             const premiumPool      = protectedOrders * avgPremium;
 
             const siClaimValue     = p_claimResolution === 'cogs' ? costPerReship : avgOrderValue;
             const siFundedReships  = claimsOffset * siClaimValue;
+            // Coverage-model figures (time savings + cost).
+            const coveredClaimLossAvoided = claimsOffset * costPerReship;
+            const deflectedTickets = claimsOffset * _tsDeflect;
+            const agentHoursFreed  = deflectedTickets * (_tsHandle / 60);
+            const csLaborSaved     = agentHoursFreed * _tsAgent;
 
             // Returns
             let totalReturns = 0, returnLabelsCostTotal = 0, totalReturnsCost = 0;
@@ -2018,7 +2044,7 @@
                 - (p_guaranteeEnabled ? gSiFundedClaims : 0)
                 - (p_returnsEnabled   ? siCoveredLabels + siCoveredPlatform : 0)
                 - (p_cashbackEnabled  ? cashbackRedeemed : 0);
-            let revenueShareAmount = p_grossRevShare ? premiumPool * revenueShare : Math.max(0, postClaimBalance) * revenueShare;
+            let revenueShareAmount = (pCov !== 'standard') ? 0 : (p_grossRevShare ? premiumPool * revenueShare : Math.max(0, postClaimBalance) * revenueShare);
 
             let totalLost     = lostRevenue + (p_returnsEnabled ? totalReturnsCost : 0);
             let extraRevenue  = siFundedReships + revenueShareAmount
@@ -2059,6 +2085,12 @@
                 _heroSubEl.textContent = fmtDollar(extraRevenue) + ' per ' + periodLabel;
                 _heroSubEl.style.display = window._cbHeroSubHidden ? 'none' : '';
             }
+            // Coverage models: hero = agent hours back (time savings), not "premiums kept".
+            if (pCov !== 'standard') {
+                document.getElementById('heroLabel').textContent = 'Agent Hours Back / ' + (viewMode === 'annual' ? 'yr' : 'mo');
+                document.getElementById('heroValue').innerHTML = (Math.round(agentHoursFreed * 10) / 10).toLocaleString('en-US') + ' hrs';
+                if (_heroSubEl) { _heroSubEl.textContent = fmtNum(Math.round(deflectedTickets)) + ' tickets deflected · ' + fmtDollar(csLaborSaved) + ' CS labor saved'; _heroSubEl.style.display = window._cbHeroSubHidden ? 'none' : ''; }
+            }
             const _setPct = (id, txt, show) => { const el = document.getElementById(id); if (el) { el.textContent = txt; el.style.display = show ? '' : 'none'; } };
             if (p_returnsOffsetMode) {
                 _setPct('p-claimsImpactPct', '', false);
@@ -2071,6 +2103,8 @@
                 _setPct('p-returnsOffsetImpactPct', _returnsPctH.toFixed(1) + '% from returns', p_returnsEnabled);
                 _setPct('p-cashbackImpactPct', _cashbackPctH.toFixed(1) + '% from cashback', p_cashbackEnabled);
             }
+            // Coverage models: no "% from claims / rev share" breakdown bubbles.
+            if (pCov !== 'standard') { ['p-claimsImpactPct', 'p-revShareImpactPct', 'p-returnsOffsetImpactPct', 'p-cashbackImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); }
 
             // Cost card
             if (p_hideCurrentCost) {
@@ -2229,7 +2263,15 @@
                 cogsP: cogsPercent,
                 claimsP: claimsRate,
                 avgShipping: avgShipping,
-                csPerClaim: csCostPerClaim,
+                csPerClaim: csPerTicket,
+                coverageType: pCov,
+                merchantCoveredOrders: merchantCoveredOrders,
+                merchantPremiumCost: merchantPremiumCost,
+                coveredClaimLossAvoided: coveredClaimLossAvoided,
+                deflectedTickets: deflectedTickets,
+                agentHoursFreed: agentHoursFreed,
+                csLaborSaved: csLaborSaved,
+                tsHandleMin: _tsHandle, tsAgentRate: _tsAgent,
                 attachP: attachRate,
                 avgPremium: avgPremium,
                 revShareP: revenueShare,
@@ -2302,6 +2344,23 @@
             const d = _p_bd; if (!d.ready) return;
             const el = document.getElementById('p-erBody'); if (!el) return;
             const fc = v => fmtDollar(v);
+            // Coverage models (Full/Hybrid): time & cost saved, not extra revenue.
+            const _erLbl = document.getElementById('p-erLabel');
+            if (d.coverageType && d.coverageType !== 'standard') {
+                if (_erLbl) _erLbl.textContent = 'Time & Cost Saved With ShipInsure';
+                const fH = h => (Math.round(h * 10) / 10).toLocaleString('en-US') + ' hrs';
+                const _pw = (window._urlView === 'annual') ? 'year' : 'month';
+                const _net = (d.merchantPremiumCost || 0) - (d.csLaborSaved || 0);
+                const rowH = (k, v, col) => `<div class="er-line"><span class="er-k">${k}</span><span class="er-v"${col ? ' style="color:' + col + '"' : ''}>${v}</span></div>`;
+                el.innerHTML =
+                    `<div class="er-value-row"><div class="rc-total positive" id="r-extraRevenue">${fH(d.agentHoursFreed || 0)}</div><div class="er-value-sub">agent hours freed / ${_pw}</div></div>` +
+                    rowH('Shipping tickets deflected', fmtNum(Math.round(d.deflectedTickets || 0))) +
+                    rowH('CS labor saved', fc(d.csLaborSaved || 0)) +
+                    rowH('Claim costs covered', fc(d.coveredClaimLossAvoided || 0)) +
+                    rowH('Net premium cost (after CS labor saved)' + (d.coverageType === 'hybrid' ? ', non-opted' : ''), (_net < 0 ? '+' : '−') + fc(Math.abs(_net)), _net < 0 ? '#1f9d63' : '#dc3545');
+                return;
+            }
+            if (_erLbl) _erLbl.textContent = 'Extra Revenue With ShipInsure';
             const revShare = d.revenueShareAmount || 0;
             const claims = d.siFundedReships || 0;
             const returnsOffset = d.returnsEnabled ? (d.totalReturnsOffset || 0) : 0;
@@ -2342,6 +2401,35 @@
             const cov = d.returnsCoverage;
             const nb = v => fmtNum(Math.round(v || 0));
             const svp = (el, show) => { if (el) el.style.display = show ? '' : 'none'; };
+
+            // Coverage models (Full/Hybrid): Volume(Claims) · Avg Premium · Premium Cost ·
+            // Covered(Orders/Claims) · Tickets Deflected — Post-Claim hidden.
+            if (d.coverageType && d.coverageType !== 'standard') {
+                const covF = d.coverageType;
+                svp(document.getElementById('p-volumePill'), true);
+                { const v = document.getElementById('p-volumeLabel'); if (v) v.textContent = (window._urlView === 'annual') ? 'Annual' : 'Monthly'; }
+                { const v = document.getElementById('p-volumeClaims'); if (v) v.textContent = nb(d.totalClaims); }
+                svp(document.getElementById('p-volumeReturnsRow'), false);
+                { const l = document.getElementById('p-premiumsLabel'); if (l) l.textContent = 'Premium Cost'; }
+                { const v = document.getElementById('r-totalPremiums'); if (v) v.textContent = fmtDollar(d.merchantPremiumCost || 0); }
+                svp(document.getElementById('p-ordersPill'), covF === 'hybrid');
+                if (covF === 'hybrid') {
+                    { const l = document.getElementById('r-protectedOrdersLabel'); if (l) l.textContent = 'Opt-in Orders'; }
+                    { const v = document.getElementById('r-protectedOrders'); if (v) v.textContent = nb((d.orders || 0) * (d.attachP || 0)); }
+                    { const a = document.getElementById('r-attachRate'); if (a) a.textContent = Math.round((d.attachP || 0) * 100) + '% attach rate'; }
+                }
+                { const l = document.getElementById('r-protectedDualLabel'); if (l) l.textContent = 'Covered'; }
+                { const v = document.getElementById('r-protectedDualValue'); if (v) v.textContent = nb(d.protectedOrders) + ' / ' + nb(d.protectedClaims); }
+                { const s = document.getElementById('r-protectedDualSub'); if (s) { s.textContent = 'Orders / Claims'; s.style.display = ''; } }
+                svp(document.getElementById('p-siFundedPill'), true);
+                { const l = document.querySelector('#p-siFundedPill .kmp-label'); if (l) l.textContent = 'Tickets Deflected'; }
+                { const pks = document.querySelectorAll('#p-siFundedPill .kmp-pk'); if (pks[0]) pks[0].textContent = 'Deflected →'; if (pks[1]) pks[1].textContent = 'Hours →'; }
+                { const t = document.getElementById('p-siFundedTotal'); if (t) t.textContent = nb(d.deflectedTickets); }
+                { const a = document.getElementById('p-siFundedAvg'); if (a) a.textContent = (Math.round((d.agentHoursFreed || 0) * 10) / 10).toLocaleString('en-US'); }
+                { const bl = document.getElementById('r-balanceLabel'); const pill = bl && bl.closest('.key-metric-pill'); if (pill) pill.style.display = 'none'; }
+                return;
+            }
+            { const bl = document.getElementById('r-balanceLabel'); const pill = bl && bl.closest('.key-metric-pill'); if (pill) pill.style.display = ''; }
 
             // Protection-only (no returns, no offset) mirrors the rep calc's combined
             // strip: Volume(Claims) · Avg Premium · Premiums · Protected(Orders/Claims)
