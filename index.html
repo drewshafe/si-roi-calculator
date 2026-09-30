@@ -3216,12 +3216,14 @@
             }
             if (cov !== 'standard') {
                 const fH = h => (Math.round(h * 10) / 10).toLocaleString('en-US') + ' hrs';
+                const _perAbbr = (timeframe === 'annual') ? 'yr' : 'mo';
+                const _perWord = (timeframe === 'annual') ? 'year' : 'month';
                 // "Premiums" box → the premium the MERCHANT pays.
                 setTxt('premiumsMetricLabel', 'Premium Cost');
                 setTxt('premiumsPaid', formatCurrency(merchantPremiumCost));
                 { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) _pcb.textContent = ''; }
                 // Hero → Time savings: agent hours freed by ticket deflection.
-                setTxt('impactLabel', 'Agent Hours Back / mo');
+                setTxt('impactLabel', 'Agent Hours Back / ' + _perAbbr);
                 setTxt('percentOfPremiums', fH(agentHoursFreed));
                 ['claimsImpactPct', 'revShareImpactPct', 'returnsOffsetImpactPct', 'cashbackImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
                 { const _sub = document.getElementById('revenueImpactSub'); if (_sub) { _sub.style.display = ''; _sub.textContent = formatNumber(Math.round(deflectedTickets)) + ' tickets deflected · ' + formatCurrency(csLaborSaved) + ' CS labor saved'; } }
@@ -3229,13 +3231,16 @@
                 // Green card → time & cost saved (operational value is the focus).
                 { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Time & Cost Saved With ShipInsure'; }
                 setTxt('extraRevenue', fH(agentHoursFreed));
-                setTxt('erValueSub', 'agent hours freed / month');
+                setTxt('erValueSub', 'agent hours freed / ' + _perWord);
                 const _row = (k, v, col) => '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;border-top:1px solid #eef0f6;"><span style="color:#6c757d;font-weight:700;">' + k + '</span><span style="font-weight:800;color:' + (col || '#1f2430') + ';">' + v + '</span></div>';
+                // Premium cost is already in the output pills; here show the NET cost after
+                // the CS labor it saves (effective out-of-pocket).
+                const _netCost = merchantPremiumCost - csLaborSaved;
                 setHtml('erBody',
                     _row('Shipping tickets deflected', formatNumber(Math.round(deflectedTickets)), '#4a5fc1') +
                     _row('CS labor saved', formatCurrency(csLaborSaved), '#28a745') +
                     _row('Claim costs covered', formatCurrency(coveredClaimLossAvoided), '#28a745') +
-                    _row('ShipInsure premium cost' + (cov === 'hybrid' ? ' (non-opted)' : ''), '−' + formatCurrency(merchantPremiumCost), '#dc3545'));
+                    _row('Net premium cost (after CS labor saved)' + (cov === 'hybrid' ? ', non-opted' : ''), (_netCost < 0 ? '+' : '−') + formatCurrency(Math.abs(_netCost)), _netCost < 0 ? '#28a745' : '#dc3545'));
             }
             renderFlows();
             updateCompactOutputs(returnsEnabled);
