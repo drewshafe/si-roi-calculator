@@ -1332,6 +1332,21 @@
                     <input type="text" id="revenueShare" placeholder="0">
                 </div>
             </div>
+            <!-- Time Savings (Full / Hybrid Coverage): CS-ticket deflection → agent hours freed -->
+            <div class="inputs-row" id="timeSavingsRow" style="display:none;">
+                <div class="input-group">
+                    <label for="tsHandleTime" title="Avg minutes an agent spends resolving one shipping ticket end-to-end (Gorgias benchmark ~7 min)">Handle Time (min)</label>
+                    <input type="text" id="tsHandleTime" placeholder="7" value="7" oninput="calculate()">
+                </div>
+                <div class="input-group">
+                    <label for="tsAgentRate" title="Fully-loaded agent cost per hour (salary + overhead + tooling; ~$25)">Agent $/hr</label>
+                    <input type="text" id="tsAgentRate" placeholder="25" value="25" oninput="calculate()">
+                </div>
+                <div class="input-group">
+                    <label for="tsDeflectPct" title="% of shipping tickets ShipInsure deflects before they reach support (self-service claims portal; ~62%)">Ticket Deflection %</label>
+                    <input type="text" id="tsDeflectPct" placeholder="62" value="62" oninput="calculate()">
+                </div>
+            </div>
 
             <div id="returnsInputs" class="returns-section">
                 <div id="returnsRateGroup" class="input-group returns">
@@ -2315,14 +2330,21 @@
         // Persist Hybrid-only inputs (% of non-opted covered + optional cart-$ ruleset)
         // into a share/save link so full/hybrid calcs round-trip.
         function _setHybridParams(params) {
-            if (_coverageType() !== 'hybrid') return;
+            const cov = _coverageType();
+            if (cov === 'standard') return;
             const gv = id => ((document.getElementById(id) || {}).value || '').trim();
-            params.set('hyc', removeCommas(gv('hybridCovered')) || '100');
-            if ((document.getElementById('hybridRulesCheck') || {}).checked) {
-                params.set('hyr', '1');
-                const mn = removeCommas(gv('hybridRuleMin')), mx = removeCommas(gv('hybridRuleMax'));
-                if (mn) params.set('hrmin', mn);
-                if (mx) params.set('hrmax', mx);
+            // Time-savings inputs (Full + Hybrid).
+            if (gv('tsHandleTime')) params.set('ht', removeCommas(gv('tsHandleTime')));
+            if (gv('tsAgentRate')) params.set('ar', removeCommas(gv('tsAgentRate')));
+            if (gv('tsDeflectPct')) params.set('df', removeCommas(gv('tsDeflectPct')));
+            if (cov === 'hybrid') {
+                params.set('hyc', removeCommas(gv('hybridCovered')) || '100');
+                if ((document.getElementById('hybridRulesCheck') || {}).checked) {
+                    params.set('hyr', '1');
+                    const mn = removeCommas(gv('hybridRuleMin')), mx = removeCommas(gv('hybridRuleMax'));
+                    if (mn) params.set('hrmin', mn);
+                    if (mx) params.set('hrmax', mx);
+                }
             }
         }
         function toggleProtectionPremiumVisibility() {
@@ -2344,6 +2366,8 @@
             // Rev Share: hidden for Full and Hybrid (merchant-paid coverage).
             setDisp('revShareGroup', cov === 'standard');
             setDisp('secondaryInputsRow', cov === 'standard');
+            // Time-savings inputs (ticket deflection → agent hours) for Full/Hybrid.
+            setDisp('timeSavingsRow', cov !== 'standard');
             // Hybrid-only inputs.
             setDisp('hybridCoveredGroup', cov === 'hybrid');
             setDisp('hybridRulesToggleGroup', cov === 'hybrid');
@@ -2892,6 +2916,14 @@
             // minus the premium the merchant itself pays (Full/Hybrid).
             const coveredClaimLossAvoided = claimsOffset * costPerReship;
             const netSavings = coveredClaimLossAvoided - merchantPremiumCost;
+            // Time savings (Full/Hybrid focus): ShipInsure's self-service claims portal
+            // deflects shipping tickets before they reach CS → agent hours freed → labor $.
+            const tsHandleMin = parseFloat(removeCommas((document.getElementById('tsHandleTime') || {}).value || '')) || 0;
+            const tsAgentRate = parseFloat(removeCommas((document.getElementById('tsAgentRate') || {}).value || '')) || 0;
+            const tsDeflect   = (parseFloat(removeCommas((document.getElementById('tsDeflectPct') || {}).value || '')) || 0) / 100;
+            const deflectedTickets = claimsOffset * tsDeflect;
+            const agentHoursFreed  = deflectedTickets * (tsHandleMin / 60);
+            const csLaborSaved     = agentHoursFreed * tsAgentRate;
             const extraRevenue = claimsExtra
                 + (guaranteeEnabled ? gSiFundedClaims   : 0)
                 + (returnsEnabled  ? totalReturnsOffset : 0)
@@ -3159,7 +3191,8 @@
                 cashbackRate, minCashback, cashbackRedemptionRate,
                 guaranteeEnabled, gClaimsRate, gAdditionalClaims, gSiFundedClaims,
                 grossRevShare: _grossRevShare,
-                coverageType: cov, merchantCoveredOrders, merchantPremiumCost, coveredClaimLossAvoided, netSavings
+                coverageType: cov, merchantCoveredOrders, merchantPremiumCost, coveredClaimLossAvoided, netSavings,
+                deflectedTickets, agentHoursFreed, csLaborSaved, tsHandleMin, tsAgentRate
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
             renderExtraRevenueCard();
@@ -3171,28 +3204,33 @@
             setTxt('premiumsMetricLabel', 'Premiums');
             setTxt('impactLabel', 'Premiums You Keep');
             { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Extra Revenue With ShipInsure'; }
+            { const _pm = document.getElementById('postClaimMetric'); if (_pm) _pm.style.display = (cov === 'standard' ? '' : 'none'); }  // Post-Claim Balance not used for coverage models
             if (cov === 'standard') {
                 const _sub = document.getElementById('revenueImpactSub'); if (_sub) _sub.style.display = 'none';
                 if (!returnsOffsetMode) { ['claimsImpactPct', 'revShareImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ''; }); }
             }
             if (cov !== 'standard') {
+                const fH = h => (Math.round(h * 10) / 10).toLocaleString('en-US') + ' hrs';
                 // "Premiums" box → the premium the MERCHANT pays.
                 setTxt('premiumsMetricLabel', 'Premium Cost');
                 setTxt('premiumsPaid', formatCurrency(merchantPremiumCost));
                 { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) _pcb.textContent = ''; }
-                // Hero → Net Savings (claim costs SI covers − premium the merchant pays).
-                setTxt('impactLabel', 'Net Savings With ShipInsure');
-                setTxt('percentOfPremiums', formatCurrency(netSavings));
+                // Hero → Time savings: agent hours freed by ticket deflection.
+                setTxt('impactLabel', 'Agent Hours Back / mo');
+                setTxt('percentOfPremiums', fH(agentHoursFreed));
                 ['claimsImpactPct', 'revShareImpactPct', 'returnsOffsetImpactPct', 'cashbackImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
-                { const _sub = document.getElementById('revenueImpactSub'); if (_sub) { _sub.style.display = ''; _sub.textContent = (coveredClaimLossAvoided > 0 ? Math.round((netSavings / coveredClaimLossAvoided) * 100) + '% of covered claim costs saved' : ''); } }
+                { const _sub = document.getElementById('revenueImpactSub'); if (_sub) { _sub.style.display = ''; _sub.textContent = formatNumber(Math.round(deflectedTickets)) + ' tickets deflected · ' + formatCurrency(csLaborSaved) + ' CS labor saved'; } }
                 { const _psub = document.getElementById('premiumsBadgeSub'); if (_psub) _psub.style.display = 'none'; }
-                // Green card → savings breakdown (no rev share / extra revenue framing).
-                { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Net Savings With ShipInsure'; }
-                setTxt('extraRevenue', formatCurrency(netSavings));
-                setTxt('erValueSub', '(Claim costs covered − premium cost)');
+                // Green card → time & cost saved (operational value is the focus).
+                { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Time & Cost Saved With ShipInsure'; }
+                setTxt('extraRevenue', fH(agentHoursFreed));
+                setTxt('erValueSub', 'agent hours freed / month');
+                const _row = (k, v, col) => '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;border-top:1px solid #eef0f6;"><span style="color:#6c757d;font-weight:700;">' + k + '</span><span style="font-weight:800;color:' + (col || '#1f2430') + ';">' + v + '</span></div>';
                 setHtml('erBody',
-                    '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;"><span style="color:#6c757d;font-weight:700;">Claim costs covered</span><span style="font-weight:800;color:#28a745;">' + formatCurrency(coveredClaimLossAvoided) + '</span></div>' +
-                    '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;border-top:1px solid #eef0f6;"><span style="color:#6c757d;font-weight:700;">ShipInsure premium cost' + (cov === 'hybrid' ? ' (non-opted)' : '') + '</span><span style="font-weight:800;color:#dc3545;">−' + formatCurrency(merchantPremiumCost) + '</span></div>');
+                    _row('Shipping tickets deflected', formatNumber(Math.round(deflectedTickets)), '#4a5fc1') +
+                    _row('CS labor saved', formatCurrency(csLaborSaved), '#28a745') +
+                    _row('Claim costs covered', formatCurrency(coveredClaimLossAvoided), '#28a745') +
+                    _row('ShipInsure premium cost' + (cov === 'hybrid' ? ' (non-opted)' : ''), '−' + formatCurrency(merchantPremiumCost), '#dc3545'));
             }
             renderFlows();
             updateCompactOutputs(returnsEnabled);
@@ -3291,7 +3329,10 @@
                 if (urlParams.get('minp') !== null) document.getElementById('minPremium').value = urlParams.get('minp');
                 document.getElementById('timeframe').value = urlParams.get('view') || 'monthly';
                 document.getElementById('pricingTemplate').value = normalizeTemplate(urlParams.get('template') || 'percentage');
-                // Hybrid Coverage inputs
+                // Coverage-model inputs: time savings (full+hybrid) + hybrid rules
+                if (urlParams.get('ht') !== null) { const el = document.getElementById('tsHandleTime'); if (el) el.value = urlParams.get('ht'); }
+                if (urlParams.get('ar') !== null) { const el = document.getElementById('tsAgentRate'); if (el) el.value = urlParams.get('ar'); }
+                if (urlParams.get('df') !== null) { const el = document.getElementById('tsDeflectPct'); if (el) el.value = urlParams.get('df'); }
                 if (urlParams.get('hyc') !== null) { const el = document.getElementById('hybridCovered'); if (el) el.value = urlParams.get('hyc'); }
                 if (urlParams.get('hyr') === '1') {
                     const chk = document.getElementById('hybridRulesCheck'); if (chk) chk.checked = true;
