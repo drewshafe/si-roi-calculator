@@ -3179,7 +3179,7 @@
                 ready: true,
                 siNetRetained, siNetMarginPct,
                 orders: periodOrders, aov: avgOrderValue, cogsP: cogsPercent, claimsP: claimsRate,
-                csPerClaim: csCostPerClaim, attachP: attachRate, avgPremium, revShareP: revenueShare,
+                csPerClaim: csPerTicket, attachP: attachRate, avgPremium, revShareP: revenueShare,
                 protectedOrders, totalClaims, protectedClaims: claimsOffset,
                 costPerReship, csCostTotal: csShippingCost, cogsAmount: cogs, totalLost,
                 siClaimValue,
@@ -3740,11 +3740,11 @@
                 row('Product Cost', '',               d.cogsP < 1 ? pct(d.cogsP) : curSym() + d.aov.toFixed(2) + ' × ' + pct(d.cogsP)) +
                 row('Claims Rate', '',                pct(d.claimsP)) +
                 row('Avg Shipping', '',               fc(d.avgShipping)) +
-                row('Avg Ticket Cost', '',            fc(d.csPerClaim)) +
+                row('Avg Ticket Cost', d.coverageType && d.coverageType !== 'standard' ? `${d.tsHandleMin} min × ${fc(d.tsAgentRate)}/hr` : '', fcc(d.csPerClaim)) +
                 row('Attach Rate', '',                pct(d.attachP)) +
                 row('Avg Premium / Order', '',        fcc(d.avgPremium)) +
                 row('Rev Share %', '',                pct(d.revShareP)) +
-                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.avgShipping)} + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
+                row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.avgShipping)} + ${fcc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
 
             // ── Cost without ShipInsure ──
             let costHTML =
