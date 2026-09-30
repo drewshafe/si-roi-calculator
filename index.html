@@ -2368,6 +2368,8 @@
             setDisp('secondaryInputsRow', cov === 'standard');
             // Time-savings inputs (ticket deflection → agent hours) for Full/Hybrid.
             setDisp('timeSavingsRow', cov !== 'standard');
+            // "Avg Ticket Cost" is replaced by Handle Time × Agent $/hr for coverage models.
+            setDisp('csCostGroup', cov === 'standard');
             // Hybrid-only inputs.
             setDisp('hybridCoveredGroup', cov === 'hybrid');
             setDisp('hybridRulesToggleGroup', cov === 'hybrid');
@@ -2721,6 +2723,12 @@
             const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
             const avgShipping   = parseFloat(removeCommas(document.getElementById('avgShipping').value)) || 0;
             const csCostPerClaim = parseFloat(removeCommas(document.getElementById('csCostPerClaim').value)) || 0;
+            // Time-savings inputs (Full/Hybrid). For coverage models the per-claim CS cost
+            // is DERIVED from handle-time × agent-rate (the "Avg Ticket Cost" field is hidden).
+            const tsHandleMin = parseFloat(removeCommas((document.getElementById('tsHandleTime') || {}).value || '')) || 0;
+            const tsAgentRate = parseFloat(removeCommas((document.getElementById('tsAgentRate') || {}).value || '')) || 0;
+            const tsDeflect   = (parseFloat(removeCommas((document.getElementById('tsDeflectPct') || {}).value || '')) || 0) / 100;
+            const csPerTicket = (cov !== 'standard') ? (tsHandleMin / 60) * tsAgentRate : csCostPerClaim;
             const revenueShare = parseFloat(removeCommas(document.getElementById('revenueShare').value)) / 100 || 0;
             const attachRate = parseFloat(removeCommas(document.getElementById('attachRate').value)) / 100 || 0;
             const protectionPremiumRaw = parseFloat(removeCommas(document.getElementById('protectionPremium').value)) || 0;
@@ -2833,8 +2841,8 @@
 
             const totalClaims = periodOrders * claimsRate;
             const claimsOffset = protectedOrders * claimsRate;
-            const costPerReship = (avgOrderValue * cogsPercent) + avgShipping + csCostPerClaim;
-            const csShippingCost = totalClaims * (csCostPerClaim + avgShipping);
+            const costPerReship = (avgOrderValue * cogsPercent) + avgShipping + csPerTicket;
+            const csShippingCost = totalClaims * (csPerTicket + avgShipping);
             const cogs = totalClaims * (avgOrderValue * cogsPercent);
             const lostRevenue = csShippingCost + cogs;
             const premiumPool = protectedOrders * avgPremium;
@@ -2918,9 +2926,6 @@
             const netSavings = coveredClaimLossAvoided - merchantPremiumCost;
             // Time savings (Full/Hybrid focus): ShipInsure's self-service claims portal
             // deflects shipping tickets before they reach CS → agent hours freed → labor $.
-            const tsHandleMin = parseFloat(removeCommas((document.getElementById('tsHandleTime') || {}).value || '')) || 0;
-            const tsAgentRate = parseFloat(removeCommas((document.getElementById('tsAgentRate') || {}).value || '')) || 0;
-            const tsDeflect   = (parseFloat(removeCommas((document.getElementById('tsDeflectPct') || {}).value || '')) || 0) / 100;
             const deflectedTickets = claimsOffset * tsDeflect;
             const agentHoursFreed  = deflectedTickets * (tsHandleMin / 60);
             const csLaborSaved     = agentHoursFreed * tsAgentRate;
