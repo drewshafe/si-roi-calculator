@@ -1222,8 +1222,10 @@
         .container.density-compact #returnsInputs.visible,
         .container.density-compact #cashbackInputs.visible { display:contents; }
         /* All compact input groups adopt the slim merchant-view field style */
-        .container.density-compact .input-group { background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; min-width:0; display:flex; flex-direction:column; gap:4px; }
-        .container.density-compact .input-group > label { color:#6c757d !important; font-size:0.64em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:0 !important; line-height:1.25; }
+        /* NB: no `display` here — the .mi-additional show/hide rules set display, and an
+           equal-specificity display here would override them and break the dropdown. */
+        .container.density-compact .input-group { background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; min-width:0; }
+        .container.density-compact .input-group > label { display:block; color:#6c757d !important; font-size:0.64em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 4px !important; line-height:1.25; }
         .container.density-compact .input-group input { width:100%; border:1.5px solid #d0d4e8 !important; background:#fff !important; color:#333 !important; border-radius:8px; padding:7px 10px; font-size:0.9em; font-weight:600; }
         .container.density-compact .input-group input:focus { outline:none; border-color:#6675ff !important; box-shadow:0 0 0 3px rgba(102,117,255,.15); }
         .container.density-compact .input-with-type input { border-radius:8px 0 0 8px; }
@@ -1345,10 +1347,8 @@
 
         <!-- Bottom: Merchant Inputs strip -->
         <div class="inputs-strip">
-            <div class="load-link-row">
-                <input type="text" id="loadLinkInput" placeholder="Paste a calculator link…">
-                <button type="button" id="loadLinkBtn" onclick="loadFromPastedLink()">Load</button>
-            </div>
+            <!-- Paste-a-link/Load lives on the Rep Hub tab (and links open directly), so the
+                 in-strip paste row was removed to match the merchant view's cleaner layout. -->
 
             <div class="inputs-strip-header">
                 <span class="inputs-strip-title">Merchant Inputs</span>
@@ -4299,6 +4299,7 @@
         // in loadSavedValues() picks it up, same as a normal deep link.
         function loadFromPastedLink() {
             const inp = document.getElementById('loadLinkInput');
+            if (!inp) return;
             const raw = (inp.value || '').trim();
             if (!raw) return;
             if (!/^https?:\/\/[^ ]*si-roi-calculator/i.test(raw)) {
@@ -4310,7 +4311,7 @@
             try { search = new URL(raw).search; } catch (e) { /* no query string */ }
             location.href = location.pathname + search;
         }
-        document.getElementById('loadLinkInput').addEventListener('keydown', e => { if (e.key === 'Enter') loadFromPastedLink(); });
+        { const _ll = document.getElementById('loadLinkInput'); if (_ll) _ll.addEventListener('keydown', e => { if (e.key === 'Enter') loadFromPastedLink(); }); }
 
         // ── Saved Configs ─────────────────────────────────────────────────
         function saveConfig() {
