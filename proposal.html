@@ -922,6 +922,49 @@
             border-radius:999px; padding:5px 11px; font-size:.72em; font-weight:800; letter-spacing:.12em; text-transform:uppercase; font-family:inherit; }
         .theme-midnight #mnAnimBtn .mn-dot { width:7px; height:7px; border-radius:50%; background:#5e6577; }
         .theme-midnight #mnAnimBtn.on .mn-dot { background:#e9c46a; box-shadow:0 0 8px #e9c46a; }
+        /* ───────── Optimized Compact layout (merchant view) — mirrors the rep calc's
+           Compact view: 4-box strip + single green card, red cost badge when shown.
+           Activated by ?disp=compact (set by custom-build / the rep calc link). ───────── */
+        #compactOpt { display:none; }
+        .proposal-layout.density-compact #compactOpt { display:block; padding:4px 2px; }
+        .proposal-layout.density-compact #resultsSection .key-metrics,
+        .proposal-layout.density-compact #resultsSection .hero-row,
+        .proposal-layout.density-compact #resultsSection .result-cards-row { display:none !important; }
+        .co2-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:14px; }
+        .co2-box { background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; min-width:0; }
+        .co2-lbl { font-size:0.58em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#6c757d; }
+        .co2-val { font-size:1.3em; font-weight:900; color:#1f2430; line-height:1.1; }
+        .co2-sub { font-size:0.62em; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; color:#8a93a5; }
+        .co2-sub b { color:#4a5fc1; font-weight:900; }
+        .co2-box.co2-keep { background:linear-gradient(135deg,#4656c7 0%,#6473e8 100%); border:none; color:#fff; }
+        .co2-keep .co2-lbl { color:rgba(255,255,255,.9); }
+        .co2-keep .co2-val { color:#fff; font-size:1.95em; }
+        .co2-pills { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+        .co2-pill { font-size:0.52em; font-weight:800; background:rgba(255,255,255,.22); color:#fff; border-radius:12px; padding:2px 7px; white-space:nowrap; }
+        .co2-pill:empty { display:none; }
+        .co2-ex-in { width:88px; text-align:center; border:1px solid #d5d9e0; border-radius:8px; padding:3px 8px; font-size:0.8em; font-weight:600; color:#333; }
+        .co2-ex-in::placeholder { color:#aab; font-weight:400; }
+        .co2-ex-in:focus { outline:none; box-shadow:0 0 0 2px rgba(102,117,255,.3); }
+        .co2-ex-res { font-size:0.62em; font-weight:800; color:#4a5fc1; min-height:0.8em; }
+        .co2-green { position:relative; background:linear-gradient(135deg,#eafaf0 0%,#d8f3e3 100%); border-left:5px solid #28a745; border-radius:14px; padding:16px 20px; margin-top:18px; }
+        .co2-green-hd { font-size:0.78em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#1f6b38; }
+        .co2-green-valrow { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:2px 0 10px; }
+        .co2-green-val { font-size:2.3em; font-weight:900; color:#28a745; line-height:1; }
+        .co2-green-sub { font-size:0.82em; font-weight:700; color:#6c757d; }
+        #coErBody { margin-top:4px; }
+        .co2-redbox { position:absolute; top:-14px; right:-4px; max-width:60%; background:linear-gradient(135deg,#ef6a5a,#e8604f); color:#fff; border-radius:12px; padding:9px 13px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
+        .co2-rb-hd { display:flex; align-items:flex-start; gap:12px; justify-content:space-between; }
+        .co2-rb-lbl { font-size:0.58em; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; line-height:1.2; }
+        .co2-rb-lbl i { display:block; font-weight:600; opacity:.92; text-transform:none; font-size:0.95em; }
+        .co2-rb-val { font-size:1.25em; font-weight:900; white-space:nowrap; }
+        .co2-rb-rows { display:flex; gap:16px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.4); font-size:0.6em; font-weight:700; }
+        .co2-rb-rows span:empty { display:none; }
+        /* Compact inputs: 2-col grid, collapse Additional Inputs by default */
+        .proposal-layout.density-compact #primaryInputsGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .theme-midnight .co2-box { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
+        .theme-midnight .co2-val { color:#efe7cf; }
+        .theme-midnight .co2-green { background:linear-gradient(150deg,#101611,#0a0d0a); border-left-color:#2ee6a0; }
+        .theme-midnight .co2-green-val { color:#2ee6a0; }
     </style>
     <script src="sb.js"></script>
 </head>
@@ -1192,6 +1235,54 @@
 
         <!-- ── Results Section ── -->
         <div id="resultsSection">
+
+            <!-- Optimized Compact layout (shown when .density-compact): 4-box strip + green card -->
+            <div id="compactOpt">
+                <div class="co2-strip">
+                    <div class="co2-box">
+                        <div class="co2-lbl" id="coAvgPremLbl">Avg Premium</div>
+                        <div class="co2-val" id="coAvgPrem">$0</div>
+                        <div class="co2-sub" id="coAvgPremExWrap">
+                            <input type="text" id="coExOrder" class="co2-ex-in" placeholder="Order $" inputmode="decimal" autocomplete="off" oninput="coUpdateExample()" aria-label="Premium for an example order value">
+                        </div>
+                        <div class="co2-ex-res" id="coExRes"></div>
+                        <div class="co2-sub" id="coAvgPremCash" style="display:none;">Cashback &rarr; <b id="coCashVal">$0</b></div>
+                    </div>
+                    <div class="co2-box">
+                        <div class="co2-lbl">Premiums</div>
+                        <div class="co2-val" id="coPrem">$0</div>
+                        <div class="co2-sub">Orders &rarr; <b id="coOrd">0</b></div>
+                    </div>
+                    <div class="co2-box">
+                        <div class="co2-lbl" id="coPostLbl">Post-Claim Balance</div>
+                        <div class="co2-val" id="coPost">$0</div>
+                        <div class="co2-sub">Claims &rarr; <b id="coClm">0</b><span id="coRetSub" style="display:none;"> &nbsp;&middot;&nbsp; Returns &rarr; <b id="coRet">0</b></span></div>
+                    </div>
+                    <div class="co2-box co2-keep">
+                        <div class="co2-lbl">Premiums You Keep</div>
+                        <div class="co2-val" id="coKeepPct2">0%</div>
+                        <div class="co2-pills" id="coKeepPills"></div>
+                    </div>
+                </div>
+                <div class="co2-green">
+                    <div class="co2-redbox" id="coRedBox" style="display:none;">
+                        <div class="co2-rb-hd">
+                            <div class="co2-rb-lbl"><span id="coRbLbl">Current Cost of Claims</span><i>(without ShipInsure)</i></div>
+                            <div class="co2-rb-val" id="coRbVal">-$0</div>
+                        </div>
+                        <div class="co2-rb-rows">
+                            <span id="coRbClaims"></span>
+                            <span id="coRbReturns" style="display:none;"></span>
+                        </div>
+                    </div>
+                    <div class="co2-green-hd" id="coErHd">Extra Revenue With ShipInsure</div>
+                    <div class="co2-green-valrow">
+                        <span class="co2-green-val" id="coErVal">$0</span>
+                        <span class="co2-green-sub" id="coErSub"></span>
+                    </div>
+                    <div id="coErBody"></div>
+                </div>
+            </div>
 
             <!-- Key Metrics row (above the Net Benefit hero) -->
             <div class="key-metrics">
@@ -2321,6 +2412,7 @@
             renderPFlows();
             pUpdateKeyPills();
             renderPExtraRevenueCard();
+            updatePCompactOpt();
             // Show/hide cost column based on p_hideCurrentCost
             const pBdCostCol = document.getElementById('p-bdCostCol');
             if (pBdCostCol) pBdCostCol.style.display = p_hideCurrentCost ? 'none' : '';
@@ -2337,6 +2429,80 @@
             const rs = document.getElementById('resultsSection');
             rs.classList.add('visible');
             document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Optimized Compact layout (merchant view): mirror the computed outputs into the
+        // 4-box strip + reuse the rendered p-erBody for the green card. Red badge when cost shown.
+        function updatePCompactOpt() {
+            const g = id => (document.getElementById(id) || {}).textContent || '';
+            const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+            const d = _p_bd || {};
+            if (!d.ready) return;
+            const returnsOn = !!d.returnsEnabled, cashOn = !!d.cashbackEnabled;
+            set('coAvgPrem', fmtDollarCents(d.avgPremium || 0));
+            set('coAvgPremLbl', g('p-avgPremiumLabel') || 'Avg Premium');
+            set('coPrem', fmtDollar(d.premiumPool || 0));
+            set('coOrd', fmtNum(Math.round(d.protectedOrders || 0)));
+            set('coPost', fmtDollar(d.postClaimBalance || 0));
+            set('coPostLbl', g('r-balanceLabel') || 'Post-Claim Balance');
+            set('coClm', fmtNum(Math.round(d.protectedClaims || 0)));
+            set('coKeepPct2', Math.round(d.percentOfPremiums || 0) + '%');
+            const retSub = document.getElementById('coRetSub');
+            if (retSub) retSub.style.display = returnsOn ? '' : 'none';
+            if (returnsOn) set('coRet', fmtNum(Math.round((d.totalReturns || 0) * (d.attachP || 0))));
+            const exWrap = document.getElementById('coAvgPremExWrap'), exRes = document.getElementById('coExRes'), cashSub = document.getElementById('coAvgPremCash');
+            if (cashOn) {
+                if (exWrap) exWrap.style.display = 'none';
+                if (exRes) exRes.style.display = 'none';
+                if (cashSub) cashSub.style.display = '';
+                set('coCashVal', fmtDollarCents(d.cashbackPerOrder || 0));
+            } else {
+                if (exWrap) exWrap.style.display = '';
+                if (exRes) exRes.style.display = '';
+                if (cashSub) cashSub.style.display = 'none';
+                coUpdateExample();
+            }
+            const pillsEl = document.getElementById('coKeepPills');
+            if (pillsEl) {
+                const parts = [];
+                ['p-claimsImpactPct', 'p-revShareImpactPct', 'p-returnsOffsetImpactPct', 'p-cashbackImpactPct'].forEach(id => {
+                    const e = document.getElementById(id);
+                    if (e && e.style.display !== 'none' && (e.textContent || '').trim()) parts.push(e.textContent.replace(/\s*from\s*/i, ' ').replace(/([\d.]+)%/, (m, n) => Math.round(parseFloat(n)) + '%').trim());
+                });
+                pillsEl.innerHTML = parts.map(t => '<span class="co2-pill">' + t + '</span>').join('');
+            }
+            // Green card: header + the already-rendered p-erBody (holds value + breakdown).
+            set('coErHd', g('p-erLabel') || 'Extra Revenue With ShipInsure');
+            const valrow = document.querySelector('#compactOpt .co2-green-valrow'); if (valrow) valrow.style.display = 'none';
+            const erBody = document.getElementById('p-erBody'), coErBody = document.getElementById('coErBody');
+            if (erBody && coErBody) coErBody.innerHTML = erBody.innerHTML;
+            // Red "current cost" badge — only when Current Cost is shown
+            const redBox = document.getElementById('coRedBox');
+            if (redBox) {
+                if (p_hideCurrentCost) { redBox.style.display = 'none'; }
+                else {
+                    redBox.style.display = '';
+                    const fc = v => fmtDollar(v);
+                    const retCost = returnsOn ? (d.totalReturnsCost || 0) : 0;
+                    const claimsCost = (d.totalLost || 0) - retCost;
+                    set('coRbLbl', returnsOn ? 'Current Cost of Claims & Returns' : 'Current Cost of Claims');
+                    set('coRbVal', '-' + fc(d.totalLost || 0));
+                    set('coRbClaims', fmtNum(Math.round(d.totalClaims || 0)) + ' claims → ' + fc(claimsCost));
+                    const rbRet = document.getElementById('coRbReturns');
+                    if (rbRet) { if (returnsOn) { rbRet.style.display = ''; rbRet.textContent = fmtNum(Math.round(d.totalReturns || 0)) + ' returns → ' + fc(retCost); } else rbRet.style.display = 'none'; }
+                }
+            }
+        }
+        function coUpdateExample() {
+            const inp = document.getElementById('coExOrder'), res = document.getElementById('coExRes');
+            if (!inp || !res) return;
+            if (typeof _premiumIsFlat === 'function' && _premiumIsFlat()) { res.textContent = ''; return; }
+            const v = parseFloat(removeCommas(inp.value)) || 0;
+            if (v <= 0) { res.textContent = ''; return; }
+            const limit = (typeof _coverageLimit === 'function') ? _coverageLimit() : 0;
+            if (limit > 0 && v > limit) { res.textContent = 'Not offered above ' + fmtDollar(limit); return; }
+            const prem = pSiPremiumFor(v);
+            res.textContent = '$' + fmtNum(Math.round(v)) + ' → ' + fmtDollarCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
         }
 
         // Extra Revenue With ShipInsure — optimized single-stack layout (merchant view).
@@ -2815,6 +2981,10 @@
             await siHydrateFromId();
             const urlPs = new URLSearchParams(window.location.search);
             if (urlPs.get('theme') === 'midnight') document.body.classList.add('theme-midnight');
+            // Optimized Compact layout — carried in the link (?disp=compact) by the rep calc /
+            // custom-build. Toggles the 4-box strip + green card in place of the default view.
+            { const _disp = (urlPs.get('disp') || urlPs.get('den') || '').toLowerCase();
+              if (_disp === 'compact' || _disp === 'c') { const pl = document.querySelector('.proposal-layout'); if (pl) pl.classList.add('density-compact'); } }
             applyCustomBuild(urlPs);
             // A cloud-stored logo (Supabase Storage) overrides any param/hash logo.
             if (window._SI_LOGO_URL) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = window._SI_LOGO_URL; lg.style.display = ''; lg.onerror = null; } }
