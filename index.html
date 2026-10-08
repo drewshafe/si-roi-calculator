@@ -3782,6 +3782,8 @@
                 params.set('upfa', String(Math.round(_upfrontTier * _uannual)));
             }
 
+            // Carry the optimized Compact layout through the link when the rep is in Compact.
+            { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); }
 
             return `${baseUrl}?${params.toString()}`;
         }
@@ -3866,6 +3868,8 @@
                 params.set('upfa', String(Math.round(_upfrontTier * _uannual)));
             }
 
+            // Carry the optimized Compact layout through the link when the rep is in Compact.
+            { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); }
 
             return `${baseUrl}?${params.toString()}`;
         }
@@ -4499,6 +4503,8 @@
                 if (!dcWrap.contains(e.target)) { panel.classList.remove('show'); btn.classList.remove('open'); }
             });
 
+            // A link that carries ?disp=compact opens the calc in the optimized Compact view.
+            try { const _d = (new URLSearchParams(location.search).get('disp') || '').toLowerCase(); if (_d === 'compact' || _d === 'c') calcDisplay.density = 'compact'; } catch (e) {}
             syncUI();
             applyDisplaySettings(calcDisplay);
         })();
