@@ -1207,8 +1207,10 @@
         .co2-rb-rows { display:flex; gap:16px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.4); font-size:0.6em; font-weight:700; }
         .co2-rb-rows span:empty { display:none; }
 
-        /* Compact inputs: core-6 grid + Additional Inputs dropdown holding the rest */
-        .container.density-compact .inputs-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px 6px; align-content:start; }
+        /* Compact inputs — merchant-view model (gray label + white box), 2-col grid in a
+           widened inputs column so labels never wrap/overlap (incl. the Split layout). */
+        .container.density-compact:not(.force-stacked) .calc-left { width:360px; }
+        .container.density-compact .inputs-strip { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 12px; align-content:start; }
         .container.density-compact .inputs-strip > .inputs-strip-header,
         .container.density-compact .inputs-strip > #miAdditionalToggle,
         .container.density-compact .inputs-strip > #timeSavingsRow,
@@ -1219,13 +1221,22 @@
         .container.density-compact #secondaryInputsRow { display:contents; }
         .container.density-compact #returnsInputs.visible,
         .container.density-compact #cashbackInputs.visible { display:contents; }
+        /* All compact input groups adopt the slim merchant-view field style */
+        .container.density-compact .input-group { background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; min-width:0; display:flex; flex-direction:column; gap:4px; }
+        .container.density-compact .input-group > label { color:#6c757d !important; font-size:0.64em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:0 !important; line-height:1.25; }
+        .container.density-compact .input-group input { width:100%; border:1.5px solid #d0d4e8 !important; background:#fff !important; color:#333 !important; border-radius:8px; padding:7px 10px; font-size:0.9em; font-weight:600; }
+        .container.density-compact .input-group input:focus { outline:none; border-color:#6675ff !important; box-shadow:0 0 0 3px rgba(102,117,255,.15); }
+        .container.density-compact .input-with-type input { border-radius:8px 0 0 8px; }
+        .container.density-compact .input-with-type .itype-btn { border:1.5px solid #d0d4e8; border-left:none; background:#f0f0f0; }
+        .container.density-compact .input-with-type .itype-btn:last-child { border-radius:0 8px 8px 0; }
+        .container.density-compact .input-with-type .itype-btn.active { background:#6675ff !important; color:#fff; border-color:#6675ff; }
         .container.density-compact #ordersGroup{order:1}
         .container.density-compact #aovGroup{order:2}
         .container.density-compact #claimsRateGroup{order:3}
         .container.density-compact #protectionPremiumGroup{order:4}
         .container.density-compact #attachRateGroup{order:5}
         .container.density-compact #revShareGroup{order:6}
-        .container.density-compact #miAdditionalToggle{order:10}
+        .container.density-compact #miAdditionalToggle{order:10; width:100%; text-align:left;}
         .container.density-compact #avgShippingGroup{order:21}
         .container.density-compact #csCostGroup{order:22}
         .container.density-compact #cogsGroup{order:23}
@@ -1236,12 +1247,8 @@
         .container.density-compact #cashbackRateGroup{order:28}
         .container.density-compact #minCashbackGroup{order:29}
         .container.density-compact #redeemGroup{order:30}
-        .container.density-compact .mi-additional { background:transparent !important; border:none !important; padding:2px 2px !important; }
-        .container.density-compact .mi-additional label { color:#6c757d !important; font-size:0.62em; font-weight:800; text-transform:uppercase; letter-spacing:.3px; margin-bottom:3px; }
-        .container.density-compact .mi-additional input { border:1px solid #d5d9e0 !important; background:#fff !important; color:#333; }
-        .container.density-compact .mi-additional .itype-btn { border:1px solid #d5d9e0; }
-        .container.density-compact .mi-additional .itype-btn.active { background:#4a5fc1 !important; color:#fff; border-color:#4a5fc1; }
-        .container.density-compact #miAdditionalToggle { width:100%; text-align:left; }
+        .theme-midnight.container.density-compact .input-group > label { color:#d9d9e6 !important; }
+        .theme-midnight.container.density-compact .input-group input { background:#12131a !important; border-color:rgba(212,175,55,.25) !important; color:#efe7cf !important; }
         .theme-midnight .co2-box { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
         .theme-midnight .co2-val { color:#efe7cf; }
         .theme-midnight .co2-green { background:linear-gradient(150deg,#101611,#0a0d0a); border-left-color:#2ee6a0; }
