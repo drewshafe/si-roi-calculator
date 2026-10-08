@@ -1167,6 +1167,92 @@
         .theme-midnight .co-val { color:#efe7cf; }
         .theme-midnight .mi-additional-toggle { background:linear-gradient(150deg,#191a22,#0b0c12); color:#e9c46a; border-color:rgba(233,196,106,.35); }
 
+        /* ───────── Optimized compact view: 4-box strip + single green card ─────────
+           Replaces the hero/pairs (#compactOutputs) with a streamlined layout that
+           mirrors the comfortable strip + green card, red card dropped (shown instead
+           as a small badge pinned to the green card when Current Cost is on). */
+        .container.density-compact #compactOutputs { display:none; }
+        #compactOpt { display:none; }
+        .container.density-compact #compactOpt { display:block; padding:14px 16px 4px; }
+
+        .co2-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:14px; }
+        .co2-box { background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; min-width:0; }
+        .co2-lbl { font-size:0.58em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#6c757d; }
+        .co2-val { font-size:1.3em; font-weight:900; color:#1f2430; line-height:1.1; }
+        .co2-sub { font-size:0.62em; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; color:#8a93a5; }
+        .co2-sub b { color:#4a5fc1; font-weight:900; }
+        .co2-box.co2-keep { background:linear-gradient(135deg,#4656c7 0%,#6473e8 100%); border:none; color:#fff; }
+        .co2-keep .co2-lbl { color:rgba(255,255,255,.9); }
+        .co2-keep .co2-val { color:#fff; font-size:1.95em; }
+        .co2-pills { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+        .co2-pill { font-size:0.52em; font-weight:800; background:rgba(255,255,255,.22); color:#fff; border-radius:12px; padding:2px 7px; white-space:nowrap; }
+        .co2-pill:empty { display:none; }
+        .co2-ex-in { width:88px; text-align:center; border:1px solid #d5d9e0; border-radius:8px; padding:3px 8px; font-size:0.8em; font-weight:600; color:#333; }
+        .co2-ex-in::placeholder { color:#aab; font-weight:400; }
+        .co2-ex-in:focus { outline:none; box-shadow:0 0 0 2px rgba(102,117,255,.3); }
+        .co2-ex-res { font-size:0.62em; font-weight:800; color:#4a5fc1; min-height:0.8em; }
+
+        .co2-green { position:relative; background:linear-gradient(135deg,#eafaf0 0%,#d8f3e3 100%); border-left:5px solid #28a745; border-radius:14px; padding:16px 20px; margin-top:18px; }
+        .co2-green-hd { font-size:0.78em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#1f6b38; }
+        .co2-green-valrow { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:2px 0 10px; }
+        .co2-green-val { font-size:2.3em; font-weight:900; color:#28a745; line-height:1; }
+        .co2-green-sub { font-size:0.82em; font-weight:700; color:#6c757d; }
+        #coErBody { margin-top:4px; }
+
+        .co2-redbox { position:absolute; top:-14px; right:-4px; max-width:60%; background:linear-gradient(135deg,#ef6a5a,#e8604f); color:#fff; border-radius:12px; padding:9px 13px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
+        .co2-rb-hd { display:flex; align-items:flex-start; gap:12px; justify-content:space-between; }
+        .co2-rb-lbl { font-size:0.58em; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; line-height:1.2; }
+        .co2-rb-lbl i { display:block; font-weight:600; opacity:.92; text-transform:none; font-size:0.95em; }
+        .co2-rb-val { font-size:1.25em; font-weight:900; white-space:nowrap; }
+        .co2-rb-rows { display:flex; gap:16px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.4); font-size:0.6em; font-weight:700; }
+        .co2-rb-rows span:empty { display:none; }
+
+        /* Compact inputs: core-6 grid + Additional Inputs dropdown holding the rest */
+        .container.density-compact .inputs-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px 6px; align-content:start; }
+        .container.density-compact .inputs-strip > .inputs-strip-header,
+        .container.density-compact .inputs-strip > #miAdditionalToggle,
+        .container.density-compact .inputs-strip > #timeSavingsRow,
+        .container.density-compact .inputs-strip > #guaranteeInputs,
+        .container.density-compact .inputs-strip > #generateProposalLink,
+        .container.density-compact .inputs-strip > #linkDisplay { grid-column:1 / -1; }
+        .container.density-compact #coreInputsRow,
+        .container.density-compact #secondaryInputsRow { display:contents; }
+        .container.density-compact #returnsInputs.visible,
+        .container.density-compact #cashbackInputs.visible { display:contents; }
+        .container.density-compact #ordersGroup{order:1}
+        .container.density-compact #aovGroup{order:2}
+        .container.density-compact #claimsRateGroup{order:3}
+        .container.density-compact #protectionPremiumGroup{order:4}
+        .container.density-compact #attachRateGroup{order:5}
+        .container.density-compact #revShareGroup{order:6}
+        .container.density-compact #miAdditionalToggle{order:10}
+        .container.density-compact #avgShippingGroup{order:21}
+        .container.density-compact #csCostGroup{order:22}
+        .container.density-compact #cogsGroup{order:23}
+        .container.density-compact #returnsRateGroup{order:24}
+        .container.density-compact #avgReturnCostGroup{order:25}
+        .container.density-compact #returnsPlatformGroup{order:26}
+        .container.density-compact #returnsCoverageBar{order:27; grid-column:1 / -1}
+        .container.density-compact #cashbackRateGroup{order:28}
+        .container.density-compact #minCashbackGroup{order:29}
+        .container.density-compact #redeemGroup{order:30}
+        .container.density-compact .mi-additional { background:transparent !important; border:none !important; padding:2px 2px !important; }
+        .container.density-compact .mi-additional label { color:#6c757d !important; font-size:0.62em; font-weight:800; text-transform:uppercase; letter-spacing:.3px; margin-bottom:3px; }
+        .container.density-compact .mi-additional input { border:1px solid #d5d9e0 !important; background:#fff !important; color:#333; }
+        .container.density-compact .mi-additional .itype-btn { border:1px solid #d5d9e0; }
+        .container.density-compact .mi-additional .itype-btn.active { background:#4a5fc1 !important; color:#fff; border-color:#4a5fc1; }
+        .container.density-compact #miAdditionalToggle { width:100%; text-align:left; }
+        .theme-midnight .co2-box { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
+        .theme-midnight .co2-val { color:#efe7cf; }
+        .theme-midnight .co2-green { background:linear-gradient(150deg,#101611,#0a0d0a); border-left-color:#2ee6a0; }
+        .theme-midnight .co2-green-val { color:#2ee6a0; }
+        /* Compact-only field labels (swapped sibling; original hidden in compact).
+           Specificity note: .input-group label sets display:block, so the hide/show
+           rules must match that weight to win. */
+        .input-group label.lbl-cmp { display:none; }
+        .container.density-compact .has-cmp label.lbl-cmp { display:block; }
+        .container.density-compact .has-cmp > label:not(.lbl-cmp) { display:none; }
+
         /* ═══════════ PROJECT MIDNIGHT — real asset overlays (ROI calc) ═══════════ */
         /* Header logo → gold/opal ROI wordmark */
         .theme-midnight .logo-area img.logo-img { content:url("assets/midnight/roi-logo.png"); }
@@ -1264,8 +1350,9 @@
 
             <!-- Merchant Inputs — Group 1: order economics -->
             <div class="inputs-row" id="coreInputsRow">
-                <div class="input-group" id="protectionPremiumGroup">
+                <div class="input-group has-cmp" id="protectionPremiumGroup">
                     <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
+                    <label class="lbl-cmp" for="protectionPremium" aria-hidden="true">Premium %</label>
                     <input type="text" id="protectionPremium" placeholder="0">
                 </div>
                 <div class="input-group" id="attachRateGroup">
@@ -1289,11 +1376,11 @@
                     <label for="hybridRuleMax" title="Only cover non-opted orders with a subtotal BELOW this (blank = no maximum)">Order $ &lt;</label>
                     <input type="text" id="hybridRuleMax" placeholder="(any)" oninput="calculate()">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="ordersGroup">
                     <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
                     <input type="text" id="annualOrders" placeholder="0">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="aovGroup">
                     <label for="avgOrderValue">AOV</label>
                     <input type="text" id="avgOrderValue" placeholder="$">
                 </div>
@@ -1317,18 +1404,20 @@
                     <label for="avgShipping">Avg Shipping</label>
                     <input type="text" id="avgShipping" placeholder="$" value="8">
                 </div>
-                <div class="input-group mi-additional" id="csCostGroup">
+                <div class="input-group mi-additional has-cmp" id="csCostGroup">
                     <label for="csCostPerClaim">Avg Ticket Cost</label>
+                    <label class="lbl-cmp" for="csCostPerClaim" aria-hidden="true">CS Cost Per Claim</label>
                     <input type="text" id="csCostPerClaim" placeholder="$" value="5">
                 </div>
             </div>
 
-            <button type="button" class="mi-additional-toggle" id="miAdditionalToggle" onclick="toggleAdditionalInputs()">+ Additional Inputs</button>
+            <button type="button" class="mi-additional-toggle" id="miAdditionalToggle" onclick="toggleAdditionalInputs()">▸ Additional Inputs</button>
 
             <!-- Merchant Inputs — Group 2: ShipInsure terms -->
             <div class="inputs-row" id="secondaryInputsRow">
-                <div class="input-group" id="revShareGroup">
+                <div class="input-group has-cmp" id="revShareGroup">
                     <label for="revenueShare" id="revShareLabel">Rev Share % (net claims)</label>
+                    <label class="lbl-cmp" for="revenueShare" aria-hidden="true">Net Rev Share %</label>
                     <input type="text" id="revenueShare" placeholder="0">
                 </div>
             </div>
@@ -1349,23 +1438,26 @@
             </div>
 
             <div id="returnsInputs" class="returns-section">
-                <div id="returnsRateGroup" class="input-group returns">
+                <div id="returnsRateGroup" class="input-group returns mi-additional has-cmp">
                     <label id="returnsRateLabel" for="returnsRate">Returns Rate %</label>
+                    <label class="lbl-cmp" for="returnsRate" aria-hidden="true">Return Rate %</label>
                     <div class="input-with-type">
                         <input type="text" id="returnsRate" placeholder="0">
                         <button class="itype-btn active" id="retPctBtn" onclick="setReturnsType('pct')">%</button>
                         <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
                     </div>
                 </div>
-                <div id="avgReturnCostGroup" class="input-group returns">
+                <div id="avgReturnCostGroup" class="input-group returns mi-additional has-cmp">
                     <label for="avgReturnCost">Avg Return Cost ($)</label>
+                    <label class="lbl-cmp" for="avgReturnCost" aria-hidden="true">Avg Label Cost</label>
                     <input type="text" id="avgReturnCost" placeholder="$">
                 </div>
-                <div id="returnsPlatformGroup" class="input-group returns">
+                <div id="returnsPlatformGroup" class="input-group returns mi-additional has-cmp">
                     <label for="returnsPlatformCost" id="returnsPlatformLabel">Returns Platform Cost ($/mo)</label>
+                    <label class="lbl-cmp" for="returnsPlatformCost" aria-hidden="true">Portal Cost</label>
                     <input type="text" id="returnsPlatformCost" placeholder="$">
                 </div>
-                <div class="returns-coverage-bar" id="returnsCoverageBar">
+                <div class="returns-coverage-bar mi-additional" id="returnsCoverageBar">
                     <div class="rc-divider rc-divider-row">
                         <span>Coverage Mode</span>
                         <select id="returnsPlatformProvider" class="rc-provider" onchange="setReturnsProvider(this.value)" title="Returns platform provider">
@@ -1385,16 +1477,19 @@
             </div>
 
             <div id="cashbackInputs" class="cashback-section">
-                <div class="input-group cashback">
+                <div class="input-group cashback mi-additional has-cmp" id="cashbackRateGroup">
                     <label for="cashbackRate">Customer Cashback %</label>
+                    <label class="lbl-cmp" for="cashbackRate" aria-hidden="true">Cashback %</label>
                     <input type="text" id="cashbackRate" placeholder="5" value="5">
                 </div>
-                <div class="input-group cashback">
+                <div class="input-group cashback mi-additional has-cmp" id="minCashbackGroup">
                     <label for="minCashback">Min Cashback Amount ($)</label>
+                    <label class="lbl-cmp" for="minCashback" aria-hidden="true">Min Cashback</label>
                     <input type="text" id="minCashback" placeholder="5" value="5">
                 </div>
-                <div class="input-group cashback">
+                <div class="input-group cashback mi-additional has-cmp" id="redeemGroup">
                     <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
+                    <label class="lbl-cmp" for="cashbackRedemptionRate" aria-hidden="true">Est Redeem %</label>
                     <input type="text" id="cashbackRedemptionRate" placeholder="10" value="10">
                 </div>
             </div>
@@ -1450,6 +1545,55 @@
                         <div class="co-upfront" id="coUpfront" style="display:none;"><span class="co-lbl">Amount Upfront</span><span class="co-val" id="coUpfrontVal">$0</span><div class="co-badges"><span class="co-badge" id="coUpfrontPct"></span></div></div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Optimized compact outputs: 4-box strip + single green card (Current Cost hidden),
+             or the same with a small red "current cost" badge pinned to the card (cost shown). -->
+        <div id="compactOpt">
+            <div class="co2-strip">
+                <div class="co2-box">
+                    <div class="co2-lbl" id="coAvgPremLbl">Avg Premium</div>
+                    <div class="co2-val" id="coAvgPrem">$0</div>
+                    <div class="co2-sub" id="coAvgPremExWrap">
+                        <input type="text" id="coExOrder" class="co2-ex-in" placeholder="Order $" inputmode="decimal" autocomplete="off" oninput="coUpdateExample()" aria-label="Premium for an example order value">
+                    </div>
+                    <div class="co2-ex-res" id="coExRes"></div>
+                    <div class="co2-sub" id="coAvgPremCash" style="display:none;">Cashback &rarr; <b id="coCashVal">$0</b></div>
+                </div>
+                <div class="co2-box">
+                    <div class="co2-lbl">Premiums</div>
+                    <div class="co2-val" id="coPrem">$0</div>
+                    <div class="co2-sub">Orders &rarr; <b id="coOrd">0</b></div>
+                </div>
+                <div class="co2-box">
+                    <div class="co2-lbl" id="coPostLbl">Post-Claim Balance</div>
+                    <div class="co2-val" id="coPost">$0</div>
+                    <div class="co2-sub">Claims &rarr; <b id="coClm">0</b><span id="coRetSub" style="display:none;"> &nbsp;&middot;&nbsp; Returns &rarr; <b id="coRet">0</b></span></div>
+                </div>
+                <div class="co2-box co2-keep">
+                    <div class="co2-lbl">Premiums You Keep</div>
+                    <div class="co2-val" id="coKeepPct2">0%</div>
+                    <div class="co2-pills" id="coKeepPills"></div>
+                </div>
+            </div>
+            <div class="co2-green">
+                <div class="co2-redbox" id="coRedBox" style="display:none;">
+                    <div class="co2-rb-hd">
+                        <div class="co2-rb-lbl"><span id="coRbLbl">Current Cost of Claims</span><i>(without ShipInsure)</i></div>
+                        <div class="co2-rb-val" id="coRbVal">-$0</div>
+                    </div>
+                    <div class="co2-rb-rows">
+                        <span id="coRbClaims"></span>
+                        <span id="coRbReturns" style="display:none;"></span>
+                    </div>
+                </div>
+                <div class="co2-green-hd">Extra Revenue With ShipInsure</div>
+                <div class="co2-green-valrow">
+                    <span class="co2-green-val" id="coErVal">$0</span>
+                    <span class="co2-green-sub" id="coErSub">(Total Funded + Revenue Share)</span>
+                </div>
+                <div id="coErBody"></div>
             </div>
         </div>
 
@@ -2560,6 +2704,10 @@
                 if (bdCol) bdCol.style.display  = '';
                 if (row)   row.classList.remove('cost-hidden');
             }
+            // Refresh the optimized compact view so its red "current cost" badge appears/hides.
+            if (typeof updateCompactOpt === 'function') {
+                updateCompactOpt(document.getElementById('returnsInputs').classList.contains('visible'));
+            }
         }
 
         // Rev Share label: (gross) when gross is on, otherwise (net offset) in Returns Offset
@@ -3284,7 +3432,10 @@
         // ── Compact-density view: mirror computed outputs into the combined pairings ──
         function toggleAdditionalInputs() {
             const c = document.querySelector('.container');
-            if (c) c.classList.toggle('show-additional');
+            if (!c) return;
+            const open = c.classList.toggle('show-additional');
+            const btn = document.getElementById('miAdditionalToggle');
+            if (btn) btn.textContent = (open ? '▾ ' : '▸ ') + 'Additional Inputs';
         }
         function updateCompactOutputs(returnsOn) {
             const g = id => (document.getElementById(id) || {}).textContent || '';
@@ -3314,6 +3465,101 @@
                 set('coReturnsMode', ((document.querySelector('.rc-btn.active') || {}).textContent || '').trim());
                 set('coReturnsPct', pctOf('totalReturnsCost'));
             }
+            updateCompactOpt(returnsOn);
+        }
+
+        // Optimized compact view (4-box strip + single green card). Mirrors the already-
+        // computed comfortable outputs (+ reuses the rendered erBody for the green card),
+        // so there is no duplicated math. Red "current cost" badge shows only when Current
+        // Cost is NOT hidden; otherwise just the strip + green card.
+        function updateCompactOpt(returnsOn) {
+            const g = id => (document.getElementById(id) || {}).textContent || '';
+            const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+            const d = _bd || {};
+            const compact = !!document.querySelector('.container.density-compact');
+            const cashOn = !!d.cashbackEnabled;
+            // Strip values
+            set('coAvgPrem', g('avgPremium'));
+            set('coAvgPremLbl', g('avgPremiumLabel') || 'Avg Premium');
+            set('coPrem', g('premiumsPaid'));
+            set('coOrd', g('protectedOrders'));
+            set('coPost', g('postClaimBalance'));
+            set('coPostLbl', g('postClaimBalanceLabel') || 'Post-Claim Balance');
+            set('coClm', g('protectedClaimsOutput'));
+            set('coKeepPct2', g('percentOfPremiums'));
+            // Returns sub-line under Post-Claim
+            const retSub = document.getElementById('coRetSub');
+            if (retSub) retSub.style.display = returnsOn ? '' : 'none';
+            if (returnsOn) set('coRet', g('protectedReturnsDisplay'));
+            // Avg Premium sub: cashback/order when cashback on, else the Order $ probe
+            const exWrap = document.getElementById('coAvgPremExWrap');
+            const exRes  = document.getElementById('coExRes');
+            const cashSub = document.getElementById('coAvgPremCash');
+            if (cashOn) {
+                if (exWrap) exWrap.style.display = 'none';
+                if (exRes)  exRes.style.display = 'none';
+                if (cashSub) cashSub.style.display = '';
+                set('coCashVal', g('cashbackPerOrderDisplay') || formatCurrencyWithCents(d.cashbackPerOrder || 0));
+            } else {
+                if (exWrap) exWrap.style.display = '';
+                if (exRes)  exRes.style.display = '';
+                if (cashSub) cashSub.style.display = 'none';
+                coUpdateExample();
+            }
+            // "Premiums You Keep" pills — reuse the computed impact lines ("X% from Y" → "X% Y")
+            const pillsEl = document.getElementById('coKeepPills');
+            if (pillsEl) {
+                const parts = [];
+                ['claimsImpactPct', 'revShareImpactPct', 'returnsOffsetImpactPct', 'cashbackImpactPct'].forEach(id => {
+                    const e = document.getElementById(id);
+                    if (e && e.style.display !== 'none' && (e.textContent || '').trim()) parts.push(e.textContent.replace(/\s*from\s*/i, ' ').replace(/([\d.]+)%/, (m, n) => Math.round(parseFloat(n)) + '%').trim());
+                });
+                pillsEl.innerHTML = parts.map(t => '<span class="co2-pill">' + t + '</span>').join('');
+            }
+            // Green card — reuse value, sublabel, and the already-rendered breakdown body
+            set('coErVal', g('extraRevenue'));
+            set('coErSub', g('erValueSub'));
+            const erBody = document.getElementById('erBody'), coErBody = document.getElementById('coErBody');
+            if (erBody && coErBody) coErBody.innerHTML = erBody.innerHTML;
+            // Red "current cost" badge — only when Current Cost is shown
+            const redBox = document.getElementById('coRedBox');
+            if (redBox) {
+                if (_hideCurrentCost || !d.ready) {
+                    redBox.style.display = 'none';
+                } else {
+                    redBox.style.display = '';
+                    const fc = v => formatCurrency(v);
+                    const retCost = returnsOn ? (d.totalReturnsCost || 0) : 0;
+                    const claimsCost = (d.totalLost || 0) - retCost;
+                    set('coRbLbl', returnsOn ? 'Current Cost of Claims & Returns' : 'Current Cost of Claims');
+                    set('coRbVal', '-' + fc(d.totalLost || 0));
+                    set('coRbClaims', formatNumber(Math.round(d.totalClaims || 0)) + ' claims → ' + fc(claimsCost));
+                    const rbRet = document.getElementById('coRbReturns');
+                    if (rbRet) {
+                        if (returnsOn) { rbRet.style.display = ''; rbRet.textContent = formatNumber(Math.round(d.totalReturns || 0)) + ' returns → ' + fc(retCost); }
+                        else rbRet.style.display = 'none';
+                    }
+                }
+            }
+            // Plan-aware panel title (compact only; comfortable keeps "Merchant Inputs")
+            const titleEl = document.querySelector('.inputs-strip-title');
+            if (titleEl) titleEl.textContent = compact
+                ? (returnsOn ? 'Protection + Returns Inputs' : (cashOn ? 'Protection + Cashback Inputs' : 'Package Protection Inputs'))
+                : 'Merchant Inputs';
+        }
+
+        // Order $ probe in the compact Avg Premium box (reuses siPremiumFor / _coverageLimit).
+        function coUpdateExample() {
+            const inp = document.getElementById('coExOrder');
+            const res = document.getElementById('coExRes');
+            if (!inp || !res) return;
+            if (typeof _premiumIsFlat === 'function' && _premiumIsFlat()) { res.textContent = ''; return; }
+            const v = parseFloat(removeCommas(inp.value)) || 0;
+            if (v <= 0) { res.textContent = ''; return; }
+            const limit = (typeof _coverageLimit === 'function') ? _coverageLimit() : 0;
+            if (limit > 0 && v > limit) { res.textContent = 'Not offered above ' + formatCurrency(limit); return; }
+            const prem = siPremiumFor(v);
+            res.textContent = '$' + formatNumber(Math.round(v)) + ' → ' + formatCurrencyWithCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
         }
 
         function loadSavedValues() {
@@ -4193,6 +4439,10 @@
             if (typeof d.layout === 'string') {
                 c.classList.toggle('force-split',   d.layout === 'split');
                 c.classList.toggle('force-stacked', d.layout === 'stacked');
+            }
+            // Density toggles don't recalc; refresh the optimized compact view + panel title.
+            if (typeof updateCompactOpt === 'function' && typeof _bd !== 'undefined' && _bd && _bd.ready) {
+                updateCompactOpt(document.getElementById('returnsInputs').classList.contains('visible'));
             }
         }
 
