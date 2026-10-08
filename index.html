@@ -4283,11 +4283,60 @@
                 return true;
             } catch (e) { console.warn('[SI] load-by-id failed:', e && e.message); return false; }
         }
+        // Apply merchant branding (accent / font / logo) to the rep calc itself, so a
+        // branded cloud folder can be loaded here and still be fully editable — the same
+        // bld payload the merchant proposal reads (?bld= + #cbimg logo).
+        function _calcShade(hex, pct) {
+            try {
+                let c = String(hex).replace('#', ''); if (c.length === 3) c = c.split('').map(x => x + x).join('');
+                const n = parseInt(c, 16);
+                const clamp = v => Math.max(0, Math.min(255, v));
+                const r = clamp((n >> 16) + pct), g = clamp(((n >> 8) & 255) + pct), b = clamp((n & 255) + pct);
+                return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+            } catch (e) { return hex; }
+        }
+        function applyCalcBranding() {
+            let cfg = null;
+            try { const raw = new URLSearchParams(location.search).get('bld'); if (raw) cfg = JSON.parse(raw); } catch (e) {}
+            const b = (cfg && cfg.branding) || {};
+            // Merchant logo — param, or the uploaded/lock-built logo carried in #cbimg.
+            let logo = b.logoUrl || '';
+            try { const m = (location.hash || '').match(/[#&]cbimg=([^&]+)/); if (m) { const o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); if (o && o.logo) logo = o.logo; } } catch (e) {}
+            if (logo) {
+                const la = document.querySelector('.logo-area');
+                if (la && !document.getElementById('cbMerchantLogo')) {
+                    const img = document.createElement('img'); img.id = 'cbMerchantLogo'; img.src = logo; img.alt = 'Merchant';
+                    img.style.cssText = 'height:44px;max-width:150px;object-fit:contain;margin-left:14px;padding-left:14px;border-left:2px solid rgba(120,130,200,.3);';
+                    img.onerror = function () { this.style.display = 'none'; };
+                    la.appendChild(img);
+                }
+            }
+            if (b.font) {
+                document.body.style.fontFamily = "'" + b.font + "', system-ui, sans-serif";
+                const l = document.createElement('link'); l.rel = 'stylesheet';
+                l.href = 'https://fonts.googleapis.com/css2?family=' + b.font.replace(/ /g, '+') + ':wght@400;600;700;800&display=swap';
+                document.head.appendChild(l);
+            }
+            if (b.accent) {
+                const a = b.accent, d = _calcShade(a, -22);
+                const prev = document.getElementById('cb-calc-accent'); if (prev) prev.remove();
+                const st = document.createElement('style'); st.id = 'cb-calc-accent';
+                st.textContent =
+                    '.co2-box.co2-keep{background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
+                    '.revenue-impact-box:not(.upfront-box){background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
+                    '.generate-link-btn{background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
+                    '.container.density-compact .input-with-type .itype-btn.active{background:' + a + '!important;border-color:' + a + '!important;}' +
+                    '.container.density-compact .input-group input:focus{border-color:' + a + '!important;}' +
+                    '#avgPremiumLabel,.co2-sub b{color:' + a + '!important;}';
+                document.head.appendChild(st);
+            }
+        }
         (async function initApp() {
             await siHydrateFromId();
             loadSavedValues();
             toggleProtectionPremiumVisibility();
             updateBadges();
+            applyCalcBranding();
             calculate();
             updateSavedConfigsUI();
             siRefreshCloudUI();
