@@ -90,6 +90,7 @@
       <div class="sub">Brand &amp; arrange the merchant proposal</div>
     </div>
     <div class="cb-link-row">
+      <label class="cb-hidename" style="color:#cdd2e8;white-space:nowrap;" title="Render the merchant proposal in the optimized Compact layout (4-box strip + single green card)"><input type="checkbox" id="dispCompact"> Compact layout</label>
       <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
       <button class="cb-btn ghost" id="loadBase">Load</button>
       <button class="cb-btn" id="copyLink">📋 Copy Custom Link</button>
@@ -772,10 +773,22 @@
       try { const m = hash.match(/[#&]cbimg=([^&]+)/); if (m) { const o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); if (o && o.logo) { _logoImg = o.logo; _renderLogoThumb(); } } } catch (e) {}
       _cbCloudId = null;
     }
+    syncDispCheckbox();
     refresh(true);
   }
   $('loadBase').addEventListener('click', loadBase);
   $('baseLink').addEventListener('keydown', e => { if (e.key === 'Enter') loadBase(); });
+
+  // Compact layout toggle — keeps disp=compact inside baseParams so the preview, the
+  // copied link, and any cloud-save all carry it (merchant view renders the optimized layout).
+  function _dispFromBase() { try { return new URLSearchParams(baseParams).get('disp') === 'compact'; } catch (e) { return false; } }
+  function syncDispCheckbox() { const c = $('dispCompact'); if (c) c.checked = _dispFromBase(); }
+  $('dispCompact').addEventListener('change', e => {
+    const bp = new URLSearchParams(baseParams);
+    if (e.target.checked) bp.set('disp', 'compact'); else bp.delete('disp');
+    baseParams = bp.toString() || DEFAULT_BASE;
+    refresh(true);
+  });
 
   // Copy Custom Link. An uploaded/lock-built logo is ~8–15KB; embedding it in the
   // URL hash makes a huge link that Slack/email/Aligned truncate on paste (dropping
@@ -911,6 +924,7 @@
         if (snap) cbRestore(snap, true);
         if (logo) { _logoImg = logo; _renderLogoThumb(); }
         _cbCloudId = id;
+        syncDispCheckbox();
         refresh(true);
         return;
       } catch (e) { console.warn('[CB] load id failed:', e && e.message); }
