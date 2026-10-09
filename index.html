@@ -4279,7 +4279,24 @@
                 const row = await SIsb.loadConfig(id);
                 const d = (row && row.data) || {};
                 window._SI_LOADED_ID = id;
-                if (d.q != null) history.replaceState('', '', location.pathname + '?' + d.q + (d.hash || ''));
+                let q = (d.q != null) ? d.q : '';
+                const hash = d.hash || '';
+                // Tier B: pull the merchant folder's branding so the calc loads BRANDED and
+                // still editable (accent/logo via applyCalcBranding), not just the raw params.
+                try {
+                    if (row && row.merchant_ref && typeof SIsb.getMerchant === 'function') {
+                        const m = await SIsb.getMerchant(row.merchant_ref);
+                        if (m && m.bld) {
+                            let bldObj = (typeof m.bld === 'string') ? JSON.parse(m.bld) : m.bld;
+                            bldObj = bldObj || {}; bldObj.branding = bldObj.branding || {};
+                            if (m.logo_path && !bldObj.branding.logoUrl) bldObj.branding.logoUrl = m.logo_path;
+                            const qp = new URLSearchParams(q);
+                            qp.set('bld', JSON.stringify(bldObj));
+                            q = qp.toString();
+                        }
+                    }
+                } catch (be) { console.warn('[SI] merchant branding load failed:', be && be.message); }
+                if (q) history.replaceState('', '', location.pathname + '?' + q + hash);
                 return true;
             } catch (e) { console.warn('[SI] load-by-id failed:', e && e.message); return false; }
         }
