@@ -1256,7 +1256,7 @@
                     <div class="co2-box">
                         <div class="co2-lbl" id="coPostLbl">Post-Claim Balance</div>
                         <div class="co2-val" id="coPost">$0</div>
-                        <div class="co2-sub">Claims &rarr; <b id="coClm">0</b><span id="coRetSub" style="display:none;"> &nbsp;&middot;&nbsp; Returns &rarr; <b id="coRet">0</b></span></div>
+                        <div class="co2-sub">Claims &rarr; <b id="coClm">0</b><span id="coRetSub" style="display:none;">Returns &rarr; <b id="coRet">0</b></span></div>
                     </div>
                     <div class="co2-box co2-keep">
                         <div class="co2-lbl">Premiums You Keep</div>
@@ -2448,7 +2448,7 @@
             set('coClm', fmtNum(Math.round(d.protectedClaims || 0)));
             set('coKeepPct2', Math.round(d.percentOfPremiums || 0) + '%');
             const retSub = document.getElementById('coRetSub');
-            if (retSub) retSub.style.display = returnsOn ? '' : 'none';
+            if (retSub) retSub.style.display = returnsOn ? 'block' : 'none';
             if (returnsOn) set('coRet', fmtNum(Math.round((d.totalReturns || 0) * (d.attachP || 0))));
             const exWrap = document.getElementById('coAvgPremExWrap'), exRes = document.getElementById('coExRes'), cashSub = document.getElementById('coAvgPremCash');
             if (cashOn) {

@@ -1580,7 +1580,7 @@
                 <div class="co2-box">
                     <div class="co2-lbl" id="coPostLbl">Post-Claim Balance</div>
                     <div class="co2-val" id="coPost">$0</div>
-                    <div class="co2-sub">Claims &rarr; <b id="coClm">0</b><span id="coRetSub" style="display:none;"> &nbsp;&middot;&nbsp; Returns &rarr; <b id="coRet">0</b></span></div>
+                    <div class="co2-sub">Claims &rarr; <b id="coClm">0</b><span id="coRetSub" style="display:none;">Returns &rarr; <b id="coRet">0</b></span></div>
                 </div>
                 <div class="co2-box co2-keep">
                     <div class="co2-lbl">Premiums You Keep</div>
@@ -3513,7 +3513,7 @@
             set('coKeepPct2', g('percentOfPremiums'));
             // Returns sub-line under Post-Claim
             const retSub = document.getElementById('coRetSub');
-            if (retSub) retSub.style.display = returnsOn ? '' : 'none';
+            if (retSub) retSub.style.display = returnsOn ? 'block' : 'none';
             if (returnsOn) set('coRet', g('protectedReturnsDisplay'));
             // Avg Premium sub: cashback/order when cashback on, else the Order $ probe
             const exWrap = document.getElementById('coAvgPremExWrap');
