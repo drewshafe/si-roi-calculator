@@ -1198,6 +1198,10 @@
         .co2-green-val { font-size:2.3em; font-weight:900; color:#28a745; line-height:1; }
         .co2-green-sub { font-size:0.82em; font-weight:700; color:#6c757d; }
         #coErBody { margin-top:4px; }
+        .co2-upfront { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; background:linear-gradient(135deg,#4656c7 0%,#6473e8 100%); color:#fff; border-radius:12px; padding:11px 16px; margin-top:12px; }
+        .co2-up-lbl { font-size:0.62em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.92; }
+        .co2-up-val { font-size:1.4em; font-weight:900; margin-left:auto; }
+        .co2-up-mo { font-size:0.72em; font-weight:700; opacity:0.9; }
 
         .co2-redbox { position:absolute; top:-14px; right:-4px; max-width:60%; background:linear-gradient(135deg,#ef6a5a,#e8604f); color:#fff; border-radius:12px; padding:9px 13px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
         .co2-rb-hd { display:flex; align-items:flex-start; gap:12px; justify-content:space-between; }
@@ -1583,6 +1587,11 @@
                     <div class="co2-val" id="coKeepPct2">0%</div>
                     <div class="co2-pills" id="coKeepPills"></div>
                 </div>
+            </div>
+            <div class="co2-upfront" id="coUpfront2" style="display:none;">
+                <span class="co2-up-lbl">Upfront Rev Share Payment</span>
+                <span class="co2-up-val" id="coUpfrontVal2">$0</span>
+                <span class="co2-up-mo" id="coUpfrontMo2">(0.0mo)</span>
             </div>
             <div class="co2-green">
                 <div class="co2-redbox" id="coRedBox" style="display:none;">
@@ -3416,9 +3425,11 @@
             const annualNet = view === 'annual' ? periodNet : periodNet * 12;
             const eligible = (annualNet / 12) >= 2500;
             const coUp = document.getElementById('coUpfront');
+            const coUp2 = document.getElementById('coUpfront2');
             if (_upfrontTier == null || !eligible) {
                 box.style.display = 'none';
                 if (coUp) coUp.style.display = 'none';
+                if (coUp2) coUp2.style.display = 'none';
                 return;
             }
             const periodRevShare = bd.revenueShareAmount || 0;
@@ -3433,6 +3444,12 @@
                 document.getElementById('coUpfrontVal').textContent = formatCurrency(upfrontAmount);
                 document.getElementById('coUpfrontPct').textContent = (_upfrontTier * 100).toFixed(1).replace(/\.0$/, '') + '% of revenue share';
                 coUp.style.display = '';
+            }
+            // Optimized compact view: show the upfront banner between the strip and green card.
+            if (coUp2) {
+                document.getElementById('coUpfrontVal2').textContent = curSym() + (upfrontAmount / 1000).toFixed(1) + 'K';
+                document.getElementById('coUpfrontMo2').textContent = '(' + months.toFixed(1) + 'mo)';
+                coUp2.style.display = '';
             }
         }
 
