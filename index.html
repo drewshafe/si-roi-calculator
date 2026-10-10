@@ -3577,13 +3577,17 @@
             const inp = document.getElementById('coExOrder');
             const res = document.getElementById('coExRes');
             if (!inp || !res) return;
-            if (typeof _premiumIsFlat === 'function' && _premiumIsFlat()) { res.textContent = ''; return; }
-            const v = parseFloat(removeCommas(inp.value)) || 0;
-            if (v <= 0) { res.textContent = ''; return; }
-            const limit = (typeof _coverageLimit === 'function') ? _coverageLimit() : 0;
-            if (limit > 0 && v > limit) { res.textContent = 'Not offered above ' + formatCurrency(limit); return; }
-            const prem = siPremiumFor(v);
-            res.textContent = '$' + formatNumber(Math.round(v)) + ' → ' + formatCurrencyWithCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
+            try {
+                if (typeof _premiumIsFlat === 'function' && _premiumIsFlat()) { res.textContent = ''; return; }
+                const v = parseFloat(removeCommas(inp.value)) || 0;
+                if (v <= 0) { res.textContent = ''; return; }
+                const sym = (typeof curSym === 'function') ? curSym() : '$';
+                const limit = (typeof _coverageLimit === 'function') ? _coverageLimit() : 0;
+                if (limit > 0 && v > limit) { res.textContent = 'Not offered above ' + formatCurrency(limit); return; }
+                const prem = siPremiumFor(v);
+                if (!isFinite(prem)) { res.textContent = ''; return; }
+                res.textContent = sym + formatNumber(Math.round(v)) + ' → ' + formatCurrencyWithCents(prem) + ' · ' + (prem / v * 100).toFixed(1) + '%';
+            } catch (e) { res.textContent = ''; }
         }
 
         function loadSavedValues() {
@@ -4031,10 +4035,15 @@
                 row('CS & Shipping', `${fn(d.totalClaims)} × (${fc(d.avgShipping)} + ${fc(d.csPerClaim)})`, fc(d.csCostTotal)) +
                 row('COGS',         `${fn(d.totalClaims)} × ${fcc(d.aov)} × ${pct(d.cogsP)}`, fc(d.cogsAmount));
             if (d.returnsEnabled) {
-                costHTML +=
-                    row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.returnLabelCost)}`,      fc(d.returnLabelsCostTotal)) +
-                    row('Returns Platform', 'monthly fee',                                       fc(d.periodPlatformCost)) +
-                    row('Total Returns Cost', 'labels + platform',                               fc(d.totalReturnsCost));
+                // Only show the cost components the selected coverage mode actually offsets,
+                // so the rows reconcile with Total Returns Cost (e.g. Opt-in/All-Labels modes
+                // don't cover the returns platform fee → don't list Returns Platform here).
+                const coversLabels = (d.returnLabelsCostTotal || 0) > 0;
+                const coversPortal = (d.siCoveredPlatform || 0) > 0;
+                if (coversLabels) costHTML += row('Return Labels', `${fn(d.totalReturns)} × ${fc(d.returnLabelCost)}`, fc(d.returnLabelsCostTotal));
+                if (coversPortal) costHTML += row('Returns Platform', 'monthly fee', fc(d.periodPlatformCost));
+                const _eq = [coversLabels ? 'labels' : null, coversPortal ? 'platform' : null].filter(Boolean).join(' + ');
+                costHTML += row('Total Returns Cost', _eq, fc(d.totalReturnsCost));
             }
             costHTML += row('Total Cost Without SI', d.returnsEnabled ? 'claims + returns' : 'CS + COGS',
                             '-' + fc(d.totalLost), 'sep negative');
