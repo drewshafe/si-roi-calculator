@@ -1211,12 +1211,15 @@
         .co2-rb-rows { display:flex; gap:16px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.4); font-size:0.6em; font-weight:700; }
         .co2-rb-rows span:empty { display:none; }
 
-        /* Compact inputs — merchant-view model (gray label + white box), 2-col grid in a
-           widened inputs column so labels never wrap/overlap (incl. the Split layout). */
-        .container.density-compact:not(.force-stacked) .calc-left { width:360px; }
-        .container.density-compact .inputs-strip { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 12px; align-content:start; }
+        /* Compact inputs — three labeled sections in trio (3-col) rows:
+           Your Metrics (orders/AOV/claims + returns) · Additional Inputs (product cost /
+           shipping / CS cost) · Your ShipInsure Inputs (premium/attach/rev-share + cashback).
+           Metrics + Additional use the slim gray field style; ShipInsure terms are blue. */
+        .container.density-compact:not(.force-stacked) .calc-left { width:392px; }
+        .container.density-compact .inputs-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px 8px; align-content:start; }
         .container.density-compact .inputs-strip > .inputs-strip-header,
         .container.density-compact .inputs-strip > #miAdditionalToggle,
+        .container.density-compact .inputs-strip > #siInputsHeader,
         .container.density-compact .inputs-strip > #timeSavingsRow,
         .container.density-compact .inputs-strip > #guaranteeInputs,
         .container.density-compact .inputs-strip > #generateProposalLink,
@@ -1225,36 +1228,47 @@
         .container.density-compact #secondaryInputsRow { display:contents; }
         .container.density-compact #returnsInputs.visible,
         .container.density-compact #cashbackInputs.visible { display:contents; }
-        /* All compact input groups adopt the slim merchant-view field style */
-        /* NB: no `display` here — the .mi-additional show/hide rules set display, and an
-           equal-specificity display here would override them and break the dropdown. */
+        /* ShipInsure-group section header (compact only) */
+        #siInputsHeader { display:none; }
+        .container.density-compact #siInputsHeader { display:block; margin-top:4px; }
+        .si-inputs-title { font-size:0.72em; font-weight:800; color:#4a5fc1; text-transform:uppercase; letter-spacing:1px; display:inline-flex; align-items:center; }
+        .si-hdr-logo { height:15px; width:auto; vertical-align:middle; }
+        /* Metrics + Additional groups: slim gray field style (no `display` here so the
+           .mi-additional show/hide rules keep working for the dropdown). */
         .container.density-compact .input-group { background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; min-width:0; }
-        .container.density-compact .input-group > label { display:block; color:#6c757d !important; font-size:0.64em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 4px !important; line-height:1.25; }
-        .container.density-compact .input-group input { width:100%; border:1.5px solid #d0d4e8 !important; background:#fff !important; color:#333 !important; border-radius:8px; padding:7px 10px; font-size:0.9em; font-weight:600; }
+        .container.density-compact .input-group > label { display:block; color:#6c757d !important; font-size:0.6em; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; margin:0 0 4px !important; line-height:1.2; }
+        .container.density-compact .input-group input { width:100%; border:1.5px solid #d0d4e8 !important; background:#fff !important; color:#333 !important; border-radius:8px; padding:6px 8px; font-size:0.85em; font-weight:600; }
         .container.density-compact .input-group input:focus { outline:none; border-color:#6675ff !important; box-shadow:0 0 0 3px rgba(102,117,255,.15); }
         .container.density-compact .input-with-type input { border-radius:8px 0 0 8px; }
         .container.density-compact .input-with-type .itype-btn { border:1.5px solid #d0d4e8; border-left:none; background:#f0f0f0; }
         .container.density-compact .input-with-type .itype-btn:last-child { border-radius:0 8px 8px 0; }
         .container.density-compact .input-with-type .itype-btn.active { background:#6675ff !important; color:#fff; border-color:#6675ff; }
-        .container.density-compact #ordersGroup{order:1}
-        .container.density-compact #aovGroup{order:2}
-        .container.density-compact #claimsRateGroup{order:3}
-        .container.density-compact #protectionPremiumGroup{order:4}
-        .container.density-compact #attachRateGroup{order:5}
-        .container.density-compact #revShareGroup{order:6}
-        .container.density-compact #miAdditionalToggle{order:10; width:100%; text-align:left;}
-        .container.density-compact #avgShippingGroup{order:21}
-        .container.density-compact #csCostGroup{order:22}
-        .container.density-compact #cogsGroup{order:23}
-        .container.density-compact #returnsRateGroup{order:24}
-        .container.density-compact #avgReturnCostGroup{order:25}
-        .container.density-compact #returnsPlatformGroup{order:26}
-        .container.density-compact #returnsCoverageBar{order:27; grid-column:1 / -1}
-        .container.density-compact #cashbackRateGroup{order:28}
-        .container.density-compact #minCashbackGroup{order:29}
-        .container.density-compact #redeemGroup{order:30}
-        .theme-midnight.container.density-compact .input-group > label { color:#d9d9e6 !important; }
-        .theme-midnight.container.density-compact .input-group input { background:#12131a !important; border-color:rgba(212,175,55,.25) !important; color:#efe7cf !important; }
+        /* ShipInsure terms: filled blue boxes */
+        .container.density-compact .input-group.si-input { background:linear-gradient(135deg,#5b6dd1 0%,#7b8de8 100%) !important; border-radius:10px; padding:8px 10px !important; }
+        .container.density-compact .input-group.si-input > label { color:#fff !important; }
+        .container.density-compact .input-group.si-input input { border:none !important; }
+        /* Order: Your Metrics → Additional Inputs → Your ShipInsure Inputs */
+        .container.density-compact .inputs-strip > .inputs-strip-header{order:0}
+        .container.density-compact #ordersGroup{order:2}
+        .container.density-compact #aovGroup{order:3}
+        .container.density-compact #claimsRateGroup{order:4}
+        .container.density-compact #returnsRateGroup{order:5}
+        .container.density-compact #avgReturnCostGroup{order:6}
+        .container.density-compact #returnsPlatformGroup{order:7}
+        .container.density-compact #returnsCoverageBar{order:8; grid-column:1 / -1}
+        .container.density-compact #miAdditionalToggle{order:10; text-align:left;}
+        .container.density-compact #avgShippingGroup{order:11}
+        .container.density-compact #csCostGroup{order:12}
+        .container.density-compact #cogsGroup{order:13}
+        .container.density-compact #siInputsHeader{order:20}
+        .container.density-compact #protectionPremiumGroup{order:21}
+        .container.density-compact #attachRateGroup{order:22}
+        .container.density-compact #revShareGroup{order:23}
+        .container.density-compact #cashbackRateGroup{order:24}
+        .container.density-compact #minCashbackGroup{order:25}
+        .container.density-compact #redeemGroup{order:26}
+        .theme-midnight.container.density-compact .input-group:not(.si-input) > label { color:#d9d9e6 !important; }
+        .theme-midnight.container.density-compact .input-group:not(.si-input) input { background:#12131a !important; border-color:rgba(212,175,55,.25) !important; color:#efe7cf !important; }
         .theme-midnight .co2-box { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
         .theme-midnight .co2-val { color:#efe7cf; }
         .theme-midnight .co2-green { background:linear-gradient(150deg,#101611,#0a0d0a); border-left-color:#2ee6a0; }
@@ -1361,12 +1375,12 @@
 
             <!-- Merchant Inputs — Group 1: order economics -->
             <div class="inputs-row" id="coreInputsRow">
-                <div class="input-group has-cmp" id="protectionPremiumGroup">
+                <div class="input-group si-input has-cmp" id="protectionPremiumGroup">
                     <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
                     <label class="lbl-cmp" for="protectionPremium" aria-hidden="true">Premium %</label>
                     <input type="text" id="protectionPremium" placeholder="0">
                 </div>
-                <div class="input-group" id="attachRateGroup">
+                <div class="input-group si-input" id="attachRateGroup">
                     <label for="attachRate">Attach Rate %</label>
                     <input type="text" id="attachRate" placeholder="0" value="68">
                 </div>
@@ -1424,9 +1438,12 @@
 
             <button type="button" class="mi-additional-toggle" id="miAdditionalToggle" onclick="toggleAdditionalInputs()">▸ Additional Inputs</button>
 
+            <!-- Compact-only section header for the ShipInsure terms group -->
+            <div class="si-inputs-header" id="siInputsHeader"><span class="si-inputs-title">Your&nbsp;<img src="shipinsure-logo-dark.png" class="si-hdr-logo" alt="ShipInsure">&nbsp;Inputs</span></div>
+
             <!-- Merchant Inputs — Group 2: ShipInsure terms -->
             <div class="inputs-row" id="secondaryInputsRow">
-                <div class="input-group has-cmp" id="revShareGroup">
+                <div class="input-group si-input has-cmp" id="revShareGroup">
                     <label for="revenueShare" id="revShareLabel">Rev Share % (net claims)</label>
                     <label class="lbl-cmp" for="revenueShare" aria-hidden="true">Net Rev Share %</label>
                     <input type="text" id="revenueShare" placeholder="0">
@@ -1449,7 +1466,7 @@
             </div>
 
             <div id="returnsInputs" class="returns-section">
-                <div id="returnsRateGroup" class="input-group returns mi-additional has-cmp">
+                <div id="returnsRateGroup" class="input-group returns has-cmp">
                     <label id="returnsRateLabel" for="returnsRate">Returns Rate %</label>
                     <label class="lbl-cmp" for="returnsRate" aria-hidden="true">Return Rate %</label>
                     <div class="input-with-type">
@@ -1458,17 +1475,17 @@
                         <button class="itype-btn" id="retCountBtn" onclick="setReturnsType('count')">#</button>
                     </div>
                 </div>
-                <div id="avgReturnCostGroup" class="input-group returns mi-additional has-cmp">
+                <div id="avgReturnCostGroup" class="input-group returns has-cmp">
                     <label for="avgReturnCost">Avg Return Cost ($)</label>
                     <label class="lbl-cmp" for="avgReturnCost" aria-hidden="true">Avg Label Cost</label>
                     <input type="text" id="avgReturnCost" placeholder="$">
                 </div>
-                <div id="returnsPlatformGroup" class="input-group returns mi-additional has-cmp">
+                <div id="returnsPlatformGroup" class="input-group returns has-cmp">
                     <label for="returnsPlatformCost" id="returnsPlatformLabel">Returns Platform Cost ($/mo)</label>
                     <label class="lbl-cmp" for="returnsPlatformCost" aria-hidden="true">Portal Cost</label>
                     <input type="text" id="returnsPlatformCost" placeholder="$">
                 </div>
-                <div class="returns-coverage-bar mi-additional" id="returnsCoverageBar">
+                <div class="returns-coverage-bar" id="returnsCoverageBar">
                     <div class="rc-divider rc-divider-row">
                         <span>Coverage Mode</span>
                         <select id="returnsPlatformProvider" class="rc-provider" onchange="setReturnsProvider(this.value)" title="Returns platform provider">
@@ -1488,17 +1505,17 @@
             </div>
 
             <div id="cashbackInputs" class="cashback-section">
-                <div class="input-group cashback mi-additional has-cmp" id="cashbackRateGroup">
+                <div class="input-group cashback si-input has-cmp" id="cashbackRateGroup">
                     <label for="cashbackRate">Customer Cashback %</label>
                     <label class="lbl-cmp" for="cashbackRate" aria-hidden="true">Cashback %</label>
                     <input type="text" id="cashbackRate" placeholder="5" value="5">
                 </div>
-                <div class="input-group cashback mi-additional has-cmp" id="minCashbackGroup">
+                <div class="input-group cashback si-input has-cmp" id="minCashbackGroup">
                     <label for="minCashback">Min Cashback Amount ($)</label>
                     <label class="lbl-cmp" for="minCashback" aria-hidden="true">Min Cashback</label>
                     <input type="text" id="minCashback" placeholder="5" value="5">
                 </div>
-                <div class="input-group cashback mi-additional has-cmp" id="redeemGroup">
+                <div class="input-group cashback si-input has-cmp" id="redeemGroup">
                     <label for="cashbackRedemptionRate">Est. Redemption Rate %</label>
                     <label class="lbl-cmp" for="cashbackRedemptionRate" aria-hidden="true">Est Redeem %</label>
                     <input type="text" id="cashbackRedemptionRate" placeholder="10" value="10">
@@ -3565,11 +3582,9 @@
                     }
                 }
             }
-            // Plan-aware panel title (compact only; comfortable keeps "Merchant Inputs")
+            // Section header: "Your Metrics" in the compact 3-section layout; comfortable keeps "Merchant Inputs".
             const titleEl = document.querySelector('.inputs-strip-title');
-            if (titleEl) titleEl.textContent = compact
-                ? (returnsOn ? 'Protection + Returns Inputs' : (cashOn ? 'Protection + Cashback Inputs' : 'Package Protection Inputs'))
-                : 'Merchant Inputs';
+            if (titleEl) titleEl.textContent = compact ? 'Your Metrics' : 'Merchant Inputs';
         }
 
         // Order $ probe in the compact Avg Premium box (reuses siPremiumFor / _coverageLimit).
