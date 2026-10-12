@@ -963,8 +963,21 @@
         .co2-rb-val { font-size:1.25em; font-weight:900; white-space:nowrap; }
         .co2-rb-rows { display:flex; gap:16px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.4); font-size:0.6em; font-weight:700; }
         .co2-rb-rows span:empty { display:none; }
-        /* Compact inputs: 2-col grid, collapse Additional Inputs by default */
-        .proposal-layout.density-compact #primaryInputsGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        /* Compact inputs — three labeled sections in trio (3-col) rows, mirroring the calc:
+           Your Metrics · Additional Inputs · Your ShipInsure Inputs (blue). */
+        .proposal-layout.density-compact #primaryInputsGrid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+        .proposal-layout.density-compact .p-si-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:0 2px; }
+        .proposal-layout.density-compact #additionalInputsInner { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+        .proposal-layout.density-compact #returnsFeatureSection,
+        .proposal-layout.density-compact #cashbackFeatureSection,
+        .proposal-layout.density-compact #guaranteeFeatureSection { display:none !important; }
+        .p-si-section { margin-top:8px; }
+        .si-inputs-title2 { font-size:0.72em; font-weight:800; color:#4a5fc1; text-transform:uppercase; letter-spacing:1px; display:inline-flex; align-items:center; margin:6px 0 4px 2px; }
+        .si-hdr-logo { height:15px; width:auto; vertical-align:middle; }
+        .proposal-layout.density-compact .field-group.si-input { background:linear-gradient(135deg,#5b6dd1 0%,#7b8de8 100%); border-radius:10px; padding:8px 10px; }
+        .proposal-layout.density-compact .field-group.si-input > label { color:#fff !important; }
+        .proposal-layout.density-compact .field-group.si-input input { border:none; }
+        .theme-midnight .si-inputs-title2 { color:#e9c46a; }
         .theme-midnight .co2-box { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
         .theme-midnight .co2-val { color:#efe7cf; }
         .theme-midnight .co2-green { background:linear-gradient(150deg,#101611,#0a0d0a); border-left-color:#2ee6a0; }
@@ -1577,6 +1590,40 @@
         // Upfront Rev Share Payment hero — shown only when the link carried ?upf=.
         // tier is a fraction of a year's rev share; amount = tier × annual rev share,
         // months = tier × 12. Display-only; excluded from every total.
+        // Compact view only: reorganize the merchant-view inputs into three labeled
+        // sections (Your Metrics / Additional Inputs / Your ShipInsure Inputs) in trio rows,
+        // mirroring the rep calc. Runs once; the merchant plan is fixed at load so a
+        // one-time DOM move is safe (field-group ids + inline handlers persist).
+        function pApplyCompactSections() {
+            const pl = document.querySelector('.proposal-layout');
+            if (!pl || !pl.classList.contains('density-compact')) return;
+            if (pl.dataset.cmpSections === '1') return;
+            pl.dataset.cmpSections = '1';
+            const metricsGrid = document.getElementById('primaryInputsGrid');
+            if (!metricsGrid) return;
+            // Use the plan flags (not computed display — the compact CSS hides the feature
+            // sections) to decide which groups move.
+            if (p_returnsEnabled) {
+                ['p-rr-group', 'p-arc-group', 'p-rpc-group'].forEach(id => { const el = document.getElementById(id); if (el) metricsGrid.appendChild(el); });
+            }
+            // "Your Metrics" title above the metrics grid.
+            if (!document.getElementById('pMetricsTitle')) {
+                const mt = document.createElement('div'); mt.id = 'pMetricsTitle'; mt.className = 'si-inputs-title2'; mt.style.margin = '0 0 2px 2px'; mt.textContent = 'Your Metrics';
+                metricsGrid.parentNode.insertBefore(mt, metricsGrid);
+            }
+            // "Your ShipInsure Inputs" section after the Additional Inputs details.
+            const addl = document.getElementById('additionalInputsDetails');
+            const siSec = document.createElement('div'); siSec.id = 'pSiSection'; siSec.className = 'p-si-section';
+            siSec.innerHTML = '<div class="si-inputs-title2">Your&nbsp;<img src="shipinsure-logo-dark.png" class="si-hdr-logo" alt="ShipInsure">&nbsp;Inputs</div><div class="inputs-grid p-si-grid" id="pSiGrid"></div>';
+            if (addl && addl.parentNode) addl.parentNode.insertBefore(siSec, addl.nextSibling);
+            else metricsGrid.parentNode.appendChild(siSec);
+            const siGrid = siSec.querySelector('#pSiGrid');
+            ['p-premium-wrap', 'p-attach-group', 'p-share-group'].forEach(id => { const el = document.getElementById(id); if (el) { el.classList.add('si-input'); siGrid.appendChild(el); } });
+            if (p_cashbackEnabled) {
+                document.querySelectorAll('#cashbackFeatureSection .field-group').forEach(el => { el.classList.add('si-input'); siGrid.appendChild(el); });
+            }
+        }
+
         function pRenderUpfront() {
             const hero = document.getElementById('p-upfrontHero');
             if (!hero) return;
@@ -3112,6 +3159,9 @@
                 document.getElementById('guaranteeFeatureSection').style.display = '';
                 if (urlPs.get('gcr')) document.getElementById('p-gcr').value = urlPs.get('gcr');
             }
+
+            // Compact view: reorganize inputs into Your Metrics / Additional / Your ShipInsure Inputs.
+            pApplyCompactSections();
 
             // Hide current cost
             if (urlPs.get('hcc') === '1') p_hideCurrentCost = true;
