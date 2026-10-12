@@ -4353,31 +4353,39 @@
                 return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
             } catch (e) { return hex; }
         }
-        function applyCalcBranding() {
-            let cfg = null;
-            try { const raw = new URLSearchParams(location.search).get('bld'); if (raw) cfg = JSON.parse(raw); } catch (e) {}
+        // Apply merchant branding. Pass a cfg object ({branding:{...}}) for a LIVE update
+        // (from the stacked Custom Build styler); with no arg it reads ?bld= + the #cbimg
+        // logo on initial load. Re-callable: updates/creates the logo and replaces the
+        // accent, and clears them when branding is removed.
+        function applyCalcBranding(cfgObj) {
+            let cfg = cfgObj || null;
+            if (!cfg) { try { const raw = new URLSearchParams(location.search).get('bld'); if (raw) cfg = JSON.parse(raw); } catch (e) {} }
             const b = (cfg && cfg.branding) || {};
-            // Merchant logo — param, or the uploaded/lock-built logo carried in #cbimg.
+            // Merchant logo — from branding.logoUrl, or (initial load only) the #cbimg hash.
             let logo = b.logoUrl || '';
-            try { const m = (location.hash || '').match(/[#&]cbimg=([^&]+)/); if (m) { const o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); if (o && o.logo) logo = o.logo; } } catch (e) {}
-            if (logo) {
-                const la = document.querySelector('.logo-area');
-                if (la && !document.getElementById('cbMerchantLogo')) {
-                    const img = document.createElement('img'); img.id = 'cbMerchantLogo'; img.src = logo; img.alt = 'Merchant';
+            if (!cfgObj) { try { const m = (location.hash || '').match(/[#&]cbimg=([^&]+)/); if (m) { const o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); if (o && o.logo) logo = o.logo; } } catch (e) {} }
+            const la = document.querySelector('.logo-area');
+            if (logo && la) {
+                let img = document.getElementById('cbMerchantLogo');
+                if (!img) {
+                    img = document.createElement('img'); img.id = 'cbMerchantLogo'; img.alt = 'Merchant';
                     img.style.cssText = 'height:44px;max-width:150px;object-fit:contain;margin-left:14px;padding-left:14px;border-left:2px solid rgba(120,130,200,.3);';
                     img.onerror = function () { this.style.display = 'none'; };
                     la.appendChild(img);
                 }
-            }
+                img.src = logo; img.style.display = '';
+            } else { const ex = document.getElementById('cbMerchantLogo'); if (ex) ex.style.display = 'none'; }
             if (b.font) {
                 document.body.style.fontFamily = "'" + b.font + "', system-ui, sans-serif";
-                const l = document.createElement('link'); l.rel = 'stylesheet';
-                l.href = 'https://fonts.googleapis.com/css2?family=' + b.font.replace(/ /g, '+') + ':wght@400;600;700;800&display=swap';
-                document.head.appendChild(l);
+                if (!document.getElementById('cb-font-' + b.font.replace(/\W/g, ''))) {
+                    const l = document.createElement('link'); l.rel = 'stylesheet'; l.id = 'cb-font-' + b.font.replace(/\W/g, '');
+                    l.href = 'https://fonts.googleapis.com/css2?family=' + b.font.replace(/ /g, '+') + ':wght@400;600;700;800&display=swap';
+                    document.head.appendChild(l);
+                }
             }
+            const prevAccent = document.getElementById('cb-calc-accent'); if (prevAccent) prevAccent.remove();
             if (b.accent) {
                 const a = b.accent, d = _calcShade(a, -22);
-                const prev = document.getElementById('cb-calc-accent'); if (prev) prev.remove();
                 const st = document.createElement('style'); st.id = 'cb-calc-accent';
                 st.textContent =
                     '.co2-box.co2-keep{background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
@@ -4389,6 +4397,11 @@
                 document.head.appendChild(st);
             }
         }
+        // Live branding updates from the stacked Custom Build styler (via the hub).
+        window.addEventListener('message', function (e) {
+            const d = e.data;
+            if (d && d.siHub === 'branding') { try { applyCalcBranding(d.cfg || null); } catch (err) {} }
+        });
         (async function initApp() {
             await siHydrateFromId();
             loadSavedValues();

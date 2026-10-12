@@ -382,6 +382,9 @@
     clearTimeout(_t);
     const doIt = () => { $('preview').src = url; };
     if (immediate) doIt(); else _t = setTimeout(doIt, 400);
+    // Live branding sync: when stacked under the ROI Builder, push the current branding
+    // to the hub so it can re-brand the calc above without reloading it.
+    try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'branding', cfg: cfg() }, '*'); } catch (e) {}
   }
 
   // ── Branding controls ──
