@@ -968,6 +968,11 @@
         .proposal-layout.density-compact #primaryInputsGrid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
         .proposal-layout.density-compact .p-si-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:0 2px; }
         .proposal-layout.density-compact #additionalInputsInner { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+        /* In the narrow trio cells, slim the %/# toggle + input padding so large count
+           values (e.g. 6,600 returns) aren't clipped. */
+        .proposal-layout.density-compact .input-with-type .itype-btn { padding:0 5px; font-size:0.68em; }
+        .proposal-layout.density-compact .input-with-type input { padding-left:8px; padding-right:3px; }
+        .proposal-layout.density-compact .field-group input { font-size:0.85em; }
         .proposal-layout.density-compact #returnsFeatureSection,
         .proposal-layout.density-compact #cashbackFeatureSection,
         .proposal-layout.density-compact #guaranteeFeatureSection { display:none !important; }
