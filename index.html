@@ -4237,6 +4237,16 @@
             alert('Magic link sent to ' + email.trim() + '.\nOpen it (same browser), then click ☁ Cloud Save again.');
             return null;
         }
+        // Name a saved scenario from its plan options (matches Custom Build's labels) so a
+        // merchant folder can hold several and they read clearly as tabs in the options view.
+        function _siScenarioLabel(search) {
+            const p = new URLSearchParams(search || '');
+            if (p.get('rom') === '1') return 'No Protection (Returns)';
+            let s = 'Protection';
+            if (p.get('re') === '1') s += ' + Returns';
+            if (p.get('cbe') === '1') s += ' + Cashback';
+            return s;
+        }
         async function siCloudSave() {
             if (!window.SIsb) { alert('Cloud module not loaded.'); return; }
             const btn = document.getElementById('cloudSaveBtn');
@@ -4249,7 +4259,17 @@
                 // Store the exact query the existing loaders understand, plus any hash.
                 const full = new URL(buildRepLink());
                 const data = { q: full.search.replace(/^\?/, ''), hash: full.hash || '' };
-                const res = await SIsb.saveConfig({ id: _siCloudId || undefined, merchant: merchant.trim(), kind: 'roi', title: merchant.trim(), data: data });
+                // Unify with the merchant-folder model: attach this scenario to the merchant
+                // folder so it can appear as a merchant option and recalls cleanly. The calc
+                // carries NO branding, so never overwrite an existing folder's branding —
+                // reuse the folder when it exists, create a bare one only when it's missing.
+                let mref;
+                try {
+                    const existing = await SIsb.getMerchantByName(merchant.trim());
+                    if (existing) mref = existing.id;
+                    else { const created = await SIsb.saveMerchant({ name: merchant.trim() }); mref = created && created.id; }
+                } catch (e) { mref = null; } // non-fatal: fall back to an unlinked save
+                const res = await SIsb.saveConfig({ id: _siCloudId || undefined, merchant: merchant.trim(), merchant_ref: mref || undefined, kind: 'roi', title: _siScenarioLabel(full.search), data: data });
                 _siCloudId = res.id;
                 // Keep the short id in the address bar so re-saves target the same row.
                 history.replaceState('', '', location.pathname + '?id=' + res.id);
