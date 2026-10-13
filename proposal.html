@@ -112,6 +112,53 @@
         /* Moved below the merchant name instead of beside the logo */
         #headerTextCol .header-view-selector { margin-top: 8px; }
 
+        /* ── Multi-option (coverage) tab bar — shown when opened via ?ids= ── */
+        .si-options-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 14px;
+            padding: 10px 12px;
+            background: #f4f5fb;
+            border: 1px solid #e3e6f3;
+            border-radius: 12px;
+        }
+        .si-options-bar .si-opt-lead {
+            font-size: 0.72em;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6b7280;
+            margin-right: 2px;
+        }
+        .si-opt-tab {
+            appearance: none;
+            border: 1.5px solid #d4d8ec;
+            background: #fff;
+            color: #3a3f55;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 0.82em;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            text-decoration: none;
+            line-height: 1.1;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .si-opt-tab:hover { border-color: #b9bfe0; }
+        .si-opt-tab.active {
+            background: linear-gradient(135deg, #6675FF 0%, #4a5fc1 100%);
+            border-color: #6675FF;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(102, 117, 255, 0.28);
+        }
+        .theme-midnight .si-options-bar { background: #0e0f16; border-color: rgba(212,175,55,.28); }
+        .theme-midnight .si-opt-tab { background: #14151d; border-color: rgba(212,175,55,.3); color: #e8dca8; }
+        .theme-midnight .si-opt-tab.active { background: linear-gradient(135deg,#d4af37,#b8912c); border-color:#d4af37; color:#1a1205; }
+
         .header-view-selector label {
             font-size: 0.78em;
             font-weight: 600;
@@ -2923,6 +2970,7 @@
                     '.calc-btn{background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;}' +
                     '#p-save-link-btn{color:' + a + ' !important;border-color:' + _cbShade(a, 40) + ' !important;}' +
                     '.proposal-header{border-bottom-color:' + a + ' !important;}' +
+                    '.si-opt-tab.active{background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;border-color:' + a + ' !important;box-shadow:0 2px 8px ' + _cbShade(a, 20) + '66 !important;}' +
                     '.no-results-placeholder strong{color:' + a + ' !important;}';
                 document.head.appendChild(st);
             }
@@ -3017,32 +3065,84 @@
         // Tier 2: if the link is a short ?id= (a cloud-saved config), fetch the row
         // and expand it into the real params/hash BEFORE the normal loader runs. Any
         // link without ?id= is untouched, so every existing link keeps working.
+        // Expand a loaded config row into real params/hash + merchant branding, then
+        // rewrite the URL so the normal render path reads it. Shared by ?id= and ?ids=.
+        async function _siApplyRow(row, extraSuffix) {
+            const d = (row && row.data) || {};
+            let q = d.q || '';
+            let logo = (row && row.logo_path) || null;
+            // Merchant-folder branding (single source): a scenario stores params only,
+            // so pull the merchant's bld + logo and inject them for applyCustomBuild.
+            if (row && row.merchant_ref) {
+                try {
+                    const m = await SIsb.getMerchant(row.merchant_ref);
+                    if (m) {
+                        if (m.bld && !/[?&]bld=/.test(q)) q += (q ? '&' : '') + 'bld=' + encodeURIComponent(JSON.stringify(m.bld));
+                        if (m.logo_path) logo = m.logo_path;
+                    }
+                } catch (e) {}
+            }
+            if (logo) window._SI_LOGO_URL = logo;
+            history.replaceState('', '', location.pathname + '?' + q + (extraSuffix || '') + (d.hash || ''));
+        }
+
+        // Multi-option compare: ?ids=a,b,c[&opt=N] loads several saved scenarios for one
+        // merchant and renders a tab bar. The active scenario drives the full render; the
+        // others are loaded only for their tab labels. Read-only (no merchant save-back).
+        async function siHydrateFromIds(idsRaw, ps) {
+            const ids = idsRaw.split(',').map(s => s.trim()).filter(Boolean);
+            if (!ids.length || !window.SIsb) return false;
+            let active = parseInt(ps.get('opt') || '0', 10);
+            if (isNaN(active) || active < 0 || active >= ids.length) active = 0;
+            try {
+                const rows = await Promise.all(ids.map(id => SIsb.loadConfig(id).catch(() => null)));
+                window._SI_OPTION_TABS = ids.map((id, i) => ({ id: id, title: (rows[i] && rows[i].title) || ('Option ' + (i + 1)) }));
+                window._SI_OPTION_ACTIVE = active;
+                const row = rows[active];
+                if (!row) return false;
+                window._SI_LOADED_ID = ids[active];
+                window._SI_EDIT_TOKEN = null; // compare view is read-only
+                // Keep ids+opt in the URL so a reload / copied address re-opens the tabs.
+                const suffix = '&ids=' + encodeURIComponent(ids.join(',')) + '&opt=' + active;
+                await _siApplyRow(row, suffix);
+                return true;
+            } catch (e) { console.warn('[SI] load-by-ids failed:', e && e.message); return false; }
+        }
+
         async function siHydrateFromId() {
             const ps = new URLSearchParams(location.search);
+            const idsRaw = ps.get('ids');
+            if (idsRaw) return await siHydrateFromIds(idsRaw, ps);
             const id = ps.get('id');
             if (!id || !window.SIsb) return false;
             try {
                 const row = await SIsb.loadConfig(id);
-                const d = (row && row.data) || {};
                 window._SI_LOADED_ID = id;
                 window._SI_EDIT_TOKEN = ps.get('t') || null;
-                let q = d.q || '';
-                let logo = (row && row.logo_path) || null;
-                // Merchant-folder branding (single source): a scenario stores params only,
-                // so pull the merchant's bld + logo and inject them for applyCustomBuild.
-                if (row && row.merchant_ref) {
-                    try {
-                        const m = await SIsb.getMerchant(row.merchant_ref);
-                        if (m) {
-                            if (m.bld && !/[?&]bld=/.test(q)) q += (q ? '&' : '') + 'bld=' + encodeURIComponent(JSON.stringify(m.bld));
-                            if (m.logo_path) logo = m.logo_path;
-                        }
-                    } catch (e) {}
-                }
-                if (logo) window._SI_LOGO_URL = logo;
-                history.replaceState('', '', location.pathname + '?' + q + (d.hash || ''));
+                await _siApplyRow(row);
                 return true;
             } catch (e) { console.warn('[SI] load-by-id failed:', e && e.message); return false; }
+        }
+
+        // Build the coverage-options tab bar (only when ?ids= brought ≥2 scenarios).
+        function renderOptionTabs() {
+            const tabs = window._SI_OPTION_TABS;
+            if (!tabs || tabs.length < 2) return;
+            const active = window._SI_OPTION_ACTIVE || 0;
+            const ids = tabs.map(t => t.id);
+            const header = document.getElementById('proposalHeader');
+            if (!header || document.getElementById('siOptionsBar')) return;
+            const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const idsEnc = encodeURIComponent(ids.join(','));
+            const bar = document.createElement('div');
+            bar.className = 'si-options-bar';
+            bar.id = 'siOptionsBar';
+            bar.innerHTML = '<span class="si-opt-lead">Coverage options</span>' +
+                tabs.map((t, i) =>
+                    '<a class="si-opt-tab' + (i === active ? ' active' : '') + '" href="' +
+                    location.pathname + '?ids=' + idsEnc + '&opt=' + i + '">' + esc(t.title) + '</a>'
+                ).join('');
+            header.parentNode.insertBefore(bar, header.nextSibling);
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
@@ -3054,6 +3154,7 @@
             { const _disp = (urlPs.get('disp') || urlPs.get('den') || '').toLowerCase();
               if (_disp === 'compact' || _disp === 'c') { const pl = document.querySelector('.proposal-layout'); if (pl) pl.classList.add('density-compact'); } }
             applyCustomBuild(urlPs);
+            renderOptionTabs();
             // A cloud-stored logo (Supabase Storage) overrides any param/hash logo.
             if (window._SI_LOGO_URL) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = window._SI_LOGO_URL; lg.style.display = ''; lg.onerror = null; } }
             // Opened via a cloud link that carries an edit token → offer merchant save-back.
