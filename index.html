@@ -1257,9 +1257,12 @@
         .container.density-compact #returnsPlatformGroup{order:7}
         .container.density-compact #returnsCoverageBar{order:8; grid-column:1 / -1}
         .container.density-compact #miAdditionalToggle{order:10; text-align:left;}
-        .container.density-compact #avgShippingGroup{order:11}
-        .container.density-compact #csCostGroup{order:12}
-        .container.density-compact #cogsGroup{order:13}
+        .container.density-compact #hybridThresholdGroup{order:11}
+        .container.density-compact #hybridAboveOrdersGroup{order:12}
+        .container.density-compact #hybridAboveAovGroup{order:13}
+        .container.density-compact #avgShippingGroup{order:14}
+        .container.density-compact #csCostGroup{order:15}
+        .container.density-compact #cogsGroup{order:16}
         .container.density-compact #siInputsHeader{order:20}
         .container.density-compact #protectionPremiumGroup{order:21}
         .container.density-compact #attachRateGroup{order:22}
@@ -1402,29 +1405,10 @@
                         <button class="itype-btn" id="claimsCountBtn" onclick="setClaimsType('count')">#</button>
                     </div>
                 </div>
-                <div class="input-group mi-additional" id="cogsGroup">
-                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
-                    <div class="input-with-type">
-                        <input type="text" id="cogsPercent" placeholder="0" value="38">
-                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
-                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
-                    </div>
-                </div>
-                <div class="input-group mi-additional" id="avgShippingGroup">
-                    <label for="avgShipping">Avg Shipping</label>
-                    <input type="text" id="avgShipping" placeholder="$" value="8">
-                </div>
-                <div class="input-group mi-additional has-cmp" id="csCostGroup">
-                    <label for="csCostPerClaim">Avg Ticket Cost</label>
-                    <label class="lbl-cmp" for="csCostPerClaim" aria-hidden="true">CS Cost Per Claim</label>
-                    <input type="text" id="csCostPerClaim" placeholder="$" value="5">
-                </div>
-                <!-- Hybrid Coverage (Additional Inputs) — mirrors the Rep Hub sidebar controls.
-                     Hidden unless the Hybrid Coverage template is selected. Below-threshold
-                     volume/AOV come from the main Orders + AOV; only the above-threshold
-                     exceptions are entered here. -->
-                <div class="input-group mi-additional" id="hybridModeGroup" style="display:none;">
-                    <label for="hybridMode" title="How coverage splits between customer opt-in and merchant-funded orders">Hybrid Mode</label>
+                <!-- Hybrid Mode is a hidden state-holder driven by the Rep Hub sidebar (it is
+                     NOT shown in the calc UI). The threshold + above-band adjuster DO appear,
+                     first, under Additional Inputs when Hybrid Coverage is selected. -->
+                <div id="hybridModeGroup" style="display:none;">
                     <select id="hybridMode" onchange="toggleHybridRules(); calculate();">
                         <option value="optin_threshold">Opt-in + threshold</option>
                         <option value="auto_above">No opt-in above threshold</option>
@@ -1442,6 +1426,23 @@
                 <div class="input-group mi-additional" id="hybridAboveAovGroup" style="display:none;">
                     <label for="hybridAboveAov" title="Average value of the above-threshold orders (blank = use the main AOV)">AOV &gt; Thresh</label>
                     <input type="text" id="hybridAboveAov" placeholder="(AOV)" oninput="calculate()">
+                </div>
+                <div class="input-group mi-additional" id="cogsGroup">
+                    <label id="cogsLabel" for="cogsPercent">Product Cost</label>
+                    <div class="input-with-type">
+                        <input type="text" id="cogsPercent" placeholder="0" value="38">
+                        <button class="itype-btn active" id="cogsPctBtn" onclick="setCogsType('pct')">%</button>
+                        <button class="itype-btn" id="cogsFlatBtn" onclick="setCogsType('flat')">$</button>
+                    </div>
+                </div>
+                <div class="input-group mi-additional" id="avgShippingGroup">
+                    <label for="avgShipping">Avg Shipping</label>
+                    <input type="text" id="avgShipping" placeholder="$" value="8">
+                </div>
+                <div class="input-group mi-additional has-cmp" id="csCostGroup">
+                    <label for="csCostPerClaim">Avg Ticket Cost</label>
+                    <label class="lbl-cmp" for="csCostPerClaim" aria-hidden="true">CS Cost Per Claim</label>
+                    <input type="text" id="csCostPerClaim" placeholder="$" value="5">
                 </div>
             </div>
 
@@ -2514,7 +2515,8 @@
             const isHybrid = (cov === 'hybrid');
             const threshMode = (isHybrid && mode !== 'no_threshold');
             const setDisp = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
-            setDisp('hybridModeGroup', isHybrid);
+            // Hybrid Mode stays a hidden holder (sidebar-driven); only the threshold + above
+            // adjuster surface in the calc (under Additional Inputs) for threshold modes.
             setDisp('hybridThresholdGroup', threshMode);
             setDisp('hybridAboveOrdersGroup', threshMode);
             setDisp('hybridAboveAovGroup', threshMode);
@@ -2567,7 +2569,7 @@
             // Hybrid inputs (sub-mode + threshold + above-band adjuster) live under Additional
             // Inputs; toggleHybridRules governs their visibility.
             if (cov !== 'hybrid') {
-                ['hybridModeGroup', 'hybridThresholdGroup', 'hybridAboveOrdersGroup', 'hybridAboveAovGroup'].forEach(id => setDisp(id, false));
+                ['hybridThresholdGroup', 'hybridAboveOrdersGroup', 'hybridAboveAovGroup'].forEach(id => setDisp(id, false));
             } else {
                 toggleHybridRules();
             }
