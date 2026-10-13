@@ -1384,22 +1384,34 @@
                     <label for="attachRate">Attach Rate %</label>
                     <input type="text" id="attachRate" placeholder="0" value="68">
                 </div>
-                <!-- Hybrid Coverage only: how much of the NON-opted volume the merchant covers -->
-                <div class="input-group" id="hybridCoveredGroup" style="display:none;">
-                    <label for="hybridCovered" title="Of orders where the customer does NOT opt in, the % the merchant pays to cover">% Non-Opted Covered</label>
-                    <input type="text" id="hybridCovered" placeholder="100" value="100" oninput="calculate()">
+                <!-- Hybrid Coverage v2: sub-mode + threshold + two order bands -->
+                <div class="input-group" id="hybridModeGroup" style="display:none;">
+                    <label for="hybridMode" title="How coverage splits between customer opt-in and merchant-funded orders">Hybrid Mode</label>
+                    <select id="hybridMode" onchange="toggleHybridRules(); calculate();">
+                        <option value="optin_threshold">Opt-in + threshold</option>
+                        <option value="auto_above">No opt-in above threshold</option>
+                        <option value="no_threshold">No threshold (cover all non-opted)</option>
+                    </select>
                 </div>
-                <!-- Hybrid Coverage only: optional cart-value ruleset for merchant-covered orders -->
-                <div class="input-group" id="hybridRulesToggleGroup" style="display:none;">
-                    <label class="view-inputs-label" style="white-space:nowrap;"><input type="checkbox" id="hybridRulesCheck" onchange="toggleHybridRules()"> Add Rules?</label>
+                <div class="input-group" id="hybridThresholdGroup" style="display:none;">
+                    <label for="hybridThreshold" title="Order value separating the two bands — the merchant auto-covers above it">Threshold $</label>
+                    <input type="text" id="hybridThreshold" placeholder="75" value="75" oninput="calculate()">
                 </div>
-                <div class="input-group" id="hybridRuleMinGroup" style="display:none;">
-                    <label for="hybridRuleMin" title="Only cover non-opted orders with a subtotal ABOVE this (blank = no minimum)">Order $ &gt;</label>
-                    <input type="text" id="hybridRuleMin" placeholder="(any)" oninput="calculate()">
+                <div class="input-group hyb-band" id="hybridBelowOrdersGroup" style="display:none;">
+                    <label for="hybridBelowOrders" title="Number of orders at or below the threshold">Orders ≤ Thresh</label>
+                    <input type="text" id="hybridBelowOrders" placeholder="0" oninput="calculate()">
                 </div>
-                <div class="input-group" id="hybridRuleMaxGroup" style="display:none;">
-                    <label for="hybridRuleMax" title="Only cover non-opted orders with a subtotal BELOW this (blank = no maximum)">Order $ &lt;</label>
-                    <input type="text" id="hybridRuleMax" placeholder="(any)" oninput="calculate()">
+                <div class="input-group hyb-band" id="hybridBelowAovGroup" style="display:none;">
+                    <label for="hybridBelowAov" title="Average order value of the below-threshold band">AOV ≤ Thresh</label>
+                    <input type="text" id="hybridBelowAov" placeholder="0" oninput="calculate()">
+                </div>
+                <div class="input-group hyb-band" id="hybridAboveOrdersGroup" style="display:none;">
+                    <label for="hybridAboveOrders" title="Number of orders above the threshold">Orders &gt; Thresh</label>
+                    <input type="text" id="hybridAboveOrders" placeholder="0" oninput="calculate()">
+                </div>
+                <div class="input-group hyb-band" id="hybridAboveAovGroup" style="display:none;">
+                    <label for="hybridAboveAov" title="Average order value of the above-threshold band">AOV &gt; Thresh</label>
+                    <input type="text" id="hybridAboveAov" placeholder="0" oninput="calculate()">
                 </div>
                 <div class="input-group" id="ordersGroup">
                     <label for="annualOrders" id="ordersInputLabel">Monthly Orders</label>
@@ -2496,13 +2508,19 @@
             t = t || (document.getElementById('pricingTemplate') || {}).value;
             return t === 'full_coverage' ? 'full' : t === 'hybrid_coverage' ? 'hybrid' : 'standard';
         }
+        // Hybrid v2: the sub-mode decides whether the threshold + two order bands show.
+        // In a threshold mode the bands are the source of truth for volume/AOV, so the
+        // main Orders + AOV fields are hidden; "No threshold" uses the main fields.
         function toggleHybridRules() {
-            const on = !!(document.getElementById('hybridRulesCheck') || {}).checked;
             const cov = _coverageType();
-            const show = on && cov === 'hybrid';
-            const mn = document.getElementById('hybridRuleMinGroup'); if (mn) mn.style.display = show ? '' : 'none';
-            const mx = document.getElementById('hybridRuleMaxGroup'); if (mx) mx.style.display = show ? '' : 'none';
-            calculate();
+            const mode = (document.getElementById('hybridMode') || {}).value || 'optin_threshold';
+            const threshMode = (cov === 'hybrid' && mode !== 'no_threshold');
+            const setDisp = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
+            setDisp('hybridThresholdGroup', threshMode);
+            ['hybridBelowOrdersGroup', 'hybridBelowAovGroup', 'hybridAboveOrdersGroup', 'hybridAboveAovGroup'].forEach(id => setDisp(id, threshMode));
+            // Main Orders/AOV hidden when the bands define the volume (threshold modes).
+            setDisp('ordersGroup', !threshMode);
+            setDisp('aovGroup', !threshMode);
         }
         // Persist Hybrid-only inputs (% of non-opted covered + optional cart-$ ruleset)
         // into a share/save link so full/hybrid calcs round-trip.
@@ -2515,12 +2533,14 @@
             if (gv('tsAgentRate')) params.set('ar', removeCommas(gv('tsAgentRate')));
             if (gv('tsDeflectPct')) params.set('df', removeCommas(gv('tsDeflectPct')));
             if (cov === 'hybrid') {
-                params.set('hyc', removeCommas(gv('hybridCovered')) || '100');
-                if ((document.getElementById('hybridRulesCheck') || {}).checked) {
-                    params.set('hyr', '1');
-                    const mn = removeCommas(gv('hybridRuleMin')), mx = removeCommas(gv('hybridRuleMax'));
-                    if (mn) params.set('hrmin', mn);
-                    if (mx) params.set('hrmax', mx);
+                const mode = (document.getElementById('hybridMode') || {}).value || 'optin_threshold';
+                params.set('hsm', mode);
+                if (mode !== 'no_threshold') {
+                    if (gv('hybridThreshold')) params.set('hth', removeCommas(gv('hybridThreshold')));
+                    if (gv('hybridBelowOrders')) params.set('hbo', removeCommas(gv('hybridBelowOrders')));
+                    if (gv('hybridBelowAov')) params.set('hbv', removeCommas(gv('hybridBelowAov')));
+                    if (gv('hybridAboveOrders')) params.set('hao', removeCommas(gv('hybridAboveOrders')));
+                    if (gv('hybridAboveAov')) params.set('hav', removeCommas(gv('hybridAboveAov')));
                 }
             }
         }
@@ -2540,18 +2560,22 @@
             // Attach Rate: hidden for Full (no opt-in); shown for Hybrid + standard.
             const setDisp = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
             setDisp('attachRateGroup', cov !== 'full');
-            // Rev Share: hidden for Full and Hybrid (merchant-paid coverage).
-            setDisp('revShareGroup', cov === 'standard');
-            setDisp('secondaryInputsRow', cov === 'standard');
+            // Rev Share: hidden for Full (merchant pays 100%); shown for Hybrid (it both
+            // earns on opt-in orders AND discounts merchant-covered orders) + standard.
+            setDisp('revShareGroup', cov !== 'full');
+            setDisp('secondaryInputsRow', cov !== 'full');
             // Time-savings inputs (ticket deflection → agent hours) for Full/Hybrid.
             setDisp('timeSavingsRow', cov !== 'standard');
             // "Avg Ticket Cost" is replaced by Handle Time × Agent $/hr for coverage models.
             setDisp('csCostGroup', cov === 'standard');
-            // Hybrid-only inputs.
-            setDisp('hybridCoveredGroup', cov === 'hybrid');
-            setDisp('hybridRulesToggleGroup', cov === 'hybrid');
-            if (cov !== 'hybrid') { setDisp('hybridRuleMinGroup', false); setDisp('hybridRuleMaxGroup', false); }
-            else { toggleHybridRules(); }
+            // Hybrid v2 inputs (sub-mode + threshold + bands).
+            setDisp('hybridModeGroup', cov === 'hybrid');
+            if (cov !== 'hybrid') {
+                ['hybridThresholdGroup', 'hybridBelowOrdersGroup', 'hybridBelowAovGroup', 'hybridAboveOrdersGroup', 'hybridAboveAovGroup'].forEach(id => setDisp(id, false));
+                setDisp('ordersGroup', true); setDisp('aovGroup', true);
+            } else {
+                toggleHybridRules();
+            }
         }
 
         // ── Currency ─────────────────────────────────────────────────────
@@ -2900,8 +2924,22 @@
             const timeframe = document.getElementById('timeframe').value;
             const pricingTemplate = document.getElementById('pricingTemplate').value;
             const cov = _coverageType(pricingTemplate);   // 'standard' | 'full' | 'hybrid'
-            const ordersInput = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
-            const avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
+            // Hybrid v2 — sub-mode + two order bands. In a threshold mode the bands are the
+            // source of truth for volume + AOV (total = below + above; AOV = blended), so the
+            // main Orders/AOV fields are hidden and reconstructed here.
+            const hybridMode = (document.getElementById('hybridMode') || {}).value || 'optin_threshold';
+            const hybridThreshMode = (cov === 'hybrid' && hybridMode !== 'no_threshold');
+            const hBelowOrders = parseFloat(removeCommas((document.getElementById('hybridBelowOrders') || {}).value || '')) || 0;
+            const hBelowAov    = parseFloat(removeCommas((document.getElementById('hybridBelowAov') || {}).value || '')) || 0;
+            const hAboveOrders = parseFloat(removeCommas((document.getElementById('hybridAboveOrders') || {}).value || '')) || 0;
+            const hAboveAov    = parseFloat(removeCommas((document.getElementById('hybridAboveAov') || {}).value || '')) || 0;
+            let ordersInput = parseFloat(removeCommas(document.getElementById('annualOrders').value)) || 0;
+            let avgOrderValue = parseFloat(removeCommas(document.getElementById('avgOrderValue').value)) || 0;
+            if (hybridThreshMode) {
+                const _tot = hBelowOrders + hAboveOrders;
+                ordersInput = _tot;
+                avgOrderValue = _tot > 0 ? (hBelowOrders * hBelowAov + hAboveOrders * hAboveAov) / _tot : 0;
+            }
             const avgShipping   = parseFloat(removeCommas(document.getElementById('avgShipping').value)) || 0;
             const csCostPerClaim = parseFloat(removeCommas(document.getElementById('csCostPerClaim').value)) || 0;
             // Time-savings inputs (Full/Hybrid). For coverage models the per-claim CS cost
@@ -3001,24 +3039,55 @@
             } else {
                 avgPremium = getTieredPremium(avgOrderValue, pricingTemplate);
             }
-            // Coverage split — which orders are covered and who pays the premium.
-            //  Full   : merchant pays 100% (no opt-in).
-            //  Hybrid : customers opt in (attach); merchant covers a % of the non-opted.
+            // Coverage split — which orders are covered, who pays, and (Hybrid) rev share.
+            //  Full   : merchant pays 100% (no opt-in), no rev share.
+            //  Hybrid : customers opt in (attach) + merchant funds non-opters per sub-mode;
+            //           rev share is EARNED on opt-in orders and DISCOUNTS merchant-covered ones.
             //  Standard: only the opted-in orders (customers pay).
-            const _optInOrders = periodOrders * attachRate;
-            let protectedOrders, merchantCoveredOrders;
+            let protectedOrders, merchantCoveredOrders, optInOrders = 0, uncoveredOrders = 0;
+            let merchantGrossPremium = 0, merchantRevShareDiscount = 0, revShareEarnedOptIn = 0;
             if (cov === 'full') {
                 merchantCoveredOrders = periodOrders;
                 protectedOrders = periodOrders;
+                merchantGrossPremium = periodOrders * avgPremium;
             } else if (cov === 'hybrid') {
-                const _pctNon = (parseFloat(removeCommas((document.getElementById('hybridCovered') || {}).value || '')) || 0) / 100;
-                merchantCoveredOrders = periodOrders * (1 - attachRate) * _pctNon;
-                protectedOrders = _optInOrders + merchantCoveredOrders;
+                const _prem = aov => Math.max(aov * protectionPremium, minPremiumFloor);
+                if (hybridMode === 'no_threshold') {
+                    optInOrders = periodOrders * attachRate;
+                    merchantCoveredOrders = periodOrders * (1 - attachRate);
+                    merchantGrossPremium = merchantCoveredOrders * avgPremium;
+                    revShareEarnedOptIn = optInOrders * avgPremium * revenueShare;
+                } else {
+                    const premBelow = _prem(hBelowAov), premAbove = _prem(hAboveAov);
+                    const optInBelow = hBelowOrders * attachRate;
+                    const optInAbove = hAboveOrders * attachRate;
+                    uncoveredOrders = hBelowOrders * (1 - attachRate); // below-threshold non-opters = uncovered
+                    if (hybridMode === 'auto_above') {
+                        // No opt-in above the threshold → merchant covers 100% above.
+                        merchantCoveredOrders = hAboveOrders;
+                        optInOrders = optInBelow;
+                        merchantGrossPremium = merchantCoveredOrders * premAbove;
+                        revShareEarnedOptIn = (optInBelow * premBelow) * revenueShare;
+                    } else {
+                        // optin_threshold: opt-in everywhere; merchant covers above-threshold non-opters.
+                        merchantCoveredOrders = hAboveOrders * (1 - attachRate);
+                        optInOrders = optInBelow + optInAbove;
+                        merchantGrossPremium = merchantCoveredOrders * premAbove;
+                        revShareEarnedOptIn = (optInBelow * premBelow + optInAbove * premAbove) * revenueShare;
+                    }
+                }
+                protectedOrders = optInOrders + merchantCoveredOrders;
+                merchantRevShareDiscount = merchantGrossPremium * revenueShare;
             } else {
+                optInOrders = periodOrders * attachRate;
                 merchantCoveredOrders = 0;
-                protectedOrders = _optInOrders;
+                protectedOrders = optInOrders;
             }
-            const merchantPremiumCost = merchantCoveredOrders * avgPremium;
+            // Net premium the merchant pays: covered-order premium minus the rev-share discount
+            // (Hybrid only). Full pays full premium (no rev share); Standard pays nothing.
+            const merchantPremiumCost = (cov === 'hybrid')
+                ? (merchantGrossPremium - merchantRevShareDiscount)
+                : (merchantCoveredOrders * avgPremium);
 
             const totalClaims = periodOrders * claimsRate;
             const claimsOffset = protectedOrders * claimsRate;
@@ -3378,7 +3447,8 @@
                 guaranteeEnabled, gClaimsRate, gAdditionalClaims, gSiFundedClaims,
                 grossRevShare: _grossRevShare,
                 coverageType: cov, merchantCoveredOrders, merchantPremiumCost, coveredClaimLossAvoided, netSavings,
-                deflectedTickets, agentHoursFreed, csLaborSaved, tsHandleMin, tsAgentRate
+                deflectedTickets, agentHoursFreed, csLaborSaved, tsHandleMin, tsAgentRate,
+                hybridMode, optInOrders, uncoveredOrders, merchantGrossPremium, merchantRevShareDiscount, revShareEarnedOptIn
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
             renderExtraRevenueCard();
@@ -3417,11 +3487,22 @@
                 // Premium cost is already in the output pills; here show the NET cost after
                 // the CS labor it saves (effective out-of-pocket).
                 const _netCost = merchantPremiumCost - csLaborSaved;
+                // Hybrid: a 3-way order-bucket breakdown (who funds each order) + rev-share.
+                let _buckets = '';
+                if (cov === 'hybrid') {
+                    _buckets =
+                        _row('🟦 Customer-funded (opt-in)', formatNumber(Math.round(optInOrders)) + ' orders', '#4a5fc1') +
+                        (revShareEarnedOptIn > 0 ? _row('&nbsp;&nbsp;↳ Rev share earned', '+' + formatCurrency(revShareEarnedOptIn), '#28a745') : '') +
+                        _row('🟩 Auto-covered by merchant', formatNumber(Math.round(merchantCoveredOrders)) + ' orders', '#1f2430') +
+                        (merchantRevShareDiscount > 0 ? _row('&nbsp;&nbsp;↳ Rev-share discount', '−' + formatCurrency(merchantRevShareDiscount), '#28a745') : '') +
+                        (uncoveredOrders > 0 ? _row('⬜ Uncovered (declined)', formatNumber(Math.round(uncoveredOrders)) + ' orders', '#adb5bd') : '');
+                }
                 setHtml('erBody',
+                    _buckets +
                     _row('Shipping tickets deflected', formatNumber(Math.round(deflectedTickets)), '#4a5fc1') +
                     _row('CS labor saved', formatCurrency(csLaborSaved), '#28a745') +
                     _row('Claim costs covered', formatCurrency(coveredClaimLossAvoided), '#28a745') +
-                    _row('Net premium cost (after CS labor saved)' + (cov === 'hybrid' ? ', non-opted' : ''), (_netCost < 0 ? '+' : '−') + formatCurrency(Math.abs(_netCost)), _netCost < 0 ? '#28a745' : '#dc3545'));
+                    _row(cov === 'hybrid' ? 'Net merchant premium (after rev share + CS labor)' : 'Net premium cost (after CS labor saved)', (_netCost < 0 ? '+' : '−') + formatCurrency(Math.abs(_netCost)), _netCost < 0 ? '#28a745' : '#dc3545'));
             }
             renderFlows();
             updateCompactOutputs(returnsEnabled);
@@ -3632,12 +3713,10 @@
                 if (urlParams.get('ht') !== null) { const el = document.getElementById('tsHandleTime'); if (el) el.value = urlParams.get('ht'); }
                 if (urlParams.get('ar') !== null) { const el = document.getElementById('tsAgentRate'); if (el) el.value = urlParams.get('ar'); }
                 if (urlParams.get('df') !== null) { const el = document.getElementById('tsDeflectPct'); if (el) el.value = urlParams.get('df'); }
-                if (urlParams.get('hyc') !== null) { const el = document.getElementById('hybridCovered'); if (el) el.value = urlParams.get('hyc'); }
-                if (urlParams.get('hyr') === '1') {
-                    const chk = document.getElementById('hybridRulesCheck'); if (chk) chk.checked = true;
-                    if (urlParams.get('hrmin') !== null) { const el = document.getElementById('hybridRuleMin'); if (el) el.value = urlParams.get('hrmin'); }
-                    if (urlParams.get('hrmax') !== null) { const el = document.getElementById('hybridRuleMax'); if (el) el.value = urlParams.get('hrmax'); }
-                }
+                // Hybrid v2: sub-mode + threshold + two bands.
+                if (urlParams.get('hsm') !== null) { const el = document.getElementById('hybridMode'); if (el) el.value = urlParams.get('hsm'); }
+                { const m = { hth: 'hybridThreshold', hbo: 'hybridBelowOrders', hbv: 'hybridBelowAov', hao: 'hybridAboveOrders', hav: 'hybridAboveAov' };
+                  Object.keys(m).forEach(k => { if (urlParams.get(k) !== null) { const el = document.getElementById(m[k]); if (el) el.value = urlParams.get(k); } }); }
                 if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
                 if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 if (urlParams.get('cr')) setClaimResolution(urlParams.get('cr'));
