@@ -1263,6 +1263,52 @@
         .container.density-compact #avgShippingGroup{order:14}
         .container.density-compact #csCostGroup{order:15}
         .container.density-compact #cogsGroup{order:16}
+        .container.density-compact #curSolHeader{order:30}
+        .container.density-compact #curTemplateGroup{order:31}
+        .container.density-compact #curPremiumGroup{order:32}
+        .container.density-compact #curAttachGroup{order:33}
+        .container.density-compact #curClaimResGroup{order:34}
+        .container.density-compact #curRevShareGroup{order:35}
+        .container.density-compact #curRevBasisGroup{order:36}
+        /* "Current Solution" sub-header within the inputs */
+        .cur-sol-header { grid-column:1 / -1; font-size:0.72em; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#7c3aed; margin:6px 0 2px; }
+        .theme-midnight .cur-sol-header { color:#c9a2ff; }
+
+        /* ── Competitor calc type: ShipInsure vs Current Solution comparison ── */
+        /* In Competitor mode, hide the normal output blocks (both densities); keep the
+           comparison view + the calculation breakdown below it. */
+        .calc-right.cmp-active > #compactOutputs,
+        .calc-right.cmp-active > #compactOpt,
+        .calc-right.cmp-active > .outputs-strip,
+        .calc-right.cmp-active > #widgetMiddleWrapper { display:none !important; }
+        #competitorOutput { padding:16px; }
+        .cmp-headline { background:linear-gradient(135deg,#4a5fc1,#6675ff); color:#fff; border-radius:14px; padding:16px 18px; text-align:center; margin-bottom:14px; }
+        .cmp-hl-label { font-size:0.78em; font-weight:700; opacity:.92; text-transform:uppercase; letter-spacing:.04em; }
+        .cmp-hl-value { font-size:2.3em; font-weight:800; line-height:1.1; margin:2px 0; }
+        .cmp-hl-sub { font-size:0.8em; opacity:.92; }
+        .cmp-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+        .cmp-card { border:1px solid #e3e6f3; border-radius:12px; padding:12px 14px; background:#fff; }
+        .cmp-card.cmp-cur { border-top:3px solid #7c3aed; }
+        .cmp-card.cmp-si { border-top:3px solid #4a5fc1; }
+        .cmp-card-head { display:flex; justify-content:space-between; align-items:baseline; font-weight:800; margin-bottom:6px; gap:8px; }
+        .cmp-card-head .cmp-card-total { font-size:1.15em; }
+        .cmp-card.cmp-cur .cmp-card-total { color:#7c3aed; }
+        .cmp-card.cmp-si .cmp-card-total { color:#4a5fc1; }
+        .cmp-card-rows > div { display:flex; justify-content:space-between; gap:10px; padding:4px 0; font-size:0.85em; border-top:1px solid #f0f1f8; }
+        .cmp-card-rows > div:first-child { border-top:none; }
+        .cmp-card-rows .k { color:#6c757d; font-weight:600; }
+        .cmp-card-rows .v { font-weight:800; color:#1f2430; }
+        .cmp-table-toggle { width:100%; background:#eef0fb; border:1px solid #d5d9f0; border-radius:8px; padding:7px; font-size:0.8em; font-weight:700; color:#4a5fc1; cursor:pointer; }
+        .cmp-table { width:100%; border-collapse:collapse; margin-top:10px; font-size:0.82em; }
+        .cmp-table th, .cmp-table td { padding:6px 8px; text-align:right; border-bottom:1px solid #eef0f6; }
+        .cmp-table th:first-child, .cmp-table td:first-child { text-align:left; color:#6c757d; font-weight:600; }
+        .cmp-table thead th { font-weight:800; color:#1f2430; border-bottom:2px solid #d5d9f0; }
+        .cmp-table .cmp-adv-row td { font-weight:800; border-top:2px solid #d5d9f0; color:#1f2430; }
+        @media (max-width:720px){ .cmp-cards { grid-template-columns:1fr; } }
+        .theme-midnight .cmp-card { background:#14151d; border-color:rgba(212,175,55,.2); }
+        .theme-midnight .cmp-card-rows .v { color:#efe7cf; }
+        .theme-midnight .cmp-card-rows .k { color:#b9b3a0; }
+        .theme-midnight .cmp-table-toggle { background:#191a22; border-color:rgba(212,175,55,.3); color:#e9c46a; }
         .container.density-compact #siInputsHeader{order:20}
         .container.density-compact #protectionPremiumGroup{order:21}
         .container.density-compact #attachRateGroup{order:22}
@@ -1444,6 +1490,52 @@
                     <label class="lbl-cmp" for="csCostPerClaim" aria-hidden="true">CS Cost Per Claim</label>
                     <input type="text" id="csCostPerClaim" placeholder="$" value="5">
                 </div>
+
+                <!-- Calc Type is a hidden state-holder driven by the Rep Hub sidebar (Core vs
+                     Competitor). Competitor mode reveals the Current Solution inputs below. -->
+                <div id="calcTypeGroup" style="display:none;">
+                    <select id="calcType" onchange="toggleCalcType(); calculate();">
+                        <option value="core">Core</option>
+                        <option value="comp">Competitor</option>
+                    </select>
+                </div>
+                <!-- Current Solution (Competitor calc type) — mirrors the ShipInsure plan
+                     inputs so the two programs compare apples-to-apples. In Additional Inputs. -->
+                <div class="cur-sol-header mi-additional" id="curSolHeader" style="display:none;">Current Solution</div>
+                <div class="input-group mi-additional" id="curTemplateGroup" style="display:none;">
+                    <label for="curTemplate">Current Pricing</label>
+                    <select id="curTemplate" onchange="toggleCurPremType(); calculate();"></select>
+                </div>
+                <div class="input-group mi-additional" id="curPremiumGroup" style="display:none;">
+                    <label for="curPremium" id="curPremiumLabel">Current Premium %</label>
+                    <div class="input-with-type">
+                        <input type="text" id="curPremium" placeholder="0" value="3.00" oninput="calculate()">
+                        <button class="itype-btn active" id="curPctBtn" onclick="setCurPremType('pct')">%</button>
+                        <button class="itype-btn" id="curFlatBtn" onclick="setCurPremType('flat')">$</button>
+                    </div>
+                </div>
+                <div class="input-group mi-additional" id="curAttachGroup" style="display:none;">
+                    <label for="curAttach">Current Attach %</label>
+                    <input type="text" id="curAttach" placeholder="0" value="50" oninput="calculate()">
+                </div>
+                <div class="input-group mi-additional" id="curClaimResGroup" style="display:none;">
+                    <label for="curClaimRes">Current Claim Resolution</label>
+                    <select id="curClaimRes" onchange="calculate()">
+                        <option value="2ndsale">Reship = 2nd Sale</option>
+                        <option value="cogs">Reship @ COGS</option>
+                    </select>
+                </div>
+                <div class="input-group mi-additional" id="curRevShareGroup" style="display:none;">
+                    <label for="curRevShare">Current Rev Share %</label>
+                    <input type="text" id="curRevShare" placeholder="0" value="0" oninput="calculate()">
+                </div>
+                <div class="input-group mi-additional" id="curRevBasisGroup" style="display:none;">
+                    <label for="curRevBasis">Current Rev Share Basis</label>
+                    <select id="curRevBasis" onchange="calculate()">
+                        <option value="net">Net (after claims)</option>
+                        <option value="gross">Gross (all premiums)</option>
+                    </select>
+                </div>
             </div>
 
             <button type="button" class="mi-additional-toggle" id="miAdditionalToggle" onclick="toggleAdditionalInputs()">▸ Additional Inputs</button>
@@ -1554,6 +1646,28 @@
         <!-- Project Midnight ambient background (behind the results); poster shows until "Animate" is on -->
         <video id="mnBg" class="mn-bg" muted loop playsinline preload="none" poster="assets/midnight/midnight-bg-poster.jpg" aria-hidden="true"></video>
         <div class="mn-scrim" aria-hidden="true"></div>
+
+        <!-- Competitor calc type: ShipInsure vs Current Solution comparison (shown only when
+             Calc Type = Competitor; the normal outputs are hidden). -->
+        <div id="competitorOutput" style="display:none;">
+            <div class="cmp-headline">
+                <div class="cmp-hl-label" id="cmpHlLabel">ShipInsure Advantage</div>
+                <div class="cmp-hl-value" id="cmpHlValue">$0</div>
+                <div class="cmp-hl-sub" id="cmpHlSub"></div>
+            </div>
+            <div class="cmp-cards">
+                <div class="cmp-card cmp-cur">
+                    <div class="cmp-card-head"><span id="cmpCurName">Current Solution</span><span class="cmp-card-total" id="cmpCurTotal">$0</span></div>
+                    <div class="cmp-card-rows" id="cmpCurRows"></div>
+                </div>
+                <div class="cmp-card cmp-si">
+                    <div class="cmp-card-head"><span>ShipInsure</span><span class="cmp-card-total" id="cmpSiTotal">$0</span></div>
+                    <div class="cmp-card-rows" id="cmpSiRows"></div>
+                </div>
+            </div>
+            <button type="button" class="cmp-table-toggle" id="cmpTableToggle" onclick="toggleCmpTable()">▸ Show full comparison</button>
+            <div id="cmpTableWrap" style="display:none;"><table class="cmp-table" id="cmpTable"></table></div>
+        </div>
 
         <!-- Compact-density outputs (shown only when density is Compact) -->
         <div id="compactOutputs">
@@ -2524,6 +2638,18 @@
         // Persist Hybrid-only inputs (% of non-opted covered + optional cart-$ ruleset)
         // into a share/save link so full/hybrid calcs round-trip.
         function _setHybridParams(params) {
+            // Competitor calc type — Current Solution inputs (carried on every link).
+            if (_calcType() === 'comp') {
+                const g2 = id => ((document.getElementById(id) || {}).value || '').trim();
+                params.set('ct', 'comp');
+                if (g2('curTemplate')) params.set('curtm', g2('curTemplate'));
+                if (g2('curPremium')) params.set('cupp', removeCommas(g2('curPremium')));
+                params.set('cupt', _curPremType);
+                if (g2('curAttach')) params.set('cua', removeCommas(g2('curAttach')));
+                if (g2('curClaimRes')) params.set('cucr', g2('curClaimRes'));
+                if (g2('curRevShare')) params.set('curs', removeCommas(g2('curRevShare')));
+                if (g2('curRevBasis')) params.set('curb', g2('curRevBasis'));
+            }
             const cov = _coverageType();
             if (cov === 'standard') return;
             const gv = id => ((document.getElementById(id) || {}).value || '').trim();
@@ -2915,7 +3041,124 @@
             calculate();
         }
 
+        // ── Competitor calc type (Core vs Competitor comparison) ─────────────────
+        let _curPremType = 'pct';
+        function _calcType() { const e = document.getElementById('calcType'); return e && e.value === 'comp' ? 'comp' : 'core'; }
+        function _setCurPremBtns(t) {
+            _curPremType = t;
+            const p = document.getElementById('curPctBtn'), f = document.getElementById('curFlatBtn');
+            if (p) p.classList.toggle('active', t === 'pct');
+            if (f) f.classList.toggle('active', t === 'flat');
+            const lbl = document.getElementById('curPremiumLabel'); if (lbl) lbl.textContent = 'Current Premium ' + (t === 'flat' ? '$' : '%');
+        }
+        function setCurPremType(t) { _setCurPremBtns(t); calculate(); }
+        // Current Solution premium field shows only for a custom template; named templates self-price.
+        function toggleCurPremType() {
+            const t = (document.getElementById('curTemplate') || {}).value;
+            if (t === 'flat_dollar') _setCurPremBtns('flat'); else if (t === 'percentage') _setCurPremBtns('pct');
+            const isCustom = (t === 'percentage' || t === 'flat_dollar' || t === '' || t === 'custom');
+            const grp = document.getElementById('curPremiumGroup');
+            if (grp) grp.style.display = (_calcType() === 'comp' && isCustom) ? '' : 'none';
+        }
+        function _ensureCurTemplateOptions() {
+            const src = document.getElementById('pricingTemplate'), dst = document.getElementById('curTemplate');
+            if (src && dst && !dst.options.length) dst.innerHTML = src.innerHTML;
+        }
+        // Switch Core ↔ Competitor: reveal the Current Solution inputs + comparison output.
+        function toggleCalcType() {
+            const comp = _calcType() === 'comp';
+            _ensureCurTemplateOptions();
+            const setDisp = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
+            ['curSolHeader', 'curTemplateGroup', 'curAttachGroup', 'curClaimResGroup', 'curRevShareGroup', 'curRevBasisGroup'].forEach(id => setDisp(id, comp));
+            toggleCurPremType();
+            setDisp('competitorOutput', comp);
+            const cr = document.querySelector('.calc-right'); if (cr) cr.classList.toggle('cmp-active', comp);
+        }
+        function toggleCmpTable() {
+            const w = document.getElementById('cmpTableWrap'), b = document.getElementById('cmpTableToggle');
+            if (!w) return;
+            const open = (w.style.display === 'none' || !w.style.display);
+            w.style.display = open ? '' : 'none';
+            if (b) b.textContent = (open ? '▾ ' : '▸ ') + 'Show full comparison';
+        }
+        let _cmpBd = null;
+        function calculateCompetitor() {
+            const vn = id => parseFloat(removeCommas((document.getElementById(id) || {}).value || '')) || 0;
+            const vv = id => (document.getElementById(id) || {}).value || '';
+            const aov = vn('avgOrderValue'), orders = vn('annualOrders'), ship = vn('avgShipping'), cs = vn('csCostPerClaim');
+            const cogsRaw = vn('cogsPercent');
+            const cogsP = _cogsType === 'flat' ? (aov > 0 ? cogsRaw / aov : 0) : cogsRaw / 100;
+            const claimsRaw = vn('claimsRate');
+            const claimsP = _claimsType === 'count' ? (orders > 0 ? claimsRaw / orders : 0) : claimsRaw / 100;
+            const minFloor = vn('minPremium');
+            const resVal = r => r === 'cogs' ? (aov * cogsP + ship + cs) : aov; // 2ndsale = full AOV
+            const premFor = (tmpl, customRaw, customType) => {
+                if (tmpl === 'percentage' || tmpl === '' || tmpl === 'custom') return Math.max(aov * (customRaw / 100), minFloor);
+                if (tmpl === 'flat_dollar') return customType === 'flat' ? customRaw : Math.max(aov * (customRaw / 100), minFloor);
+                return getTieredPremium(aov, tmpl);
+            };
+            const siAvgP = premFor(vv('pricingTemplate'), vn('protectionPremium'), 'pct');
+            const curAvgP = premFor(vv('curTemplate'), vn('curPremium'), _curPremType);
+            const prog = (avgP, attachP, claimRes, revShareP, basis) => {
+                const prot = orders * attachP, premsIn = prot * avgP, protCl = prot * claimsP;
+                const funded = protCl * resVal(claimRes), post = premsIn - funded;
+                const revSh = (basis === 'gross' ? premsIn : Math.max(0, post)) * revShareP;
+                return { prot, avgP, premsIn, protCl, funded, post, revSh, net: post + revSh, claimRes };
+            };
+            const si = prog(siAvgP, vn('attachRate') / 100, vv('claimResolution'), vn('revenueShare') / 100, _grossRevShare ? 'gross' : 'net');
+            const cur = prog(curAvgP, vn('curAttach') / 100, vv('curClaimRes'), vn('curRevShare') / 100, vv('curRevBasis') || 'net');
+            const advantage = si.net - cur.net;
+            _cmpBd = { si, cur, advantage, orders, aov };
+            const fc = formatCurrency, fcc = formatCurrencyWithCents, fn = formatNumber;
+            const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+            const setHtml = (id, h) => { const e = document.getElementById(id); if (e) e.innerHTML = h; };
+            const per = (document.getElementById('timeframe').value === 'annual') ? 'yr' : 'mo';
+            setTxt('cmpHlLabel', 'ShipInsure Advantage vs Current Solution');
+            setTxt('cmpHlValue', (advantage < 0 ? '−' : '') + fc(Math.abs(advantage)) + ' / ' + per);
+            setTxt('cmpHlSub', 'ShipInsure nets ' + fc(si.net) + ' vs ' + fc(cur.net));
+            setTxt('cmpCurTotal', fc(cur.net));
+            setTxt('cmpSiTotal', fc(si.net));
+            const rows = p => '<div><span class="k">Protected Orders</span><span class="v">' + fn(Math.round(p.prot)) + '</span></div>'
+                + '<div><span class="k">Avg Premium</span><span class="v">' + fcc(p.avgP) + '</span></div>'
+                + '<div><span class="k">Gross Premiums</span><span class="v">' + fc(p.premsIn) + '</span></div>'
+                + '<div><span class="k">Funded Claims (' + (p.claimRes === 'cogs' ? '@COGS' : '2nd sale') + ')</span><span class="v">−' + fc(p.funded) + '</span></div>'
+                + '<div><span class="k">Rev Share</span><span class="v">+' + fc(p.revSh) + '</span></div>'
+                + '<div><span class="k">Program Net</span><span class="v">' + fc(p.net) + '</span></div>';
+            setHtml('cmpCurRows', rows(cur));
+            setHtml('cmpSiRows', rows(si));
+            const tr = (k, cv, sv) => '<tr><td>' + k + '</td><td>' + cv + '</td><td>' + sv + '</td></tr>';
+            setHtml('cmpTable',
+                '<thead><tr><th></th><th>Current Solution</th><th>ShipInsure</th></tr></thead><tbody>'
+                + tr('Protected Orders', fn(Math.round(cur.prot)), fn(Math.round(si.prot)))
+                + tr('Avg Premium', fcc(cur.avgP), fcc(si.avgP))
+                + tr('Gross Premiums', fc(cur.premsIn), fc(si.premsIn))
+                + tr('Protected Claims', fn(Math.round(cur.protCl)), fn(Math.round(si.protCl)))
+                + tr('Funded Claims', '−' + fc(cur.funded), '−' + fc(si.funded))
+                + tr('Post-Claim Balance', fc(cur.post), fc(si.post))
+                + tr('Rev Share', '+' + fc(cur.revSh), '+' + fc(si.revSh))
+                + tr('Program Net', fc(cur.net), fc(si.net))
+                + '<tr class="cmp-adv-row"><td>ShipInsure Advantage</td><td colspan="2">' + (advantage < 0 ? '−' : '') + fc(Math.abs(advantage)) + '</td></tr>'
+                + '</tbody>');
+            const bd = document.getElementById('bdBody');
+            if (bd && bd.classList.contains('visible')) renderBreakdown();
+        }
+        function renderCompetitorBreakdown() {
+            const bd = _cmpBd, el = document.getElementById('bdBody'); if (!bd || !el) return;
+            const fc = formatCurrency, fcc = formatCurrencyWithCents, fn = formatNumber;
+            const side = (name, p) => '<div style="margin-bottom:12px;"><div style="font-weight:800;margin-bottom:4px;">' + name + '</div>'
+                + '<div style="font-size:.85em;color:#555;line-height:1.6;">'
+                + 'Protected orders = ' + fn(Math.round(bd.orders)) + ' × attach = <b>' + fn(Math.round(p.prot)) + '</b><br>'
+                + 'Gross premiums = ' + fn(Math.round(p.prot)) + ' × ' + fcc(p.avgP) + ' = <b>' + fc(p.premsIn) + '</b><br>'
+                + 'Funded claims = ' + fn(Math.round(p.protCl)) + ' × ' + fcc(p.protCl > 0 ? p.funded / p.protCl : 0) + ' = <b>−' + fc(p.funded) + '</b><br>'
+                + 'Post-claim balance = <b>' + fc(p.post) + '</b> · Rev share = <b>+' + fc(p.revSh) + '</b><br>'
+                + 'Program net = <b>' + fc(p.net) + '</b></div></div>';
+            el.innerHTML = side('Current Solution', bd.cur) + side('ShipInsure', bd.si)
+                + '<div style="font-weight:800;border-top:1px solid #ddd;padding-top:8px;">ShipInsure Advantage = ' + fc(bd.si.net) + ' − ' + fc(bd.cur.net) + ' = ' + (bd.advantage < 0 ? '−' : '') + fc(Math.abs(bd.advantage)) + '</div>';
+        }
+
         function calculate() {
+            // Competitor calc type runs its own comparison engine + output.
+            if (_calcType() === 'comp') { calculateCompetitor(); if (typeof _siEmitState === 'function') _siEmitState(); return; }
             // Keep SI Premium = ½ Avg Return Cost in Returns Offset mode (until edited).
             _roApplyAutoPremium();
             const timeframe = document.getElementById('timeframe').value;
@@ -3718,6 +3961,13 @@
                 if (urlParams.get('hsm') !== null) { const el = document.getElementById('hybridMode'); if (el) el.value = urlParams.get('hsm'); }
                 { const m = { hth: 'hybridThreshold', hao: 'hybridAboveOrders', hav: 'hybridAboveAov' };
                   Object.keys(m).forEach(k => { if (urlParams.get(k) !== null) { const el = document.getElementById(m[k]); if (el) el.value = urlParams.get(k); } }); }
+                // Competitor calc type + Current Solution inputs.
+                _ensureCurTemplateOptions();
+                if (urlParams.get('ct') === 'comp') { const ce = document.getElementById('calcType'); if (ce) ce.value = 'comp'; }
+                if (urlParams.get('cupt')) _setCurPremBtns(urlParams.get('cupt') === 'flat' ? 'flat' : 'pct');
+                { const m2 = { curtm: 'curTemplate', cupp: 'curPremium', cua: 'curAttach', cucr: 'curClaimRes', curs: 'curRevShare', curb: 'curRevBasis' };
+                  Object.keys(m2).forEach(k => { if (urlParams.get(k) !== null) { const el = document.getElementById(m2[k]); if (el) el.value = urlParams.get(k); } }); }
+                toggleCalcType();
                 if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
                 if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 if (urlParams.get('cr')) setClaimResolution(urlParams.get('cr'));
@@ -4101,6 +4351,7 @@
         }
 
         function renderBreakdown() {
+            if (_calcType() === 'comp') { renderCompetitorBreakdown(); return; }
             const d = _bd;
             if (!d.ready) return;
             const row = (lbl, eq, val, cls='') =>
@@ -4644,6 +4895,14 @@
                 hybridThreshold: (document.getElementById('hybridThreshold') || {}).value || '',
                 hybridAboveOrders: (document.getElementById('hybridAboveOrders') || {}).value || '',
                 hybridAboveAov:  (document.getElementById('hybridAboveAov') || {}).value || '',
+                calcType:        _calcType(),
+                curTemplate:     (document.getElementById('curTemplate') || {}).value || '',
+                curPremium:      (document.getElementById('curPremium') || {}).value || '',
+                curPremType:     _curPremType,
+                curAttach:       (document.getElementById('curAttach') || {}).value || '',
+                curClaimRes:     (document.getElementById('curClaimRes') || {}).value || '',
+                curRevShare:     (document.getElementById('curRevShare') || {}).value || '',
+                curRevBasis:     (document.getElementById('curRevBasis') || {}).value || '',
                 merchantName:    document.getElementById('merchantName').value,
                 siInputsVisible: document.getElementById('siInputsCheck').checked,
                 coverage:        _returnsCoverage,
@@ -4762,6 +5021,12 @@
             if (typeof d.hybridThreshold === 'string') { const e = document.getElementById('hybridThreshold'); if (e) e.value = d.hybridThreshold; }
             if (typeof d.hybridAboveOrders === 'string') { const e = document.getElementById('hybridAboveOrders'); if (e) e.value = d.hybridAboveOrders; }
             if (typeof d.hybridAboveAov === 'string') { const e = document.getElementById('hybridAboveAov'); if (e) e.value = d.hybridAboveAov; }
+            // Competitor calc type + Current Solution controls driven from the Rep Hub sidebar.
+            if (typeof d.calcType === 'string') { _ensureCurTemplateOptions(); const e = document.getElementById('calcType'); if (e) e.value = (d.calcType === 'comp' ? 'comp' : 'core'); toggleCalcType(); }
+            if (typeof d.curPremType === 'string') _setCurPremBtns(d.curPremType === 'flat' ? 'flat' : 'pct');
+            { const cm = { curTemplate: 'curTemplate', curPremium: 'curPremium', curAttach: 'curAttach', curClaimRes: 'curClaimRes', curRevShare: 'curRevShare', curRevBasis: 'curRevBasis' };
+              Object.keys(cm).forEach(k => { if (typeof d[k] === 'string') { const e = document.getElementById(cm[k]); if (e) e.value = d[k]; } }); }
+            if (typeof d.curTemplate === 'string') toggleCurPremType();
             if (typeof d.merchantName === 'string') document.getElementById('merchantName').value = d.merchantName;
             if (typeof d.siInputsVisible === 'boolean') { document.getElementById('siInputsCheck').checked = d.siInputsVisible; toggleSiInputsVisibility(); }
             if (typeof d.coverage === 'string') setReturnsCoverage(d.coverage);
