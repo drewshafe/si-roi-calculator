@@ -387,6 +387,27 @@
     try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'branding', cfg: cfg() }, '*'); } catch (e) {}
   }
 
+  // On load (when stacked), ask the hub for the calc's current data so the preview starts
+  // in sync with the rep's live inputs, not just the seed link.
+  try { window.addEventListener('load', function () { try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'needData' }, '*'); } catch (e) {} }); } catch (e) {}
+
+  // Live rep-input + display sync: when stacked under the ROI Builder, the hub relays the
+  // calc's current merchant link (+ display settings) on every change, so the preview below
+  // reflects the rep's edits in real time. Branding stays owned by this editor (bld stripped).
+  window.addEventListener('message', function (e) {
+    const d = e.data; if (!d || d.siHub !== 'repdata') return;
+    try {
+      if (typeof d.link !== 'string' || !d.link) return;
+      const ps = new URLSearchParams(new URL(d.link).search);
+      ps.delete('bld');
+      if (d.display && d.display.density) { if (d.display.density === 'compact') ps.set('disp', 'compact'); else ps.delete('disp'); }
+      baseParams = ps.toString() || DEFAULT_BASE;
+      if ($('baseLink')) $('baseLink').value = proposalBase() + '?' + baseParams;
+      if (typeof syncDispCheckbox === 'function') syncDispCheckbox();
+      refresh(false);
+    } catch (err) {}
+  });
+
   // ── Branding controls ──
   function renderSwatches() {
     $('swatches').innerHTML = '';
