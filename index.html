@@ -2672,10 +2672,11 @@
             const cov = _coverageType(template);
             const premiumGroup = document.getElementById('protectionPremiumGroup');
             const premiumLabel = document.getElementById('protectionPremiumLabel');
+            const premiumLabelCmp = premiumGroup ? premiumGroup.querySelector('.lbl-cmp') : null; // compact label
             // Full/Hybrid price the premium the %-of-AOV way (with the Min $ floor).
             const isPct = (template === 'percentage' || cov !== 'standard');
-            if (isPct) { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium %'; }
-            else if (template === 'flat_dollar') { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium $'; }
+            if (isPct) { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium %'; if (premiumLabelCmp) premiumLabelCmp.textContent = 'Premium %'; }
+            else if (template === 'flat_dollar') { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium $'; if (premiumLabelCmp) premiumLabelCmp.textContent = 'Premium $'; }
             else { premiumGroup.style.display = 'none'; }
             // Min $ floor applies to %-based pricing (incl. Full/Hybrid).
             const minWrap = document.getElementById('minPremiumWrapper');

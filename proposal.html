@@ -1075,7 +1075,7 @@
                         <input type="text" id="p-orders" placeholder="e.g. 5000">
                     </div>
                     <div class="field-group">
-                        <label for="p-aov">Avg Order Value ($)</label>
+                        <label for="p-aov">AOV</label>
                         <input type="text" id="p-aov" placeholder="e.g. 85">
                     </div>
                     <div class="field-group" id="p-claims-group">
@@ -1095,7 +1095,7 @@
                         <input type="text" id="p-attach" placeholder="68" value="68">
                     </div>
                     <div class="field-group" id="p-share-group">
-                        <label for="p-share" id="p-share-label">Revenue Share %</label>
+                        <label for="p-share" id="p-share-label">Rev Share % (net claims)</label>
                         <input type="text" id="p-share" placeholder="25" value="25">
                     </div>
                 </div>
@@ -1128,7 +1128,7 @@
                     <div class="feature-section-title cashback">Customer Cashback</div>
                     <div class="inputs-grid" style="padding:0 0 4px;">
                         <div class="field-group">
-                            <label for="p-cb">Cashback Rate %</label>
+                            <label for="p-cb">Customer Cashback %</label>
                             <input type="text" id="p-cb" placeholder="5" value="5">
                         </div>
                         <div class="field-group">
@@ -1136,7 +1136,7 @@
                             <input type="text" id="p-mincb" placeholder="5" value="5">
                         </div>
                         <div class="field-group">
-                            <label for="p-cbrr">Redemption Rate %</label>
+                            <label for="p-cbrr">Est. Redemption Rate %</label>
                             <input type="text" id="p-cbrr" placeholder="10" value="10">
                         </div>
                     </div>
@@ -2049,7 +2049,7 @@
             hide('p-claims-group');
             hide('additionalInputsDetails');
             const sl = document.getElementById('p-share-label');
-            if (sl) sl.textContent = p_grossRevShare ? 'Revenue Share % (gross)' : 'Revenue Share % (net offset)';
+            if (sl) sl.textContent = p_grossRevShare ? 'Rev Share % (gross)' : 'Rev Share % (net offset)';
         }
 
         // ── Lock inputs ────────────────────────────────────────────────────────
@@ -3272,6 +3272,8 @@
             // Hide current cost
             if (urlPs.get('hcc') === '1') p_hideCurrentCost = true;
             if (urlPs.get('grs') === '1') p_grossRevShare   = true;
+            // Rev Share label — mirror the ROI calc's wording for all modes (after rom + grs set).
+            { const sl = document.getElementById('p-share-label'); if (sl) sl.textContent = p_grossRevShare ? 'Rev Share % (gross)' : (p_returnsOffsetMode ? 'Rev Share % (net offset)' : 'Rev Share % (net claims)'); }
 
 
             // Lock inputs
