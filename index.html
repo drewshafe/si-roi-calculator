@@ -2899,6 +2899,10 @@
             lbl.textContent = _grossRevShare
                 ? 'Rev Share % (gross)'
                 : (returnsOffsetMode ? 'Rev Share % (net offset)' : 'Rev Share % (net claims)');
+            // Compact label must track the same dynamic state (Rule: dynamic on Comfort → dynamic on Compact).
+            const grp = document.getElementById('revShareGroup');
+            const cmp = grp ? grp.querySelector('.lbl-cmp') : null;
+            if (cmp) cmp.textContent = _grossRevShare ? 'Rev Share % (gross)' : 'Net Rev Share %';
         }
 
         function toggleGrossRevShare() {
@@ -3752,6 +3756,7 @@
             renderFlows();
             updateCompactOutputs(returnsEnabled);
             renderUpfrontBubble();
+            fitStripLabels();
             // Keep the Rep Hub sidebar (SI Net, etc.) in sync after every recalc.
             if (typeof _siEmitState === 'function') _siEmitState();
         }
@@ -4943,7 +4948,25 @@
             if (typeof updateCompactOpt === 'function' && typeof _bd !== 'undefined' && _bd && _bd.ready) {
                 updateCompactOpt(document.getElementById('returnsInputs').classList.contains('visible'));
             }
+            fitStripLabels();
         }
+
+        // Hard rule: no input-strip label ever wraps to a second line on any calc type.
+        // Shrink the font just enough to keep each label on one line (down to a floor).
+        let _fitT = null;
+        function fitStripLabels() {
+            clearTimeout(_fitT);
+            _fitT = setTimeout(function () {
+                document.querySelectorAll('.inputs-strip label').forEach(function (el) {
+                    if (!el.offsetParent) return;                 // skip hidden labels
+                    el.style.whiteSpace = 'nowrap';
+                    el.style.fontSize = '';                       // reset to the CSS size first
+                    var fs = parseFloat(getComputedStyle(el).fontSize) || 12, guard = 0;
+                    while (el.scrollWidth > el.clientWidth + 0.5 && fs > 7 && guard < 28) { fs -= 0.5; el.style.fontSize = fs + 'px'; guard++; }
+                });
+            }, 30);
+        }
+        window.addEventListener('resize', fitStripLabels);
 
         // ── Standalone Display controls — same Size/Text/Density/Layout controls
         // the Rep Hub sidebar drives via postMessage, exposed directly in the

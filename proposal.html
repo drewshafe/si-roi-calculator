@@ -1029,6 +1029,10 @@
         .proposal-layout.density-compact .field-group.si-input { background:linear-gradient(135deg,#5b6dd1 0%,#7b8de8 100%); border-radius:10px; padding:8px 10px; }
         .proposal-layout.density-compact .field-group.si-input > label { color:#fff !important; }
         .proposal-layout.density-compact .field-group.si-input input { border:none; }
+        /* Compact short labels — swap in the ROI-Builder-matching short forms in Compact. */
+        .field-group label.lbl-cmp { display:none; }
+        .proposal-layout.density-compact .field-group.has-cmp label.lbl-cmp { display:block; }
+        .proposal-layout.density-compact .field-group.has-cmp > label:not(.lbl-cmp) { display:none; }
         .theme-midnight .si-inputs-title2 { color:#e9c46a; }
         .theme-midnight .co2-box { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
         .theme-midnight .co2-val { color:#efe7cf; }
@@ -1086,16 +1090,18 @@
                             <button class="itype-btn" id="p-claims-count-btn" onclick="pSetClaimsType('count')">#</button>
                         </div>
                     </div>
-                    <div class="field-group premium-field-wrap" id="p-premium-wrap">
+                    <div class="field-group premium-field-wrap has-cmp" id="p-premium-wrap">
                         <label for="p-premium" id="p-premium-label">SI Premium %</label>
+                        <label class="lbl-cmp" id="p-premium-label-cmp" for="p-premium" aria-hidden="true">Premium %</label>
                         <input type="text" id="p-premium" placeholder="3.00" value="3.00">
                     </div>
                     <div class="field-group" id="p-attach-group">
                         <label for="p-attach">Attach Rate %</label>
                         <input type="text" id="p-attach" placeholder="68" value="68">
                     </div>
-                    <div class="field-group" id="p-share-group">
+                    <div class="field-group has-cmp" id="p-share-group">
                         <label for="p-share" id="p-share-label">Rev Share % (net claims)</label>
+                        <label class="lbl-cmp" id="p-share-label-cmp" for="p-share" aria-hidden="true">Net Rev Share %</label>
                         <input type="text" id="p-share" placeholder="25" value="25">
                     </div>
                 </div>
@@ -1104,20 +1110,23 @@
                 <div class="feature-section" id="returnsFeatureSection" style="display:none;">
                     <div class="feature-section-title">Returns</div>
                     <div class="inputs-grid" style="padding:0 0 4px;">
-                        <div class="field-group" id="p-rr-group">
+                        <div class="field-group has-cmp" id="p-rr-group">
                             <label for="p-rr" id="p-rr-label">Returns Rate %</label>
+                            <label class="lbl-cmp" for="p-rr" aria-hidden="true">Return Rate %</label>
                             <div class="input-with-type">
                                 <input type="text" id="p-rr" placeholder="e.g. 8">
                                 <button class="itype-btn active" id="p-rr-pct-btn" onclick="pSetReturnsType('pct')">%</button>
                                 <button class="itype-btn" id="p-rr-count-btn" onclick="pSetReturnsType('count')">#</button>
                             </div>
                         </div>
-                        <div class="field-group" id="p-arc-group">
+                        <div class="field-group has-cmp" id="p-arc-group">
                             <label for="p-arc">Avg Return Cost ($)</label>
+                            <label class="lbl-cmp" for="p-arc" aria-hidden="true">Avg Label Cost</label>
                             <input type="text" id="p-arc" placeholder="e.g. 8">
                         </div>
-                        <div class="field-group" id="p-rpc-group">
+                        <div class="field-group has-cmp" id="p-rpc-group">
                             <label for="p-rpc" id="p-rpc-label">Returns Platform Cost ($/mo)</label>
+                            <label class="lbl-cmp" id="p-rpc-label-cmp" for="p-rpc" aria-hidden="true">Portal Cost</label>
                             <input type="text" id="p-rpc" placeholder="e.g. 300">
                         </div>
                     </div>
@@ -1127,16 +1136,19 @@
                 <div class="feature-section" id="cashbackFeatureSection" style="display:none;">
                     <div class="feature-section-title cashback">Customer Cashback</div>
                     <div class="inputs-grid" style="padding:0 0 4px;">
-                        <div class="field-group">
+                        <div class="field-group has-cmp">
                             <label for="p-cb">Customer Cashback %</label>
+                            <label class="lbl-cmp" for="p-cb" aria-hidden="true">Cashback %</label>
                             <input type="text" id="p-cb" placeholder="5" value="5">
                         </div>
-                        <div class="field-group">
+                        <div class="field-group has-cmp">
                             <label for="p-mincb">Min Cashback Amount ($)</label>
+                            <label class="lbl-cmp" for="p-mincb" aria-hidden="true">Min Cashback</label>
                             <input type="text" id="p-mincb" placeholder="5" value="5">
                         </div>
-                        <div class="field-group">
+                        <div class="field-group has-cmp">
                             <label for="p-cbrr">Est. Redemption Rate %</label>
+                            <label class="lbl-cmp" for="p-cbrr" aria-hidden="true">Est Redeem %</label>
                             <input type="text" id="p-cbrr" placeholder="10" value="10">
                         </div>
                     </div>
@@ -2008,6 +2020,8 @@
             if (!lbl) return;
             const unit = isAnnual ? '($/yr)' : '($/mo)';
             lbl.textContent = (p_returnsProvider ? p_returnsProvider + ' Portal ' : 'Returns Platform Cost ') + unit;
+            const cmp = document.getElementById('p-rpc-label-cmp');
+            if (cmp) cmp.textContent = p_returnsProvider ? (p_returnsProvider + ' Portal') : 'Portal Cost';
         }
 
         // ── Template visibility ────────────────────────────────────────────────
@@ -2016,9 +2030,11 @@
             const cov = template === 'full_coverage' ? 'full' : template === 'hybrid_coverage' ? 'hybrid' : 'standard';
             const wrap = document.getElementById('p-premium-wrap');
             const lbl = document.getElementById('p-premium-label');
+            const lblCmp = document.getElementById('p-premium-label-cmp');
             if (template === 'percentage' || template === 'flat_dollar' || cov !== 'standard') {
                 wrap.classList.add('visible');
                 lbl.textContent = template === 'flat_dollar' ? 'SI Premium $' : 'SI Premium %';
+                if (lblCmp) lblCmp.textContent = template === 'flat_dollar' ? 'Premium $' : 'Premium %';
             } else {
                 wrap.classList.remove('visible');
             }
@@ -2050,6 +2066,7 @@
             hide('additionalInputsDetails');
             const sl = document.getElementById('p-share-label');
             if (sl) sl.textContent = p_grossRevShare ? 'Rev Share % (gross)' : 'Rev Share % (net offset)';
+            { const slc = document.getElementById('p-share-label-cmp'); if (slc) slc.textContent = p_grossRevShare ? 'Rev Share % (gross)' : 'Net Rev Share %'; }
         }
 
         // ── Lock inputs ────────────────────────────────────────────────────────
@@ -2096,6 +2113,22 @@
         }
 
         // ── Main Calculation ───────────────────────────────────────────────────
+        // Hard rule: no input label ever wraps to a second line. Shrink the font to fit one line.
+        let _pFitT = null;
+        function pFitLabels() {
+            clearTimeout(_pFitT);
+            _pFitT = setTimeout(function () {
+                document.querySelectorAll('#inputsSection .field-group label').forEach(function (el) {
+                    if (!el.offsetParent) return;
+                    el.style.whiteSpace = 'nowrap';
+                    el.style.fontSize = '';
+                    var fs = parseFloat(getComputedStyle(el).fontSize) || 12, guard = 0;
+                    while (el.scrollWidth > el.clientWidth + 0.5 && fs > 7 && guard < 28) { fs -= 0.5; el.style.fontSize = fs + 'px'; guard++; }
+                });
+            }, 30);
+        }
+        window.addEventListener('resize', pFitLabels);
+
         function calculateProposal() {
             // Keep SI Premium = ½ Avg Return Cost in Returns Offset mode (until edited).
             _pRoApplyAutoPremium();
@@ -2544,6 +2577,7 @@
             const rs = document.getElementById('resultsSection');
             rs.classList.add('visible');
             document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+            pFitLabels();
         }
 
         // Optimized Compact layout (merchant view): mirror the computed outputs into the
@@ -3274,6 +3308,7 @@
             if (urlPs.get('grs') === '1') p_grossRevShare   = true;
             // Rev Share label — mirror the ROI calc's wording for all modes (after rom + grs set).
             { const sl = document.getElementById('p-share-label'); if (sl) sl.textContent = p_grossRevShare ? 'Rev Share % (gross)' : (p_returnsOffsetMode ? 'Rev Share % (net offset)' : 'Rev Share % (net claims)'); }
+            { const slc = document.getElementById('p-share-label-cmp'); if (slc) slc.textContent = p_grossRevShare ? 'Rev Share % (gross)' : 'Net Rev Share %'; }
 
 
             // Lock inputs
