@@ -2870,9 +2870,10 @@
                 row('Claims Rate', '',                pct(d.claimsP)) +
                 row('Avg Shipping', '',               fc(d.avgShipping)) +
                 row('Avg Ticket Cost', '',            fc(d.csPerClaim)) +
-                row('Attach Rate', '',                pct(d.attachP)) +
+                // Full Coverage is merchant-paid blanket coverage: no opt-in, no rev share.
+                (d.coverageType === 'full' ? row('Orders Covered', 'blanket', '100%') : row('Attach Rate', '', pct(d.attachP))) +
                 row('Avg Premium / Order', '',        fcc(d.avgPremium)) +
-                row('Rev Share %', '',                pct(d.revShareP)) +
+                (d.coverageType === 'full' ? '' : row('Rev Share %', '', pct(d.revShareP))) +
                 row('Cost Per Reship', `(${fcc(d.aov)} × ${pct(d.cogsP)}) + ${fc(d.avgShipping)} + ${fc(d.csPerClaim)}`, fc(d.costPerReship), 'sep');
 
             // Cost without ShipInsure
@@ -2890,7 +2891,21 @@
                             '-' + fc(d.totalLost), 'sep negative');
             document.getElementById('p-bd-cost').innerHTML = costHTML;
 
-            // Revenue with ShipInsure
+            // Full Coverage: cost-vs-value, not the opt-in / rev-share model
+            if (d.coverageType === 'full') {
+                const netVsPrem = d.coveredClaimLossAvoided + (d.returnsEnabled ? d.totalReturnsOffset : 0) + d.csLaborSaved - d.merchantPremiumCost;
+                let fh =
+                    row('Orders Covered', '100% of orders (blanket)', fn(d.orders)) +
+                    row('Premium Cost (merchant-paid)', `${fn(d.orders)} × ${fcc(d.avgPremium)}`, '− ' + fc(d.merchantPremiumCost), 'negative') +
+                    row('Protected Claims', `${fn(d.orders)} × ${pct(d.claimsP)}`, fn(d.protectedClaims)) +
+                    row('Claim Costs Covered', `${fn(d.protectedClaims)} × ${fcc(d.costPerReship)}`, '+ ' + fc(d.coveredClaimLossAvoided), 'positive');
+                if (d.returnsEnabled) fh += row('Returns Cost Covered', 'labels + portal', '+ ' + fc(d.totalReturnsOffset), 'positive');
+                fh += row('CS Labor Saved', `${fn(Math.round(d.deflectedTickets))} tickets deflected`, '+ ' + fc(d.csLaborSaved), 'positive') +
+                    row('Net vs Premium', 'covered + labor − premium', (netVsPrem < 0 ? '− ' : '+ ') + fc(Math.abs(netVsPrem)), 'sep ' + (netVsPrem < 0 ? 'negative' : 'positive'));
+                document.getElementById('p-bd-revenue').innerHTML = fh;
+                return;
+            }
+            // Revenue with ShipInsure (opt-in / Hybrid / standard)
             let revHTML =
                 row('Protected Orders',   `${fn(d.orders)} × ${pct(d.attachP)}`,             fn(d.protectedOrders)) +
                 row('Premiums Collected', `${fn(d.protectedOrders)} × ${fcc(d.avgPremium)}`, fc(d.premiumPool)) +
