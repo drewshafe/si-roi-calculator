@@ -1033,6 +1033,22 @@
         .field-group label.lbl-cmp { display:none; }
         .proposal-layout.density-compact .field-group.has-cmp label.lbl-cmp { display:block; }
         .proposal-layout.density-compact .field-group.has-cmp > label:not(.lbl-cmp) { display:none; }
+        /* Full Coverage pricing meter (premium vs loss ratio) */
+        #p-fullPricingMeter .fp-meter { margin:0 0 14px; padding:12px 14px; border:1px solid #e3e6f3; border-radius:12px; background:#fff; }
+        .fp-head { font-size:0.74em; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; margin-bottom:8px; }
+        .fp-track { position:relative; height:12px; border-radius:6px; background:#eef0f6; margin:18px 0 8px; }
+        .fp-band { position:absolute; top:0; height:100%; background:rgba(40,167,69,.28); border-radius:6px; }
+        .fp-loss { position:absolute; top:-5px; width:2px; height:22px; background:#1f2430; }
+        .fp-loss::after { content:'loss ratio'; position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:800; color:#1f2430; white-space:nowrap; }
+        .fp-prem { position:absolute; top:-7px; width:3px; height:26px; background:#dc3545; }
+        .fp-prem.ok { background:#28a745; }
+        .fp-prem::after { content:'premium'; position:absolute; top:26px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:800; white-space:nowrap; }
+        .fp-legend { display:flex; flex-wrap:wrap; gap:10px; font-size:0.78em; color:#6c757d; margin-top:14px; }
+        .fp-legend b { color:#1f2430; }
+        .fp-verdict { margin-top:8px; font-size:0.82em; font-weight:800; padding:6px 10px; border-radius:8px; }
+        .fp-verdict.high { background:#fdecea; color:#b42318; }
+        .fp-verdict.ok { background:#e7f6ec; color:#1f7a37; }
+        .fp-verdict.low { background:#fff6e6; color:#9a6a00; }
         .theme-midnight .si-inputs-title2 { color:#e9c46a; }
         .theme-midnight .co2-box { background:linear-gradient(150deg,#14141c,#0b0b12); border-color:rgba(212,175,55,.16); }
         .theme-midnight .co2-val { color:#efe7cf; }
@@ -1316,6 +1332,9 @@
 
         <!-- ── Results Section ── -->
         <div id="resultsSection">
+
+            <!-- Full Coverage pricing meter (premium vs loss ratio) — Full Coverage only. -->
+            <div id="p-fullPricingMeter" style="display:none;"></div>
 
             <!-- Optimized Compact layout (shown when .density-compact): 4-box strip + green card -->
             <div id="compactOpt">
@@ -2129,6 +2148,33 @@
         }
         window.addEventListener('resize', pFitLabels);
 
+        function renderFullPricingMeter(gmv, premiumCost, totalLost) {
+            const el = document.getElementById('p-fullPricingMeter'); if (!el) return;
+            if (!(gmv > 0)) { el.innerHTML = ''; return; }
+            const premPct = (premiumCost / gmv) * 100;
+            const lossPct = (totalLost / gmv) * 100;
+            const sugLow = lossPct * 1.05, sugHigh = lossPct * 1.5;
+            const mult = lossPct > 0 ? premPct / lossPct : 0;
+            const scaleMax = (Math.max(premPct, sugHigh, lossPct) * 1.15) || 1;
+            const pos = v => Math.max(0, Math.min(100, (v / scaleMax) * 100));
+            const f2 = v => v.toFixed(2).replace(/\.?0+$/, '') + '%';
+            let verdictCls, verdictTxt;
+            if (premPct > sugHigh + 0.001) { verdictCls = 'high'; verdictTxt = 'Priced ' + mult.toFixed(1) + '× your loss ratio — consider ' + f2(sugLow) + '–' + f2(sugHigh) + ' of GMV.'; }
+            else if (premPct < lossPct - 0.001) { verdictCls = 'low'; verdictTxt = 'Below your loss ratio — underpriced vs. the risk taken on.'; }
+            else { verdictCls = 'ok'; verdictTxt = 'In line with the risk (' + mult.toFixed(1) + '× loss ratio).'; }
+            el.innerHTML =
+                '<div class="fp-meter">' +
+                    '<div class="fp-head">Full Coverage pricing check</div>' +
+                    '<div class="fp-track">' +
+                        '<div class="fp-band" style="left:' + pos(sugLow) + '%;width:' + Math.max(0, pos(sugHigh) - pos(sugLow)) + '%"></div>' +
+                        '<div class="fp-loss" style="left:' + pos(lossPct) + '%"></div>' +
+                        '<div class="fp-prem ' + (verdictCls !== 'high' ? 'ok' : '') + '" style="left:' + pos(premPct) + '%"></div>' +
+                    '</div>' +
+                    '<div class="fp-legend"><span>Premium <b>' + f2(premPct) + '</b> of GMV</span><span>Loss ratio <b>' + f2(lossPct) + '</b></span><span>Suggested <b>' + f2(sugLow) + '–' + f2(sugHigh) + '</b></span></div>' +
+                    '<div class="fp-verdict ' + verdictCls + '">' + verdictTxt + '</div>' +
+                '</div>';
+        }
+
         function calculateProposal() {
             // Keep SI Premium = ½ Avg Return Cost in Returns Offset mode (until edited).
             _pRoApplyAutoPremium();
@@ -2716,6 +2762,10 @@
             const cov = d.returnsCoverage;
             const nb = v => fmtNum(Math.round(v || 0));
             const svp = (el, show) => { if (el) el.style.display = show ? '' : 'none'; };
+
+            // Full Coverage pricing meter: premium % of GMV vs the loss ratio.
+            { const _fpm = document.getElementById('p-fullPricingMeter'); if (_fpm) _fpm.style.display = (d.coverageType === 'full') ? '' : 'none'; }
+            if (d.coverageType === 'full') renderFullPricingMeter((d.orders || 0) * (d.aov || 0), d.merchantPremiumCost || 0, d.totalLost || 0);
 
             // Coverage models (Full/Hybrid): Volume(Claims) · Avg Premium · Premium Cost ·
             // Covered(Orders/Claims) · Tickets Deflected — Post-Claim hidden.

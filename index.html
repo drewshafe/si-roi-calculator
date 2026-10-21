@@ -1282,6 +1282,25 @@
         .calc-right.cmp-active > .outputs-strip,
         .calc-right.cmp-active > #widgetMiddleWrapper { display:none !important; }
         #competitorOutput { padding:16px; }
+        /* Full Coverage pricing meter (premium vs loss ratio) */
+        .fp-meter { margin:10px 16px 0; padding:12px 14px; border:1px solid #e3e6f3; border-radius:12px; background:#fff; }
+        .fp-head { font-size:0.74em; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; margin-bottom:8px; }
+        .fp-track { position:relative; height:12px; border-radius:6px; background:#eef0f6; margin:18px 0 8px; }
+        .fp-band { position:absolute; top:0; height:100%; background:rgba(40,167,69,.28); border-radius:6px; }
+        .fp-loss { position:absolute; top:-5px; width:2px; height:22px; background:#1f2430; }
+        .fp-loss::after { content:'loss ratio'; position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:800; color:#1f2430; white-space:nowrap; }
+        .fp-prem { position:absolute; top:-7px; width:3px; height:26px; background:#dc3545; }
+        .fp-prem.ok { background:#28a745; }
+        .fp-prem::after { content:'premium'; position:absolute; top:26px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:800; white-space:nowrap; }
+        .fp-legend { display:flex; flex-wrap:wrap; gap:10px; font-size:0.78em; color:#6c757d; margin-top:14px; }
+        .fp-legend b { color:#1f2430; }
+        .fp-verdict { margin-top:8px; font-size:0.82em; font-weight:800; padding:6px 10px; border-radius:8px; }
+        .fp-verdict.high { background:#fdecea; color:#b42318; }
+        .fp-verdict.ok { background:#e7f6ec; color:#1f7a37; }
+        .fp-verdict.low { background:#fff6e6; color:#9a6a00; }
+        .theme-midnight .fp-meter { background:#14151d; border-color:rgba(212,175,55,.22); }
+        .theme-midnight .fp-head, .theme-midnight .fp-legend { color:#b9b3a0; }
+        .theme-midnight .fp-legend b, .theme-midnight .fp-loss::after { color:#efe7cf; }
         .cmp-headline { background:linear-gradient(135deg,#4a5fc1,#6675ff); color:#fff; border-radius:14px; padding:16px 18px; text-align:center; margin-bottom:14px; }
         .cmp-hl-label { font-size:0.78em; font-weight:700; opacity:.92; text-transform:uppercase; letter-spacing:.04em; }
         .cmp-hl-value { font-size:2.3em; font-weight:800; line-height:1.1; margin:2px 0; }
@@ -1668,6 +1687,9 @@
             <button type="button" class="cmp-table-toggle" id="cmpTableToggle" onclick="toggleCmpTable()">▸ Show full comparison</button>
             <div id="cmpTableWrap" style="display:none;"><table class="cmp-table" id="cmpTable"></table></div>
         </div>
+
+        <!-- Full Coverage pricing meter (premium vs loss ratio) — shown only for Full Coverage. -->
+        <div id="fullPricingMeter" style="display:none;"></div>
 
         <!-- Compact-density outputs (shown only when density is Compact) -->
         <div id="compactOutputs">
@@ -3713,7 +3735,9 @@
                 const _sub = document.getElementById('revenueImpactSub'); if (_sub) _sub.style.display = 'none';
                 if (!returnsOffsetMode) { ['claimsImpactPct', 'revShareImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ''; }); }
             }
+            { const _fpm = document.getElementById('fullPricingMeter'); if (_fpm) _fpm.style.display = (cov === 'full') ? '' : 'none'; }
             if (cov === 'full') {
+                renderFullPricingMeter(periodOrders * avgOrderValue, merchantPremiumCost, totalLost);
                 const fH = h => (Math.round(h * 10) / 10).toLocaleString('en-US') + ' hrs';
                 const _perAbbr = (timeframe === 'annual') ? 'yr' : 'mo';
                 const _perWord = (timeframe === 'annual') ? 'year' : 'month';
@@ -4982,6 +5006,36 @@
             }, 30);
         }
         window.addEventListener('resize', fitStripLabels);
+
+        // Full Coverage pricing meter: premium % of GMV vs the actual loss ratio (exposure ÷
+        // GMV), with a suggested band just above the loss ratio so a mispriced blanket premium
+        // is obvious. Keeps Full Coverage from reading as a losing pitch.
+        function renderFullPricingMeter(gmv, premiumCost, totalLost) {
+            const el = document.getElementById('fullPricingMeter'); if (!el) return;
+            if (!(gmv > 0)) { el.innerHTML = ''; return; }
+            const premPct = (premiumCost / gmv) * 100;
+            const lossPct = (totalLost / gmv) * 100;
+            const sugLow = lossPct * 1.05, sugHigh = lossPct * 1.5;
+            const mult = lossPct > 0 ? premPct / lossPct : 0;
+            const scaleMax = (Math.max(premPct, sugHigh, lossPct) * 1.15) || 1;
+            const pos = v => Math.max(0, Math.min(100, (v / scaleMax) * 100));
+            const f2 = v => v.toFixed(2).replace(/\.?0+$/, '') + '%';
+            let verdictCls, verdictTxt;
+            if (premPct > sugHigh + 0.001) { verdictCls = 'high'; verdictTxt = 'Priced ' + mult.toFixed(1) + '× your loss ratio — consider ' + f2(sugLow) + '–' + f2(sugHigh) + ' of GMV.'; }
+            else if (premPct < lossPct - 0.001) { verdictCls = 'low'; verdictTxt = 'Below your loss ratio — underpriced vs. the risk taken on.'; }
+            else { verdictCls = 'ok'; verdictTxt = 'In line with the risk (' + mult.toFixed(1) + '× loss ratio).'; }
+            el.innerHTML =
+                '<div class="fp-meter">' +
+                    '<div class="fp-head">Full Coverage pricing check</div>' +
+                    '<div class="fp-track">' +
+                        '<div class="fp-band" style="left:' + pos(sugLow) + '%;width:' + Math.max(0, pos(sugHigh) - pos(sugLow)) + '%"></div>' +
+                        '<div class="fp-loss" style="left:' + pos(lossPct) + '%"></div>' +
+                        '<div class="fp-prem ' + (verdictCls !== 'high' ? 'ok' : '') + '" style="left:' + pos(premPct) + '%"></div>' +
+                    '</div>' +
+                    '<div class="fp-legend"><span>Premium <b>' + f2(premPct) + '</b> of GMV</span><span>Loss ratio <b>' + f2(lossPct) + '</b></span><span>Suggested <b>' + f2(sugLow) + '–' + f2(sugHigh) + '</b></span></div>' +
+                    '<div class="fp-verdict ' + verdictCls + '">' + verdictTxt + '</div>' +
+                '</div>';
+        }
 
         // ── Standalone Display controls — same Size/Text/Density/Layout controls
         // the Rep Hub sidebar drives via postMessage, exposed directly in the
