@@ -2260,7 +2260,10 @@
             const siClaimValue     = p_claimResolution === 'cogs' ? costPerReship : avgOrderValue;
             const siFundedReships  = claimsOffset * siClaimValue;
             // Coverage-model figures (time savings + cost).
-            const coveredClaimLossAvoided = claimsOffset * costPerReship;
+            // Value SI covers per claim mirrors the standard "Funded Claim Amount": full AOV
+            // when resolution is 2nd Sale, or costPerReship when resolution is COGS. siClaimValue
+            // already encodes that toggle, so Full Coverage credits the same as the standard calc.
+            const coveredClaimLossAvoided = claimsOffset * siClaimValue;
             const deflectedTickets = claimsOffset * _tsDeflect;
             const agentHoursFreed  = deflectedTickets * (_tsHandle / 60);
             const csLaborSaved     = agentHoursFreed * _tsAgent;
@@ -2984,7 +2987,7 @@
                     row('Orders Covered', '100% of orders (blanket)', fn(d.orders)) +
                     row('Premium Cost (merchant-paid)', `${fn(d.orders)} × ${fcc(d.avgPremium)}`, '− ' + fc(d.merchantPremiumCost), 'negative') +
                     row('Protected Claims', `${fn(d.orders)} × ${pct(d.claimsP)}`, fn(d.protectedClaims)) +
-                    row('Claim Costs Covered', `${fn(d.protectedClaims)} × ${fcc(d.costPerReship)}`, '+ ' + fc(d.coveredClaimLossAvoided), 'positive');
+                    row('Claim Costs Covered', `${fn(d.protectedClaims)} × ${fcc(d.siClaimValue)}`, '+ ' + fc(d.coveredClaimLossAvoided), 'positive');
                 if (d.returnsEnabled) fh += row('Returns Cost Covered', 'labels + portal', '+ ' + fc(d.totalReturnsOffset), 'positive');
                 fh += row('CS Labor Saved', `${fn(Math.round(d.deflectedTickets))} tickets deflected`, '+ ' + fc(d.csLaborSaved), 'positive') +
                     row('Net vs Premium', 'covered + labor − premium', (netVsPrem < 0 ? '− ' : '+ ') + fc(Math.abs(netVsPrem)), 'sep ' + (netVsPrem < 0 ? 'negative' : 'positive'));

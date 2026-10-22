@@ -3456,7 +3456,11 @@
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
             // Coverage-model value: claim losses the merchant avoids across covered orders,
             // minus the premium the merchant itself pays (Full/Hybrid).
-            const coveredClaimLossAvoided = claimsOffset * costPerReship;
+            // Value SI covers per claim mirrors the standard "Funded Claim Amount": the full
+            // AOV when resolution is 2nd Sale (SI funds a full-price replacement), or the
+            // fulfillment cost (costPerReship) when resolution is COGS — siClaimValue already
+            // encodes that toggle, so Full Coverage credits the same amount the standard calc does.
+            const coveredClaimLossAvoided = claimsOffset * siClaimValue;
             const netSavings = coveredClaimLossAvoided - merchantPremiumCost;
             // Time savings (Full/Hybrid focus): ShipInsure's self-service claims portal
             // deflects shipping tickets before they reach CS → agent hours freed → labor $.
@@ -4465,7 +4469,7 @@
                     row('Orders Covered', '100% of orders (blanket)', fn(d.orders)) +
                     row('Premium Cost (merchant-paid)', `${fn(d.orders)} × ${fcc(d.avgPremium)}`, '− ' + fc(d.merchantPremiumCost), 'negative') +
                     row('Protected Claims', `${fn(d.orders)} × ${pct(d.claimsP)}`, fn(d.protectedClaims)) +
-                    row('Claim Costs Covered', `${fn(d.protectedClaims)} × ${fcc(d.costPerReship)}`, '+ ' + fc(d.coveredClaimLossAvoided), 'positive');
+                    row('Claim Costs Covered', `${fn(d.protectedClaims)} × ${fcc(d.siClaimValue)}`, '+ ' + fc(d.coveredClaimLossAvoided), 'positive');
                 if (d.returnsEnabled) fh += row('Returns Cost Covered', 'labels + portal', '+ ' + fc(d.totalReturnsOffset), 'positive');
                 fh += row('CS Labor Saved', `${fn(Math.round(d.deflectedTickets))} tickets deflected`, '+ ' + fc(d.csLaborSaved), 'positive') +
                     row('Net vs Premium', 'covered + labor − premium', (netVsPrem < 0 ? '− ' : '+ ') + fc(Math.abs(netVsPrem)), 'sep ' + (netVsPrem < 0 ? 'negative' : 'positive'));
