@@ -1176,6 +1176,10 @@
         .container.density-compact #compactOpt { display:block; padding:14px 16px 4px; }
 
         .co2-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:14px; }
+        /* Full Coverage compact order: Avg Premium · Claim Costs Covered · Agent Hours Back · Premiums(last) */
+        .co2-strip.fc-order > .co2-box:nth-child(2) { order:4; }
+        .co2-strip.fc-order > .co2-box:nth-child(3) { order:2; }
+        .co2-strip.fc-order > .co2-box:nth-child(4) { order:3; }
         .co2-box { background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; min-width:0; }
         .co2-lbl { font-size:0.58em; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#6c757d; }
         .co2-val { font-size:1.3em; font-weight:900; color:#1f2430; line-height:1.1; }
@@ -1446,7 +1450,18 @@
                 <div class="input-group si-input has-cmp" id="protectionPremiumGroup">
                     <label for="protectionPremium" id="protectionPremiumLabel">SI Premium %</label>
                     <label class="lbl-cmp" for="protectionPremium" aria-hidden="true">Premium %</label>
-                    <input type="text" id="protectionPremium" placeholder="0">
+                    <div class="input-with-type">
+                        <input type="text" id="protectionPremium" placeholder="0">
+                        <button class="itype-btn active" id="premiumPctBtn" onclick="setPremiumType('pct')" style="display:none;">%</button>
+                        <button class="itype-btn" id="premiumDollarBtn" onclick="setPremiumType('dollar')" style="display:none;">$</button>
+                    </div>
+                </div>
+                <!-- Full Coverage only: a flat plan fee that becomes the Net Cost of ShipInsure
+                     when the quoted premium is below the merchant's loss ratio (shown by calculate). -->
+                <div class="input-group si-input has-cmp" id="fullPlanCostGroup" style="display:none;">
+                    <label for="fullPlanCost" id="fullPlanCostLabel">Annual Plan Cost</label>
+                    <label class="lbl-cmp" for="fullPlanCost" aria-hidden="true">Plan Cost</label>
+                    <input type="text" id="fullPlanCost" placeholder="$" oninput="calculate()">
                 </div>
                 <div class="input-group si-input" id="attachRateGroup">
                     <label for="attachRate">Attach Rate %</label>
@@ -1767,7 +1782,7 @@
                         <span id="coRbReturns" style="display:none;"></span>
                     </div>
                 </div>
-                <div class="co2-green-hd">Extra Revenue With ShipInsure</div>
+                <div class="co2-green-hd" id="coGreenHd">Extra Revenue With ShipInsure</div>
                 <div class="co2-green-valrow">
                     <span class="co2-green-val" id="coErVal">$0</span>
                     <span class="co2-green-sub" id="coErSub">(Total Funded + Revenue Share)</span>
@@ -2257,6 +2272,7 @@
         let _roSiPremiumManual  = false;
         let _roPrevPricing      = null;   // { template, premium } snapshot taken on entering offset mode
         let _cogsType        = 'pct';     // 'pct' | 'flat'
+        let _premiumType     = 'pct';     // 'pct' | 'dollar' (Full Coverage premium: % of AOV or flat $/order)
         let _claimsType      = 'pct';     // 'pct' | 'count'
         let _returnsType     = 'pct';     // 'pct' | 'count'
         let _claimResolution = '2ndsale'; // '2ndsale' | 'cogs'
@@ -2270,6 +2286,17 @@
             document.getElementById('cogsFlatBtn').classList.toggle('active', t === 'flat');
             document.getElementById('cogsLabel').textContent = t === 'flat' ? 'Product Cost $' : 'Product Cost';
             document.getElementById('cogsPercent').placeholder = t === 'flat' ? curSym() : '0';
+            calculate();
+        }
+
+        // Full Coverage premium basis: % of AOV, or a flat $/order (parallels the Product Cost toggle).
+        function setPremiumType(t) {
+            _premiumType = t;
+            const pb = document.getElementById('premiumPctBtn'), db = document.getElementById('premiumDollarBtn');
+            if (pb) pb.classList.toggle('active', t === 'pct');
+            if (db) db.classList.toggle('active', t === 'dollar');
+            try { localStorage.setItem('shipinsure_premiumType', t); } catch (e) {}
+            toggleProtectionPremiumVisibility();
             calculate();
         }
 
@@ -2711,12 +2738,18 @@
             const premiumLabelCmp = premiumGroup ? premiumGroup.querySelector('.lbl-cmp') : null; // compact label
             // Full/Hybrid price the premium the %-of-AOV way (with the Min $ floor).
             const isPct = (template === 'percentage' || cov !== 'standard');
-            if (isPct) { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium %'; if (premiumLabelCmp) premiumLabelCmp.textContent = 'Premium %'; }
+            // Full Coverage can switch its premium between % of AOV and a flat $/order.
+            const premDollar = (cov === 'full' && _premiumType === 'dollar');
+            const pb = document.getElementById('premiumPctBtn'), db = document.getElementById('premiumDollarBtn');
+            if (pb) { pb.style.display = (cov === 'full') ? '' : 'none'; pb.classList.toggle('active', _premiumType === 'pct'); }
+            if (db) { db.style.display = (cov === 'full') ? '' : 'none'; db.classList.toggle('active', _premiumType === 'dollar'); }
+            if (premDollar) { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium $'; if (premiumLabelCmp) premiumLabelCmp.textContent = 'Premium $'; }
+            else if (isPct) { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium %'; if (premiumLabelCmp) premiumLabelCmp.textContent = 'Premium %'; }
             else if (template === 'flat_dollar') { premiumGroup.style.display = 'block'; premiumLabel.textContent = 'SI Premium $'; if (premiumLabelCmp) premiumLabelCmp.textContent = 'Premium $'; }
             else { premiumGroup.style.display = 'none'; }
-            // Min $ floor applies to %-based pricing (incl. Full/Hybrid).
+            // Min $ floor applies to %-based pricing (incl. Full/Hybrid), but not a flat-$ premium.
             const minWrap = document.getElementById('minPremiumWrapper');
-            if (minWrap) minWrap.style.display = isPct ? '' : 'none';
+            if (minWrap) minWrap.style.display = (isPct && !premDollar) ? '' : 'none';
             // Attach Rate: hidden for Full (no opt-in); shown for Hybrid + standard.
             const setDisp = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
             setDisp('attachRateGroup', cov !== 'full');
@@ -3266,6 +3299,8 @@
                 localStorage.setItem('shipinsure_returnsPlatformCost', document.getElementById('returnsPlatformCost').value);
                 localStorage.setItem('shipinsure_returnsEnabled', returnsEnabled ? '1' : '0');
                 localStorage.setItem('shipinsure_cogsType', _cogsType);
+                localStorage.setItem('shipinsure_premiumType', _premiumType);
+                { const _pc = document.getElementById('fullPlanCost'); if (_pc) localStorage.setItem('shipinsure_fullPlanCost', _pc.value); }
                 localStorage.setItem('shipinsure_claimsType', _claimsType);
                 localStorage.setItem('shipinsure_returnsType', _returnsType);
                 localStorage.setItem('shipinsure_cashbackEnabled', cashbackEnabled ? '1' : '0');
@@ -3306,7 +3341,10 @@
             // Optional $ floor on %-based pricing (blank = premium is true to the %).
             const minPremiumFloor = parseFloat(removeCommas((document.getElementById('minPremium') || {}).value || '')) || 0;
             let avgPremium;
-            if (pricingTemplate === 'percentage' || cov !== 'standard') {
+            if (cov === 'full' && _premiumType === 'dollar') {
+                // Full Coverage with a flat $/order premium (the %↔$ toggle).
+                avgPremium = Math.max(protectionPremiumRaw, minPremiumFloor);
+            } else if (pricingTemplate === 'percentage' || cov !== 'standard') {
                 avgPremium = Math.max(avgOrderValue * protectionPremium, minPremiumFloor);
             } else if (pricingTemplate === 'flat_dollar') {
                 avgPremium = protectionPremium;
@@ -3456,17 +3494,31 @@
             const totalLost = lostRevenue + (returnsEnabled ? totalReturnsCost : 0);
             // Coverage-model value: claim losses the merchant avoids across covered orders,
             // minus the premium the merchant itself pays (Full/Hybrid).
-            // Value SI covers per claim mirrors the standard "Funded Claim Amount": the full
-            // AOV when resolution is 2nd Sale (SI funds a full-price replacement), or the
-            // fulfillment cost (costPerReship) when resolution is COGS — siClaimValue already
-            // encodes that toggle, so Full Coverage credits the same amount the standard calc does.
-            const coveredClaimLossAvoided = claimsOffset * siClaimValue;
+            // Full Coverage is an insurance-cost view: "Claim Costs Covered" is the merchant's
+            // real avoided cost (reship = COGS + shipping + CS), so it reconciles exactly with
+            // "Current Cost of Claims" and the loss ratio. (We intentionally do NOT use AOV here —
+            // that overstates avoided cost vs. the merchant's actual exposure.)
+            const coveredClaimLossAvoided = claimsOffset * costPerReship;
             const netSavings = coveredClaimLossAvoided - merchantPremiumCost;
             // Time savings (Full/Hybrid focus): ShipInsure's self-service claims portal
             // deflects shipping tickets before they reach CS → agent hours freed → labor $.
             const deflectedTickets = claimsOffset * tsDeflect;
             const agentHoursFreed  = deflectedTickets * (tsHandleMin / 60);
             const csLaborSaved     = agentHoursFreed * tsAgentRate;
+            // ── Full Coverage insurance economics ───────────────────────────────
+            // Premium is always a real cost. Compare it to the merchant's loss ratio
+            // (their actual exposure ÷ GMV). Net Cost of ShipInsure:
+            //   • premium at/above loss ratio → premium minus everything it covers
+            //     (claims + returns + CS labor) = what the coverage nets out to cost.
+            //   • premium below loss ratio → a bare % isn't a real price, so the rep's
+            //     flat Plan Cost becomes the Net Cost of ShipInsure.
+            const fcGmv = periodOrders * avgOrderValue;
+            const fcPremiumPct = fcGmv > 0 ? merchantPremiumCost / fcGmv : 0;
+            const fcLossPct = fcGmv > 0 ? totalLost / fcGmv : 0;
+            const fcBelowLossRatio = fcLossPct > 0 && fcPremiumPct < fcLossPct;
+            const fcPlanCost = parseFloat(removeCommas((document.getElementById('fullPlanCost') || {}).value || '')) || 0;
+            const fcCoveredTotal = coveredClaimLossAvoided + (returnsEnabled ? totalReturnsOffset : 0) + csLaborSaved;
+            const netCostOfSI = fcBelowLossRatio ? fcPlanCost : (merchantPremiumCost - fcCoveredTotal);
             const extraRevenue = claimsExtra
                 + (guaranteeEnabled ? gSiFundedClaims   : 0)
                 + (returnsEnabled  ? totalReturnsOffset : 0)
@@ -3736,6 +3788,7 @@
                 grossRevShare: _grossRevShare,
                 coverageType: cov, merchantCoveredOrders, merchantPremiumCost, coveredClaimLossAvoided, netSavings,
                 deflectedTickets, agentHoursFreed, csLaborSaved, tsHandleMin, tsAgentRate,
+                fcPremiumPct, fcLossPct, fcBelowLossRatio, fcPlanCost, netCostOfSI, premiumType: _premiumType,
                 hybridMode, optInOrders, uncoveredOrders, merchantGrossPremium, merchantRevShareDiscount, revShareEarnedOptIn, merchantNetCovered
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
@@ -3748,6 +3801,7 @@
             setTxt('premiumsMetricLabel', 'Premiums');
             setTxt('impactLabel', 'Premiums You Keep');
             { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Extra Revenue With ShipInsure'; }
+            if (cov !== 'full') { const _pcg = document.getElementById('fullPlanCostGroup'); if (_pcg) _pcg.style.display = 'none'; }
             { const _pm = document.getElementById('postClaimMetric'); if (_pm) _pm.style.display = (cov === 'full' ? 'none' : ''); }  // Post-Claim Balance: used by standard + hybrid, hidden for full
             if (cov !== 'full') {
                 const _sub = document.getElementById('revenueImpactSub'); if (_sub) _sub.style.display = 'none';
@@ -3755,12 +3809,16 @@
             }
             { const _fpm = document.getElementById('fullPricingMeter'); if (_fpm) _fpm.style.display = (cov === 'full') ? '' : 'none'; }
             if (cov === 'full') {
-                renderFullPricingMeter(periodOrders * avgOrderValue, merchantPremiumCost, totalLost);
                 const fH = h => (Math.round(h * 10) / 10).toLocaleString('en-US') + ' hrs';
                 const _perAbbr = (timeframe === 'annual') ? 'yr' : 'mo';
                 const _perWord = (timeframe === 'annual') ? 'year' : 'month';
-                // "Premiums" box → the premium the MERCHANT pays.
-                setTxt('premiumsMetricLabel', 'Premium Cost');
+                // Plan Cost input appears only when the premium is below the loss ratio.
+                { const _pcg = document.getElementById('fullPlanCostGroup'); if (_pcg) _pcg.style.display = fcBelowLossRatio ? 'block' : 'none';
+                  const _pcl = document.getElementById('fullPlanCostLabel'); if (_pcl) _pcl.textContent = (timeframe === 'annual' ? 'Annual' : 'Monthly') + ' Plan Cost'; }
+                // Cost-of-coverage readout (premium vs. loss ratio → Net Cost of ShipInsure).
+                renderFullPricingMeter(fcGmv, merchantPremiumCost, totalLost, netCostOfSI, fcBelowLossRatio, _perWord);
+                // Premiums box → the premium the MERCHANT pays, view-dependent label, shown last.
+                setTxt('premiumsMetricLabel', (timeframe === 'annual' ? 'Annual' : 'Monthly') + ' Premiums');
                 setTxt('premiumsPaid', formatCurrency(merchantPremiumCost));
                 { const _pcb = document.getElementById('postClaimBadge'); if (_pcb) _pcb.textContent = ''; }
                 // Hero → Time savings: agent hours freed by ticket deflection.
@@ -3769,22 +3827,24 @@
                 ['claimsImpactPct', 'revShareImpactPct', 'returnsOffsetImpactPct', 'cashbackImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
                 { const _sub = document.getElementById('revenueImpactSub'); if (_sub) { _sub.style.display = ''; _sub.textContent = formatNumber(Math.round(deflectedTickets)) + ' tickets deflected · ' + formatCurrency(csLaborSaved) + ' CS labor saved'; } }
                 { const _psub = document.getElementById('premiumsBadgeSub'); if (_psub) _psub.style.display = 'none'; }
-                // Green card → time & cost saved (operational value is the focus).
-                { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'Time & Cost Saved With ShipInsure'; }
+                // Green card → "With ShipInsure": what the premium covers, netted to a real cost.
+                { const _h = document.querySelector('.result-card.positive .card-header h3'); if (_h) _h.textContent = 'With ShipInsure'; }
                 setTxt('extraRevenue', fH(agentHoursFreed));
                 setTxt('erValueSub', 'agent hours freed / ' + _perWord);
                 const _row = (k, v, col) => '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;border-top:1px solid #eef0f6;"><span style="color:#6c757d;font-weight:700;">' + k + '</span><span style="font-weight:800;color:' + (col || '#1f2430') + ';">' + v + '</span></div>';
-                // Everything the merchant-paid premium buys: claims covered + (when returns
-                // is on) every return label & portal fee SI eats + the CS labor deflected.
-                // Net vs premium = total value covered − premium (matches the breakdown).
-                const _coveredTotal = coveredClaimLossAvoided + (returnsEnabled ? totalReturnsOffset : 0) + csLaborSaved;
-                const _netVsPrem = _coveredTotal - merchantPremiumCost;
+                // Insurance framing: the premium is a cost; it buys claims covered + (returns) +
+                // CS labor. Bottom line is the Net Cost of ShipInsure, not "free value."
+                const _premLbl = (timeframe === 'annual' ? 'Annual' : 'Monthly') + ' premiums paid';
+                const _nc = netCostOfSI;
                 setHtml('erBody',
                     _row('Shipping tickets deflected', formatNumber(Math.round(deflectedTickets)), '#4a5fc1') +
-                    _row('CS labor saved', formatCurrency(csLaborSaved), '#28a745') +
                     _row('Claim costs covered', formatCurrency(coveredClaimLossAvoided), '#28a745') +
                     (returnsEnabled ? _row('Return costs covered (labels + portal)', formatCurrency(totalReturnsOffset), '#28a745') : '') +
-                    _row('Net vs premium', (_netVsPrem < 0 ? '−' : '+') + formatCurrency(Math.abs(_netVsPrem)), _netVsPrem < 0 ? '#dc3545' : '#28a745'));
+                    _row('CS labor saved', formatCurrency(csLaborSaved), '#28a745') +
+                    _row(_premLbl, '− ' + formatCurrency(merchantPremiumCost), '#dc3545') +
+                    (fcBelowLossRatio
+                        ? _row('Net Cost of ShipInsure (plan)', formatCurrency(fcPlanCost), '#1f2430')
+                        : _row('Net Cost of ShipInsure', (_nc > 0 ? '' : '+ ') + formatCurrency(Math.abs(_nc)), _nc > 0 ? '#dc3545' : '#28a745')));
             } else if (cov === 'hybrid') {
                 // Hybrid keeps the STANDARD Extra-Revenue output (populated by renderExtraRevenueCard
                 // above); prepend an order-bucket breakdown + the merchant's net cost for the
@@ -3909,9 +3969,13 @@
             // Box 3 becomes the total SI actually covers: claim costs + (when on) every return
             // label & portal fee — the value Drew flagged as missing in compact.
             const _coFull = d.coverageType === 'full';
+            const _coStrip = document.querySelector('#compactOpt .co2-strip');
+            if (_coStrip) _coStrip.classList.toggle('fc-order', _coFull);
             if (_coFull) {
+                const _annual = (document.getElementById('timeframe') || {}).value === 'annual';
                 const _covTotal = (d.coveredClaimLossAvoided || 0) + (returnsOn ? (d.totalReturnsOffset || 0) : 0);
-                set('coPremLbl', 'Premium Cost');
+                // Box order (via .fc-order CSS): Avg Premium · Claim Costs Covered · Agent Hours · Premiums(last)
+                set('coPremLbl', (_annual ? 'Annual' : 'Monthly') + ' Premiums');
                 set('coPostLbl', returnsOn ? 'Costs Covered' : 'Claim Costs Covered');
                 set('coPost', formatCurrency(_covTotal));
                 set('coKeepLbl', 'Agent Hours Back'); // coKeepPct2 already holds the hrs string
@@ -3919,6 +3983,7 @@
                 set('coPremLbl', 'Premiums');
                 set('coKeepLbl', 'Premiums You Keep');
             }
+            set('coGreenHd', _coFull ? 'With ShipInsure' : 'Extra Revenue With ShipInsure');
             // Returns sub-line under Post-Claim
             const retSub = document.getElementById('coRetSub');
             if (retSub) retSub.style.display = returnsOn ? 'block' : 'none';
@@ -3952,7 +4017,17 @@
             set('coErVal', g('extraRevenue'));
             set('coErSub', g('erValueSub'));
             const erBody = document.getElementById('erBody'), coErBody = document.getElementById('coErBody');
-            if (erBody && coErBody) coErBody.innerHTML = erBody.innerHTML;
+            if (erBody && coErBody) {
+                coErBody.innerHTML = erBody.innerHTML;
+                // Full Coverage compact already shows Claim/Costs Covered as a strip box — drop the
+                // duplicate row from the green card so it doesn't appear twice.
+                if (_coFull) {
+                    coErBody.querySelectorAll('div').forEach(r => {
+                        const k = (r.querySelector('span') || {}).textContent || '';
+                        if (/costs covered/i.test(k)) r.style.display = 'none';
+                    });
+                }
+            }
             // Red "current cost" badge — only when Current Cost is shown
             const redBox = document.getElementById('coRedBox');
             if (redBox) {
@@ -4037,6 +4112,8 @@
                 if (urlParams.get('cogstype')) setCogsType(urlParams.get('cogstype'));
                 if (urlParams.get('claimstype')) setClaimsType(urlParams.get('claimstype'));
                 if (urlParams.get('cr')) setClaimResolution(urlParams.get('cr'));
+                if (urlParams.get('premt')) _premiumType = urlParams.get('premt');
+                if (urlParams.get('plan') !== null) { const el = document.getElementById('fullPlanCost'); if (el) el.value = urlParams.get('plan'); }
 
                 // SI Inputs visibility checkbox — defaults to visible; only an
                 // explicit vi=0 (from a saved rep link) hides it.
@@ -4115,6 +4192,8 @@
                 document.getElementById('timeframe').value = s('timeframe') || 'monthly';
                 document.getElementById('pricingTemplate').value = normalizeTemplate(s('pricingTemplate') || 'percentage');
                 if (s('cogsType')) setCogsType(s('cogsType'));
+                if (s('premiumType')) _premiumType = s('premiumType');
+                { const _pc = s('fullPlanCost'); if (_pc) { const el = document.getElementById('fullPlanCost'); if (el) el.value = _pc; } }
                 if (s('claimsType')) setClaimsType(s('claimsType'));
                 if (s('returnsRate')) document.getElementById('returnsRate').value = s('returnsRate');
                 if (s('avgReturnCost')) document.getElementById('avgReturnCost').value = s('avgReturnCost');
@@ -4172,6 +4251,9 @@
                 cr: _claimResolution,
                 vi: document.getElementById('siInputsCheck').checked ? '1' : '0',
             });
+            // Full Coverage: premium basis (%/$) + flat Plan Cost (shown when premium < loss ratio).
+            if (_premiumType !== 'pct') params.set('premt', _premiumType);
+            { const _pc = removeCommas((document.getElementById('fullPlanCost') || {}).value || ''); if (_pc) params.set('plan', _pc); }
 
             // Feature toggles
             if (returnsOffsetMode) params.set('rom', '1');
@@ -4469,7 +4551,7 @@
                     row('Orders Covered', '100% of orders (blanket)', fn(d.orders)) +
                     row('Premium Cost (merchant-paid)', `${fn(d.orders)} × ${fcc(d.avgPremium)}`, '− ' + fc(d.merchantPremiumCost), 'negative') +
                     row('Protected Claims', `${fn(d.orders)} × ${pct(d.claimsP)}`, fn(d.protectedClaims)) +
-                    row('Claim Costs Covered', `${fn(d.protectedClaims)} × ${fcc(d.siClaimValue)}`, '+ ' + fc(d.coveredClaimLossAvoided), 'positive');
+                    row('Claim Costs Covered', `${fn(d.protectedClaims)} × ${fcc(d.costPerReship)}`, '+ ' + fc(d.coveredClaimLossAvoided), 'positive');
                 if (d.returnsEnabled) fh += row('Returns Cost Covered', 'labels + portal', '+ ' + fc(d.totalReturnsOffset), 'positive');
                 fh += row('CS Labor Saved', `${fn(Math.round(d.deflectedTickets))} tickets deflected`, '+ ' + fc(d.csLaborSaved), 'positive') +
                     row('Net vs Premium', 'covered + labor − premium', (netVsPrem < 0 ? '− ' : '+ ') + fc(Math.abs(netVsPrem)), 'sep ' + (netVsPrem < 0 ? 'negative' : 'positive'));
@@ -5047,29 +5129,37 @@
         // Full Coverage pricing meter: premium % of GMV vs the actual loss ratio (exposure ÷
         // GMV), with a suggested band just above the loss ratio so a mispriced blanket premium
         // is obvious. Keeps Full Coverage from reading as a losing pitch.
-        function renderFullPricingMeter(gmv, premiumCost, totalLost) {
+        // Cost-of-coverage readout: what the merchant pays (premium) vs. what they'd otherwise
+        // lose (loss ratio), stated plainly as the Net Cost of ShipInsure — no "overpriced" scolding.
+        function renderFullPricingMeter(gmv, premiumCost, totalLost, netCost, belowLoss, periodWord) {
             const el = document.getElementById('fullPricingMeter'); if (!el) return;
             if (!(gmv > 0)) { el.innerHTML = ''; return; }
             const premPct = (premiumCost / gmv) * 100;
             const lossPct = (totalLost / gmv) * 100;
-            const sugLow = lossPct * 1.05, sugHigh = lossPct * 1.5;
-            const mult = lossPct > 0 ? premPct / lossPct : 0;
-            const scaleMax = (Math.max(premPct, sugHigh, lossPct) * 1.15) || 1;
+            const scaleMax = (Math.max(premPct, lossPct) * 1.25) || 1;
             const pos = v => Math.max(0, Math.min(100, (v / scaleMax) * 100));
             const f2 = v => v.toFixed(2).replace(/\.?0+$/, '') + '%';
+            const _per = periodWord || 'year';
+            const nc = netCost || 0;
             let verdictCls, verdictTxt;
-            if (premPct > sugHigh + 0.001) { verdictCls = 'high'; verdictTxt = 'Priced ' + mult.toFixed(1) + '× your loss ratio — consider ' + f2(sugLow) + '–' + f2(sugHigh) + ' of GMV.'; }
-            else if (premPct < lossPct - 0.001) { verdictCls = 'low'; verdictTxt = 'Below your loss ratio — underpriced vs. the risk taken on.'; }
-            else { verdictCls = 'ok'; verdictTxt = 'In line with the risk (' + mult.toFixed(1) + '× loss ratio).'; }
+            if (belowLoss) {
+                verdictCls = 'ok';
+                verdictTxt = 'Premium sits below your loss exposure — priced at a flat ' + formatCurrency(nc) + ' / ' + _per + ' plan.';
+            } else if (nc > 0) {
+                verdictCls = 'ok';
+                verdictTxt = 'You pay ' + f2(premPct) + ' of GMV to cover a ' + f2(lossPct) + ' loss exposure — net cost of ShipInsure ' + formatCurrency(nc) + ' / ' + _per + '.';
+            } else {
+                verdictCls = 'low';
+                verdictTxt = 'Everything covered outweighs the premium — ShipInsure nets you +' + formatCurrency(Math.abs(nc)) + ' / ' + _per + '.';
+            }
             el.innerHTML =
                 '<div class="fp-meter">' +
-                    '<div class="fp-head">Full Coverage pricing check</div>' +
+                    '<div class="fp-head">Cost of coverage</div>' +
                     '<div class="fp-track">' +
-                        '<div class="fp-band" style="left:' + pos(sugLow) + '%;width:' + Math.max(0, pos(sugHigh) - pos(sugLow)) + '%"></div>' +
                         '<div class="fp-loss" style="left:' + pos(lossPct) + '%"></div>' +
-                        '<div class="fp-prem ' + (verdictCls !== 'high' ? 'ok' : '') + '" style="left:' + pos(premPct) + '%"></div>' +
+                        '<div class="fp-prem ok" style="left:' + pos(premPct) + '%"></div>' +
                     '</div>' +
-                    '<div class="fp-legend"><span>Premium <b>' + f2(premPct) + '</b> of GMV</span><span>Loss ratio <b>' + f2(lossPct) + '</b></span><span>Suggested <b>' + f2(sugLow) + '–' + f2(sugHigh) + '</b></span></div>' +
+                    '<div class="fp-legend"><span>You pay <b>' + f2(premPct) + '</b> of GMV</span><span>You’d lose <b>' + f2(lossPct) + '</b> (loss ratio)</span></div>' +
                     '<div class="fp-verdict ' + verdictCls + '">' + verdictTxt + '</div>' +
                 '</div>';
         }
