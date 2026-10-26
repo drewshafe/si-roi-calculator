@@ -3519,6 +3519,22 @@
             const fcPlanCost = parseFloat(removeCommas((document.getElementById('fullPlanCost') || {}).value || '')) || 0;
             const fcCoveredTotal = coveredClaimLossAvoided + (returnsEnabled ? totalReturnsOffset : 0) + csLaborSaved;
             const netCostOfSI = fcBelowLossRatio ? fcPlanCost : (merchantPremiumCost - fcCoveredTotal);
+            // ── Hybrid honest net (two buckets, no rev-share double count) ──────────
+            //  Opt-in bucket (customer-funded): claims SI funds at the pool's AOV basis + the
+            //    rev share the merchant earns on opt-in premiums — both pure upside.
+            //  Merchant-covered bucket (merchant self-insures that slice, like mini Full
+            //    Coverage): claims SI covers at COGS, minus the net premium the merchant pays
+            //    (gross − the rev share it earns back). The merchant-covered rev share lives
+            //    ONLY inside that net premium — never also counted as "extra revenue."
+            const hybOptInClaims        = (cov === 'hybrid') ? optInOrders * claimsRate : 0;
+            const hybMerchantClaims     = (cov === 'hybrid') ? merchantCoveredOrders * claimsRate : 0;
+            const hybOptInClaimsFunded  = hybOptInClaims * siClaimValue;
+            const hybMerchantClaimsCov  = hybMerchantClaims * costPerReship;
+            const hybOptInBenefit       = hybOptInClaimsFunded + revShareEarnedOptIn;
+            const hybMerchantBucketNet  = hybMerchantClaimsCov - merchantNetCovered;
+            const hybridNetValue        = hybOptInBenefit + hybMerchantBucketNet
+                + (returnsEnabled  ? totalReturnsOffset : 0)
+                + (cashbackEnabled ? cashbackRedeemed   : 0);
             const extraRevenue = claimsExtra
                 + (guaranteeEnabled ? gSiFundedClaims   : 0)
                 + (returnsEnabled  ? totalReturnsOffset : 0)
@@ -3789,7 +3805,8 @@
                 coverageType: cov, merchantCoveredOrders, merchantPremiumCost, coveredClaimLossAvoided, netSavings,
                 deflectedTickets, agentHoursFreed, csLaborSaved, tsHandleMin, tsAgentRate,
                 fcPremiumPct, fcLossPct, fcBelowLossRatio, fcPlanCost, netCostOfSI, premiumType: _premiumType,
-                hybridMode, optInOrders, uncoveredOrders, merchantGrossPremium, merchantRevShareDiscount, revShareEarnedOptIn, merchantNetCovered
+                hybridMode, optInOrders, uncoveredOrders, merchantGrossPremium, merchantRevShareDiscount, revShareEarnedOptIn, merchantNetCovered,
+                hybOptInClaimsFunded, hybMerchantClaimsCov, hybOptInBenefit, hybMerchantBucketNet, hybridNetValue
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
             renderExtraRevenueCard();
@@ -3846,17 +3863,30 @@
                         ? _row('Net Cost of ShipInsure (plan)', formatCurrency(fcPlanCost), '#1f2430')
                         : _row('Net Cost of ShipInsure', (_nc > 0 ? '' : '+ ') + formatCurrency(Math.abs(_nc)), _nc > 0 ? '#dc3545' : '#28a745')));
             } else if (cov === 'hybrid') {
-                // Hybrid keeps the STANDARD Extra-Revenue output (populated by renderExtraRevenueCard
-                // above); prepend an order-bucket breakdown + the merchant's net cost for the
-                // non-opted orders it funds (gross premium − the rev share it earns back).
+                // Honest two-bucket economics (replaces the old gross "Extra Revenue" that
+                // double-counted the merchant-covered rev share and ignored the premium paid).
+                //  🟦 Opt-in (customer-funded): claims funded + opt-in rev share = pure upside.
+                //  🟩 Merchant-covered (self-insured slice): claims covered at COGS − net premium.
+                // Headline + sub are overridden to the NET value with ShipInsure.
                 const _row = (k, v, col) => '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 2px;font-size:.9em;border-top:1px solid #eef0f6;"><span style="color:#6c757d;font-weight:700;">' + k + '</span><span style="font-weight:800;color:' + (col || '#1f2430') + ';">' + v + '</span></div>';
-                const _bkts =
-                    _row('🟦 Customer-funded (opt-in)', formatNumber(Math.round(optInOrders)) + ' orders', '#4a5fc1') +
-                    _row('🟩 Merchant-covered (non-opted)', formatNumber(Math.round(merchantCoveredOrders)) + ' orders', '#1f2430') +
-                    (uncoveredOrders > 0 ? _row('⬜ Uncovered (declined opt-in)', formatNumber(Math.round(uncoveredOrders)) + ' orders', '#adb5bd') : '') +
-                    (merchantGrossPremium > 0 ? _row('Merchant covers these', '−' + formatCurrency(merchantNetCovered) + ' net (' + formatCurrency(merchantGrossPremium) + ' − ' + formatCurrency(merchantRevShareDiscount) + ' rev share)', '#dc3545') : '');
+                const _sub = (t) => '<div style="padding:1px 2px 4px;font-size:.78em;color:#9aa1ad;font-weight:600;">' + t + '</div>';
+                let _h = '';
+                _h += _sub('🟦 Opt-in · customer-funded (' + formatNumber(Math.round(optInOrders)) + ' orders)');
+                _h += _row('Claims funded', '+ ' + formatCurrency(hybOptInClaimsFunded), '#28a745');
+                if (revShareEarnedOptIn > 0) _h += _row('Rev share earned', '+ ' + formatCurrency(revShareEarnedOptIn), '#28a745');
+                _h += _sub('🟩 Merchant-covered · you self-insure (' + formatNumber(Math.round(merchantCoveredOrders)) + ' orders)');
+                _h += _row('Claims covered (at COGS)', '+ ' + formatCurrency(hybMerchantClaimsCov), '#28a745');
+                if (merchantGrossPremium > 0) _h += _row('Premiums you pay (net of rev share)', '− ' + formatCurrency(merchantNetCovered), '#dc3545');
+                if (uncoveredOrders > 0) _h += _sub('⬜ Uncovered · declined opt-in (' + formatNumber(Math.round(uncoveredOrders)) + ' orders) — you still carry these');
+                if (returnsEnabled)  _h += _row('Returns offset', '+ ' + formatCurrency(totalReturnsOffset), '#28a745');
+                if (cashbackEnabled) _h += _row('Cashback (est. redeemed)', '+ ' + formatCurrency(cashbackRedeemed), '#28a745');
+                _h += _row('Net with ShipInsure', (hybridNetValue >= 0 ? '+ ' : '− ') + formatCurrency(Math.abs(hybridNetValue)), hybridNetValue >= 0 ? '#28a745' : '#dc3545');
                 const er = document.getElementById('erBody');
-                if (er) er.innerHTML = _bkts + er.innerHTML;
+                if (er) er.innerHTML = _h;
+                // Headline reflects the honest NET, not the old gross figure.
+                { const _h3 = document.querySelector('.result-card.positive .card-header h3'); if (_h3) _h3.textContent = 'With ShipInsure'; }
+                setTxt('extraRevenue', formatCurrency(hybridNetValue));
+                setTxt('erValueSub', 'net of premiums you pay');
             }
             renderFlows();
             updateCompactOutputs(returnsEnabled);
@@ -3983,7 +4013,7 @@
                 set('coPremLbl', 'Premiums');
                 set('coKeepLbl', 'Premiums You Keep');
             }
-            set('coGreenHd', _coFull ? 'With ShipInsure' : 'Extra Revenue With ShipInsure');
+            set('coGreenHd', (_coFull || d.coverageType === 'hybrid') ? 'With ShipInsure' : 'Extra Revenue With ShipInsure');
             // Returns sub-line under Post-Claim
             const retSub = document.getElementById('coRetSub');
             if (retSub) retSub.style.display = returnsOn ? 'block' : 'none';
