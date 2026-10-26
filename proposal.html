@@ -2254,9 +2254,10 @@
             }
             _cashbackPerOrderCached = 0;
 
-            // Coverage split: who is covered + who pays. For coverage models the per-claim
-            // CS cost is DERIVED from handle-time × agent-rate (Avg Ticket Cost is retired).
-            const csPerTicket = (pCov !== 'standard') ? (_tsHandle / 60) * _tsAgent : csCostPerClaim;
+            // Per-claim CS cost: Full Coverage derives it from handle-time × agent-rate (the
+            // operational framing); Hybrid + Standard use the Avg Ticket Cost input — matches the
+            // ROI builder so Hybrid reconciles across calc ↔ merchant view.
+            const csPerTicket = (pCov === 'full') ? (_tsHandle / 60) * _tsAgent : csCostPerClaim;
             const _optIn = periodOrders * attachRate;
             let protectedOrders, merchantCoveredOrders;
             if (pCov === 'full') { merchantCoveredOrders = periodOrders; protectedOrders = periodOrders; }
@@ -2376,6 +2377,21 @@
             const fcCoveredTotal = coveredClaimLossAvoided + (p_returnsEnabled ? totalReturnsOffset : 0) + csLaborSaved;
             const netCostOfSI = fcBelowLossRatio ? fcPlanCost : (merchantPremiumCost - fcCoveredTotal);
 
+            // ── Hybrid honest two-bucket net (mirrors the ROI builder) ──────────
+            const hybOptInPremium       = (pCov === 'hybrid') ? _optIn * avgPremium : 0;
+            const hybMerchantGrossPrem  = (pCov === 'hybrid') ? merchantCoveredOrders * avgPremium : 0;
+            const hybMerchantRevShareDisc = hybMerchantGrossPrem * revenueShare;
+            const hybRevShareEarnedOptIn  = hybOptInPremium * revenueShare;
+            const hybMerchantNetCovered = hybMerchantGrossPrem - hybMerchantRevShareDisc;
+            const hybUncoveredOrders    = Math.max(0, periodOrders - protectedOrders);
+            const hybOptInClaimsFunded  = (pCov === 'hybrid') ? (_optIn * claimsRate) * siClaimValue : 0;
+            const hybMerchantClaimsCov  = (pCov === 'hybrid') ? (merchantCoveredOrders * claimsRate) * costPerReship : 0;
+            const hybOptInBenefit       = hybOptInClaimsFunded + hybRevShareEarnedOptIn;
+            const hybMerchantBucketNet  = hybMerchantClaimsCov - hybMerchantNetCovered;
+            const hybridNetValue        = hybOptInBenefit + hybMerchantBucketNet
+                + (p_returnsEnabled  ? totalReturnsOffset : 0)
+                + (p_cashbackEnabled ? cashbackRedeemed   : 0);
+
             // ── Populate Results ───────────────────────────────────────────────
             // Hero = "Premiums You Keep": % headline + breakdown bubbles (mirrors the rep calc)
             const _siFundedPctH = premiumPool > 0 ? ((siFundedReships + (p_guaranteeEnabled ? gSiFundedClaims : 0)) / premiumPool) * 100 : 0;
@@ -2396,11 +2412,17 @@
                 _heroSubEl.textContent = fmtDollar(extraRevenue) + ' per ' + periodLabel;
                 _heroSubEl.style.display = window._cbHeroSubHidden ? 'none' : '';
             }
-            // Coverage models: hero = agent hours back (time savings), not "premiums kept".
-            if (pCov !== 'standard') {
+            // Coverage models: Full = agent hours back; Hybrid = "Premiums You Keep" scoped to
+            // the opt-in (customer-funded) pool — the only pool where that concept applies.
+            if (pCov === 'full') {
                 document.getElementById('heroLabel').textContent = 'Agent Hours Back / ' + (viewMode === 'annual' ? 'yr' : 'mo');
                 document.getElementById('heroValue').innerHTML = (Math.round(agentHoursFreed * 10) / 10).toLocaleString('en-US') + ' hrs';
                 if (_heroSubEl) { _heroSubEl.textContent = fmtNum(Math.round(deflectedTickets)) + ' tickets deflected · ' + fmtDollar(csLaborSaved) + ' CS labor saved'; _heroSubEl.style.display = window._cbHeroSubHidden ? 'none' : ''; }
+            } else if (pCov === 'hybrid') {
+                const _keptPct = hybOptInPremium > 0 ? (hybOptInBenefit / hybOptInPremium) * 100 : 0;
+                document.getElementById('heroLabel').textContent = 'Premiums You Keep';
+                document.getElementById('heroValue').innerHTML = Math.round(_keptPct) + '%';
+                if (_heroSubEl) { _heroSubEl.textContent = 'on customer opt-in orders'; _heroSubEl.style.display = window._cbHeroSubHidden ? 'none' : ''; }
             }
             const _setPct = (id, txt, show) => { const el = document.getElementById(id); if (el) { el.textContent = txt; el.style.display = show ? '' : 'none'; } };
             if (p_returnsOffsetMode) {
@@ -2408,14 +2430,22 @@
                 _setPct('p-revShareImpactPct', _revSharePctH.toFixed(1) + '% from rev share', !_rsZeroH);
                 _setPct('p-returnsOffsetImpactPct', _returnsPctH.toFixed(1) + '% from returns', true);
                 _setPct('p-cashbackImpactPct', '', false);
+            } else if (pCov === 'hybrid') {
+                // Opt-in-scoped impact lines to match the hero.
+                const _clPct = hybOptInPremium > 0 ? (hybOptInClaimsFunded / hybOptInPremium) * 100 : 0;
+                const _rsPct = hybOptInPremium > 0 ? (hybRevShareEarnedOptIn / hybOptInPremium) * 100 : 0;
+                _setPct('p-claimsImpactPct', _clPct.toFixed(1) + '% from claims', true);
+                _setPct('p-revShareImpactPct', _rsPct.toFixed(1) + '% from rev share', hybRevShareEarnedOptIn > 0);
+                _setPct('p-returnsOffsetImpactPct', '', false);
+                _setPct('p-cashbackImpactPct', '', false);
             } else {
                 _setPct('p-claimsImpactPct', _siFundedPctH.toFixed(1) + '% from claims', true);
                 _setPct('p-revShareImpactPct', _revSharePctH.toFixed(1) + '% from rev share', !_rsZeroH);
                 _setPct('p-returnsOffsetImpactPct', _returnsPctH.toFixed(1) + '% from returns', p_returnsEnabled);
                 _setPct('p-cashbackImpactPct', _cashbackPctH.toFixed(1) + '% from cashback', p_cashbackEnabled);
             }
-            // Coverage models: no "% from claims / rev share" breakdown bubbles.
-            if (pCov !== 'standard') { ['p-claimsImpactPct', 'p-revShareImpactPct', 'p-returnsOffsetImpactPct', 'p-cashbackImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); }
+            // Full Coverage only: no "% from claims / rev share" breakdown bubbles.
+            if (pCov === 'full') { ['p-claimsImpactPct', 'p-revShareImpactPct', 'p-returnsOffsetImpactPct', 'p-cashbackImpactPct'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); }
 
             // Cost card
             if (p_hideCurrentCost) {
@@ -2580,6 +2610,11 @@
                 merchantPremiumCost: merchantPremiumCost,
                 fcPremiumPct: fcPremiumPct, fcLossPct: fcLossPct, fcBelowLossRatio: fcBelowLossRatio,
                 fcPlanCost: fcPlanCost, netCostOfSI: netCostOfSI, premiumType: p_premiumType,
+                optInOrders: _optIn, uncoveredOrders: hybUncoveredOrders, optInPremium: hybOptInPremium,
+                revShareEarnedOptIn: hybRevShareEarnedOptIn, merchantGrossPremium: hybMerchantGrossPrem,
+                merchantRevShareDiscount: hybMerchantRevShareDisc, merchantNetCovered: hybMerchantNetCovered,
+                hybOptInClaimsFunded: hybOptInClaimsFunded, hybMerchantClaimsCov: hybMerchantClaimsCov,
+                hybOptInBenefit: hybOptInBenefit, hybMerchantBucketNet: hybMerchantBucketNet, hybridNetValue: hybridNetValue,
                 coveredClaimLossAvoided: coveredClaimLossAvoided,
                 deflectedTickets: deflectedTickets,
                 agentHoursFreed: agentHoursFreed,
@@ -2686,6 +2721,12 @@
                 set('coPost', fmtDollar(_covTotal));
                 set('coKeepLbl', 'Agent Hours Back');
                 set('coKeepPct2', fH(d.agentHoursFreed || 0));
+            } else if (d.coverageType === 'hybrid') {
+                // "Premiums You Keep" scoped to the opt-in pool (matches the hero + green card).
+                set('coPremLbl', 'Premiums');
+                set('coKeepLbl', 'Premiums You Keep');
+                const _kept = (d.optInPremium > 0) ? (d.hybOptInBenefit / d.optInPremium) * 100 : 0;
+                set('coKeepPct2', Math.round(_kept) + '%');
             } else {
                 set('coPremLbl', 'Premiums');
                 set('coKeepLbl', 'Premiums You Keep');
@@ -2792,14 +2833,24 @@
                             : rowH('Net Cost of ShipInsure', (_nc > 0 ? '' : '+ ') + fc(Math.abs(_nc)), _nc > 0 ? '#dc3545' : '#1f9d63'));
                     return;
                 }
-                if (_erLbl) _erLbl.textContent = 'Time & Cost Saved With ShipInsure';
-                // Hybrid keeps the non-opted net-premium framing (opt-in rev share applies separately).
-                const _net = (d.merchantPremiumCost || 0) - (d.csLaborSaved || 0);
-                el.innerHTML = _hero +
-                    rowH('Shipping tickets deflected', fmtNum(Math.round(d.deflectedTickets || 0))) +
-                    rowH('CS labor saved', fc(d.csLaborSaved || 0)) +
-                    rowH('Claim costs covered', fc(d.coveredClaimLossAvoided || 0)) +
-                    rowH('Net premium cost (after CS labor saved), non-opted', (_net < 0 ? '+' : '−') + fc(Math.abs(_net)), _net < 0 ? '#1f9d63' : '#dc3545');
+                // Hybrid: honest two-bucket net (mirrors the ROI builder).
+                //  🟦 Opt-in (customer-funded): claims funded + opt-in rev share = pure upside.
+                //  🟩 Merchant-covered (self-insured slice): claims covered at COGS − net premium.
+                if (_erLbl) _erLbl.textContent = 'With ShipInsure';
+                const _subH = (t) => '<div style="padding:2px 2px 4px;font-size:.78em;color:#9aa1ad;font-weight:600;">' + t + '</div>';
+                const _net = d.hybridNetValue || 0;
+                let _h = `<div class="er-value-row"><div class="rc-total positive" id="r-extraRevenue">${(_net < 0 ? '−' : '') + fc(Math.abs(_net))}</div><div class="er-value-sub">net of premiums you pay</div></div>`;
+                _h += _subH('🟦 Opt-in · customer-funded (' + fmtNum(Math.round(d.optInOrders || 0)) + ' orders)');
+                _h += rowH('Claims funded', '+ ' + fc(d.hybOptInClaimsFunded || 0), '#1f9d63');
+                if ((d.revShareEarnedOptIn || 0) > 0) _h += rowH('Rev share earned', '+ ' + fc(d.revShareEarnedOptIn || 0), '#1f9d63');
+                _h += _subH('🟩 Merchant-covered · you self-insure (' + fmtNum(Math.round(d.merchantCoveredOrders || 0)) + ' orders)');
+                _h += rowH('Claims covered (at COGS)', '+ ' + fc(d.hybMerchantClaimsCov || 0), '#1f9d63');
+                if ((d.merchantGrossPremium || 0) > 0) _h += rowH('Premiums you pay (net of rev share)', '− ' + fc(d.merchantNetCovered || 0), '#dc3545');
+                if ((d.uncoveredOrders || 0) > 0) _h += _subH('⬜ Uncovered · declined opt-in (' + fmtNum(Math.round(d.uncoveredOrders)) + ' orders) — you still carry these');
+                if (d.returnsEnabled)  _h += rowH('Returns offset', '+ ' + fc(d.totalReturnsOffset || 0), '#1f9d63');
+                if (d.cashbackEnabled) _h += rowH('Cashback (est. redeemed)', '+ ' + fc(d.cashbackRedeemed || 0), '#1f9d63');
+                _h += rowH('Net with ShipInsure', (_net >= 0 ? '+ ' : '− ') + fc(Math.abs(_net)), _net >= 0 ? '#1f9d63' : '#dc3545');
+                el.innerHTML = _h;
                 return;
             }
             if (_erLbl) _erLbl.textContent = 'Extra Revenue With ShipInsure';

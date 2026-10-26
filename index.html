@@ -3887,6 +3887,17 @@
                 { const _h3 = document.querySelector('.result-card.positive .card-header h3'); if (_h3) _h3.textContent = 'With ShipInsure'; }
                 setTxt('extraRevenue', formatCurrency(hybridNetValue));
                 setTxt('erValueSub', 'net of premiums you pay');
+                // Hero "Premiums You Keep %" — rescope to the OPT-IN (customer-funded) pool, the
+                // only pool where it applies. (Was gross whole-pool math with the double-counted
+                // rev share.) The merchant-covered slice is a separate cost, shown in the card.
+                if (optInPremium > 0) {
+                    setTxt('percentOfPremiums', Math.round((hybOptInBenefit / optInPremium) * 100) + '%');
+                    setTxt('claimsImpactPct', ((hybOptInClaimsFunded / optInPremium) * 100).toFixed(1) + '% from claims');
+                    setTxt('revShareImpactPct', ((revShareEarnedOptIn / optInPremium) * 100).toFixed(1) + '% from rev share');
+                    { const _e = document.getElementById('revShareImpactPct'); if (_e) _e.style.display = revShareEarnedOptIn > 0 ? '' : 'none'; }
+                    { const _e = document.getElementById('claimsImpactPct'); if (_e) _e.style.display = ''; }
+                }
+                { const _sub = document.getElementById('revenueImpactSub'); if (_sub) { _sub.style.display = ''; _sub.textContent = 'on customer opt-in orders'; } }
             }
             renderFlows();
             updateCompactOutputs(returnsEnabled);
