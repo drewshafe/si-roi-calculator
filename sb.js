@@ -124,9 +124,124 @@
   }
   async function deleteConfig(id) { const c = await client(); const { error } = await c.from('configs').delete().eq('id', id); if (error) throw error; return true; }
 
+  // ── Merchant folders (Rep Hub) — needs merchant-folders-schema.sql ─────
+  // A folder = a merchants row. Every tool's saves live in merchant_assets
+  // (kind: checkout | email | claim | proposal | msa | mnda), team-wide.
+  const ASSET_KINDS = ['checkout', 'email', 'claim', 'proposal', 'msa', 'mnda'];
+  const ASSET_COLS = 'id, merchant_ref, kind, title, doc_url, rep_email, updated_by_email, created_at, updated_at';
+
+  async function listFolders(opts) {
+    const c = await client();
+    let q = c.from('merchants').select('id, name, logo_path, domain, archived, updated_at').order('name', { ascending: true });
+    if (!(opts && opts.includeArchived)) q = q.eq('archived', false);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+  }
+  // Create a folder, or return the existing one with that name (names are unique, case-insensitive).
+  async function createFolder(f) {
+    const name = String((f && f.name) || '').trim();
+    if (!name) throw new Error('Folder needs a merchant name');
+    const ex = await getMerchantByName(name);
+    if (ex) {
+      const back = await updateFolder(ex.id, { archived: false });   // re-creating an archived folder brings it back
+      return Object.assign(back, { existed: true });
+    }
+    const c = await client();
+    const row = { name: name, bld: {}, cb: {}, updated_at: new Date().toISOString() };
+    if (f.logoUrl) row.logo_path = f.logoUrl;
+    if (f.domain) row.domain = f.domain;
+    const { data, error } = await c.from('merchants').insert(row).select('id, name, logo_path, domain, archived, updated_at').single();
+    if (error) throw error;
+    return data;
+  }
+  // Rename / re-logo / set domain / archive — never touches the folder's branding (bld/cb).
+  async function updateFolder(id, patch) {
+    const c = await client();
+    const row = { updated_at: new Date().toISOString() };
+    if (patch.name != null) row.name = String(patch.name).trim();
+    if (patch.logoUrl !== undefined) row.logo_path = patch.logoUrl;
+    if (patch.domain !== undefined) row.domain = patch.domain;
+    if (patch.archived != null) row.archived = !!patch.archived;
+    const { data, error } = await c.from('merchants').update(row).eq('id', id).select('id, name, logo_path, domain, archived, updated_at').single();
+    if (error) throw error;
+    return data;
+  }
+
+  // List saves (no payloads) — for one folder, optionally one kind; newest first.
+  async function listAssets(merchantRef, kind) {
+    const c = await client();
+    let q = c.from('merchant_assets').select(ASSET_COLS).order('updated_at', { ascending: false });
+    if (merchantRef) q = q.eq('merchant_ref', merchantRef);
+    if (kind) q = q.eq('kind', kind);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+  }
+  async function recentAssets(limit) {
+    const c = await client();
+    const { data, error } = await c.from('merchant_assets').select(ASSET_COLS).order('updated_at', { ascending: false }).limit(limit || 20);
+    if (error) throw error;
+    return data || [];
+  }
+  // One save with its payload. Works signed in or not (asset_get = exact id only).
+  async function getAsset(id) {
+    const c = await client();
+    const { data, error } = await c.rpc('asset_get', { p_id: id });
+    if (error) throw error;
+    if (!data) throw new Error('Save not found');
+    return data;
+  }
+  // save({id?, merchant_ref, kind, title, data, doc_url?}) → { id, updated_at }. No id = new version.
+  async function saveAsset(a) {
+    if (!a || !a.merchant_ref) throw new Error('Pick a merchant folder first');
+    if (ASSET_KINDS.indexOf(a.kind) < 0) throw new Error('Unknown save type: ' + a.kind);
+    const c = await client();
+    const row = { merchant_ref: a.merchant_ref, kind: a.kind, title: a.title || '', data: a.data || {} };
+    if (a.doc_url !== undefined) row.doc_url = a.doc_url;
+    const q = c.from('merchant_assets');
+    const res = a.id ? await q.update(row).eq('id', a.id).select('id, updated_at').single()
+                     : await q.insert(row).select('id, updated_at').single();
+    if (res.error) throw res.error;
+    // Bump the folder so the most recently worked-on merchants sort first.
+    c.from('merchants').update({ updated_at: new Date().toISOString() }).eq('id', a.merchant_ref).then(function () {}, function () {});
+    return res.data;
+  }
+  async function deleteAsset(id) { const c = await client(); const { error } = await c.from('merchant_assets').delete().eq('id', id); if (error) throw error; return true; }
+  // Everything in a folder: tool saves + the folder's ROI scenarios (configs).
+  async function folderContents(merchantRef) {
+    const c = await client();
+    const [assets, cfg] = await Promise.all([
+      listAssets(merchantRef),
+      c.from('configs').select('id, merchant, merchant_ref, kind, title, logo_path, updated_by, updated_at')
+        .eq('merchant_ref', merchantRef).order('updated_at', { ascending: false })
+    ]);
+    if (cfg.error) throw cfg.error;
+    return { assets: assets, scenarios: cfg.data || [] };
+  }
+
+  // ── Active merchant (shared by the Rep Hub and every tool; same origin) ──
+  // {id, name, logo} in localStorage; other tabs/iframes hear changes via 'storage'.
+  const ACTIVE_KEY = 'si_active_merchant';
+  function getActiveFolder() { try { return JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null'); } catch (e) { return null; } }
+  function setActiveFolder(f) {
+    const v = f && f.id ? { id: f.id, name: f.name || '', logo: f.logo || f.logo_path || '' } : null;
+    try { v ? localStorage.setItem(ACTIVE_KEY, JSON.stringify(v)) : localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
+    _activeSubs.forEach(function (fn) { try { fn(v); } catch (e) {} });
+    return v;
+  }
+  const _activeSubs = [];
+  function onActiveFolder(fn) {
+    _activeSubs.push(fn);
+    window.addEventListener('storage', function (e) { if (e.key === ACTIVE_KEY) fn(getActiveFolder()); });
+  }
+
   window.SIsb = {
     URL: SB_URL, client, currentUser, signInMagic, signOut,
     uploadLogo, saveConfig, loadConfig, listConfigs, updateByToken, deleteConfig,
-    saveMerchant, getMerchant, getMerchantByName, listMerchants
+    saveMerchant, getMerchant, getMerchantByName, listMerchants,
+    ASSET_KINDS, listFolders, createFolder, updateFolder,
+    listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents,
+    getActiveFolder, setActiveFolder, onActiveFolder
   };
 })();
