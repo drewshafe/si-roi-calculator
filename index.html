@@ -3810,6 +3810,7 @@
             };
             if (document.getElementById('bdBody').classList.contains('visible')) renderBreakdown();
             renderExtraRevenueCard();
+            if (window.mvRefresh) setTimeout(window.mvRefresh, 0);   // mobile.js — after the rest of calculate() settles
             // ── Full / Hybrid Coverage: recast the outputs as cost-vs-savings ──
             const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
             const setHtml = (id, h) => { const e = document.getElementById(id); if (e) e.innerHTML = h; };
@@ -5315,6 +5316,7 @@
         _siEmitState();
 
     </script>
+    <script src="mobile.js"></script>
 
 </body>
 </html>
