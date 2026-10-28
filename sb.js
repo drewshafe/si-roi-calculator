@@ -128,7 +128,8 @@
   // A folder = a merchants row. Every tool's saves live in merchant_assets
   // (kind: checkout | email | claim | proposal | msa | mnda), team-wide.
   const ASSET_KINDS = ['checkout', 'email', 'claim', 'proposal', 'msa', 'mnda'];
-  const ASSET_COLS = 'id, merchant_ref, kind, title, doc_url, rep_email, updated_by_email, created_at, updated_at';
+  // source / file_path: set on uploaded or linked docs (data.source = 'upload' | 'link').
+  const ASSET_COLS = 'id, merchant_ref, kind, title, doc_url, rep_email, updated_by_email, created_at, updated_at, source:data->>source, file_path:data->file->>path';
 
   async function listFolders(opts) {
     const c = await client();
@@ -240,6 +241,27 @@
     return data[0];
   }
 
+  // ── Uploaded docs (private bucket "merchant-docs"; see merchant-docs-storage.sql) ──
+  // A rep's existing Proposal / MSA / MNDA file, filed in a merchant folder. The file
+  // lives in Storage; its merchant_assets row keeps data.file = {path, name, size, type}.
+  const DOCS_BUCKET = 'merchant-docs';
+  async function uploadDoc(file, merchantRef, kind) {
+    const c = await client();
+    const safe = String(file.name || 'file').replace(/[^\w.\-]+/g, '_').slice(-80);
+    const path = merchantRef + '/' + kind + '/' + Date.now().toString(36) + '-' + safe;
+    const { error } = await c.storage.from(DOCS_BUCKET).upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+    if (error) throw error;
+    return { path: path, name: file.name, size: file.size, type: file.type || '' };
+  }
+  // Short-lived link to open a private file (default 1 hour).
+  async function docLink(path, seconds) {
+    const c = await client();
+    const { data, error } = await c.storage.from(DOCS_BUCKET).createSignedUrl(path, seconds || 3600);
+    if (error) throw error;
+    return data.signedUrl;
+  }
+  async function removeDoc(path) { const c = await client(); const { error } = await c.storage.from(DOCS_BUCKET).remove([path]); if (error) throw error; return true; }
+
   // ── Active merchant (shared by the Rep Hub and every tool; same origin) ──
   // {id, name, logo} in localStorage; other tabs/iframes hear changes via 'storage'.
   const ACTIVE_KEY = 'si_active_merchant';
@@ -261,7 +283,7 @@
     uploadLogo, saveConfig, loadConfig, listConfigs, updateByToken, deleteConfig,
     saveMerchant, getMerchant, getMerchantByName, listMerchants,
     ASSET_KINDS, listFolders, createFolder, updateFolder,
-    listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents, linkScenario, renameSave,
+    listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents, linkScenario, renameSave, uploadDoc, docLink, removeDoc,
     getActiveFolder, setActiveFolder, onActiveFolder
   };
 })();
