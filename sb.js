@@ -229,6 +229,17 @@
     return data[0];
   }
 
+  // Rename a folder save — ROI scenario (configs) or tool save (merchant_assets). Title only.
+  // A scenario's title is also its tab label on a multi-option merchant link.
+  async function renameSave(kind, id, title) {
+    const c = await client();
+    const table = kind === 'roi' ? 'configs' : 'merchant_assets';
+    const { data, error } = await c.from(table).update({ title: title }).eq('id', id).select('id, title');
+    if (error) throw error;
+    if (!data || !data.length) throw new Error('Not allowed to rename that save (only the rep who saved it can)');
+    return data[0];
+  }
+
   // ── Active merchant (shared by the Rep Hub and every tool; same origin) ──
   // {id, name, logo} in localStorage; other tabs/iframes hear changes via 'storage'.
   const ACTIVE_KEY = 'si_active_merchant';
@@ -250,7 +261,7 @@
     uploadLogo, saveConfig, loadConfig, listConfigs, updateByToken, deleteConfig,
     saveMerchant, getMerchant, getMerchantByName, listMerchants,
     ASSET_KINDS, listFolders, createFolder, updateFolder,
-    listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents, linkScenario,
+    listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents, linkScenario, renameSave,
     getActiveFolder, setActiveFolder, onActiveFolder
   };
 })();
