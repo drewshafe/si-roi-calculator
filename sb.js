@@ -220,6 +220,15 @@
     return { assets: assets, scenarios: cfg.data || [] };
   }
 
+  // File an existing ROI scenario (config) into a merchant folder — touches only merchant_ref.
+  async function linkScenario(configId, merchantRef) {
+    const c = await client();
+    const { data, error } = await c.from('configs').update({ merchant_ref: merchantRef }).eq('id', configId).select('id, merchant_ref');
+    if (error) throw error;
+    if (!data || !data.length) throw new Error('Not allowed to move that scenario (only the rep who saved it can)');
+    return data[0];
+  }
+
   // ── Active merchant (shared by the Rep Hub and every tool; same origin) ──
   // {id, name, logo} in localStorage; other tabs/iframes hear changes via 'storage'.
   const ACTIVE_KEY = 'si_active_merchant';
@@ -241,7 +250,7 @@
     uploadLogo, saveConfig, loadConfig, listConfigs, updateByToken, deleteConfig,
     saveMerchant, getMerchant, getMerchantByName, listMerchants,
     ASSET_KINDS, listFolders, createFolder, updateFolder,
-    listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents,
+    listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents, linkScenario,
     getActiveFolder, setActiveFolder, onActiveFolder
   };
 })();
