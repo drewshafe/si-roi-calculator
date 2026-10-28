@@ -1060,6 +1060,7 @@
         .theme-midnight .co2-green-val { color:#2ee6a0; }
     </style>
     <script src="sb.js"></script>
+    <script src="portal-templates.js"></script>
 </head>
 <body>
     <div class="proposal-layout">
@@ -1833,6 +1834,8 @@
             "t_398_498": [{min:0,max:200,premium:3.98},{min:200,max:1000,premium:4.98}],
             "t_3pct_2pct": [{min:0,max:65,premium:1.95},{min:65,max:1000,pct:0.03},{min:1000,max:4900,pct:0.02}]
         };
+        // Merchant Portal templates (portal-templates.js) — adds the "Merchant Portal" options (pt_<id>) and their rules.
+        if (window.SI_PORTAL) SI_PORTAL.install(document.getElementById('p-template'), pricingTemplates);
 
         function getTieredPremium(orderValue, template) {
             const tiers = pricingTemplates[template];
@@ -1874,7 +1877,7 @@
         let _exHideTimer = null;
         function _premiumIsFlat() {
             const t = document.getElementById('p-template').value;
-            return t === 'flat_dollar' || t.slice(0, 2) === 'f_';
+            return t === 'flat_dollar' || t.slice(0, 2) === 'f_' || (t.slice(0, 3) === 'pt_' && !!window.SI_PORTAL && (SI_PORTAL.byId(t.slice(3)) || {}).kind === 'flat');
         }
         function _coverageLimit() {
             const v = parseFloat(removeCommas(new URLSearchParams(location.search).get('limit') || '')) || 0;
