@@ -1521,6 +1521,7 @@
     </script>
     <script src="sb.js"></script>
     <script src="portal-templates.js"></script>
+    <script src="cb-layout.js"></script>
 </head>
 <body>
     <div class="container">
@@ -5081,6 +5082,10 @@
                     '#avgPremiumLabel,.co2-sub b{color:' + a + '!important;}';
                 document.head.appendChild(st);
             }
+            // Layout + styles from the build (cb-layout.js): merchant input section + per-field
+            // order / width / style / hide, inputs column position, results block order / width /
+            // style / hide, text blocks, header. Same engine the merchant proposal uses.
+            if (window.SICB) { try { window.SICB.apply(cfg && (cfg.branding || cfg.layout || cfg.inputs) ? cfg : null); } catch (e) { console.warn('[SI] build layout failed:', e && e.message); } }
         }
         // Live branding updates from the stacked Custom Build styler (via the hub).
         window.addEventListener('message', function (e) {

@@ -19,7 +19,7 @@
   .cb-link-row input::placeholder{ color:rgba(255,255,255,.55); }
   .cb-btn{ font-family:inherit; font-size:.78rem; font-weight:700; padding:7px 13px; border-radius:7px; border:none; cursor:pointer; background:var(--accent); color:#fff; }
   .cb-btn.ghost{ background:rgba(255,255,255,.14); }
-  main{ flex:1; display:grid; grid-template-columns:340px 1fr; min-height:0; }
+  main{ flex:1; display:grid; grid-template-columns:360px 1fr; min-height:0; }
   .editor{ background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding:16px; }
   .preview{ background:#d8dced; overflow:hidden; position:relative; }
   .preview iframe{ width:100%; height:100%; border:0; display:block; }
@@ -78,10 +78,52 @@
   .cb-lock-btn{ background:#1a1a2e; color:#fff; border-color:#1a1a2e; }
   .cb-lock-btn:hover{ background:#26264a; }
   .cb-up-clear{ font-size:.8rem; font-weight:800; color:#dc3545; background:#fee; border:1px solid #f3c6cc; border-radius:6px; padding:4px 8px; cursor:pointer; }
+  /* width segment + colour control + style editor (blocks / fields) */
+  .w-seg{ display:inline-flex; gap:2px; flex-shrink:0; }
+  .w-seg button{ font-family:inherit; font-size:.62rem; font-weight:800; min-width:17px; height:21px; padding:0 2px; border:1px solid #d0d4e8; background:#fff; color:#5b6280; border-radius:5px; cursor:pointer; }
+  .w-seg button.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .lay-item .lay-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+  #fldList .lay-item, #layList .lay-item{ gap:5px; padding:6px 7px; }
+  #fldList .lay-name, #layList .lay-name{ font-size:.76rem; }
+  #fldList .lay-mini, #layList .lay-mini, #fldList .lay-eye, #layList .lay-eye{ padding:1px; }
+  .seg-row .blk-seg button{ white-space:nowrap; }
+  .lay-item.sel{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(102,117,255,.25); background:#f4f5ff; }
+  .lay-item.pinned{ cursor:default; background:#f4f6fb; }
+  .lay-item.pinned .lay-grip{ visibility:hidden; }
+  .cc{ display:flex; align-items:center; gap:4px; }
+  .cc input[type=color]{ flex:1; min-width:0; height:28px; padding:1px; border:1px solid #d0d4e8; border-radius:6px; background:#fff; cursor:pointer; }
+  .cc.unset input[type=color]{ opacity:.3; }
+  .cc .cc-x{ font-size:.66rem; line-height:1; padding:5px 6px; border:1px solid #e3e6f0; background:#fff; color:#8a90a6; border-radius:6px; cursor:pointer; }
+  .cc.unset .cc-x{ visibility:hidden; }
+  .cc .cc-def{ font-size:.58rem; font-weight:800; color:#9aa1b8; text-transform:uppercase; letter-spacing:.04em; display:none; }
+  .cc.unset .cc-def{ display:inline; }
+  .mini-grid{ display:grid; grid-template-columns:1fr 1fr; gap:7px 8px; }
+  .mini-grid .c label{ display:block; font-size:.55rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:3px; }
+  .mini-grid .c select, .mini-grid .c input[type=number]{ width:100%; font-family:inherit; font-size:.76rem; padding:4px 6px; border:1px solid #d0d4e8; border-radius:6px; background:#fff; height:28px; }
+  .mini-grid .c.full{ grid-column:1/-1; }
+  .seg-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 8px; }
+  .seg-row > span{ font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .seg-row .blk-seg{ flex:0 0 auto; }
+  .seg-row .blk-seg button{ padding:4px 8px; }
+  .hdr-text{ margin-top:9px; padding:9px 10px 10px; border:1px solid var(--line); border-radius:8px; background:#fafbfe; }
+  /* preview toolbar (on-canvas editing) */
+  .preview{ display:flex; flex-direction:column; }
+  .pv-bar{ flex-shrink:0; display:flex; align-items:center; gap:10px; padding:7px 12px; background:#eef0f8; border-bottom:1px solid #cfd4ea; }
+  .pv-bar .pv-edit{ white-space:nowrap; flex-shrink:0; font-family:inherit; font-size:.76rem; font-weight:800; padding:6px 12px; border-radius:7px; border:1px solid #c8ccff; background:#fff; color:var(--accent); cursor:pointer; }
+  .pv-bar .pv-edit.on{ background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(102,117,255,.35); }
+  .pv-bar .pv-hint{ font-size:.68rem; color:#6c7390; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pv-bar.editing .pv-hint{ display:none; }
+  .pv-bar{ flex-wrap:wrap; row-gap:6px; }
+  .pv-bar .pv-sel{ margin-left:auto; font-size:.68rem; font-weight:800; color:var(--ink); white-space:nowrap; }
+  .pv-col{ display:inline-flex; align-items:center; gap:5px; padding-left:10px; border-left:1px solid #cfd4ea; }
+  .pv-col-l{ font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#6c7390; white-space:nowrap; }
+  .pv-col .blk-seg button{ padding:3px 7px; font-size:.72rem; }
+  .preview iframe{ flex:1; height:auto; min-height:0; }
   .lb-swatch{ border:2px solid transparent; box-shadow:0 0 0 1px #d5d9f0; }
   .lb-swatch.active{ border-color:#6675ff; box-shadow:0 0 0 2px #6675ff; }
 </style>
 <script src="sb.js"></script>
+<script src="cb-layout.js"></script>
 </head>
 <body>
   <header class="cbh">
@@ -124,6 +166,24 @@
             <input type="color" id="accent2" value="#2a2f45">
             <input type="text" id="accent2Hex" value="#2a2f45" spellcheck="false">
           </div>
+          <div class="hdr-text">
+            <div class="cb-sub-h" style="margin-bottom:7px;">Header text <span style="font-weight:600;text-transform:none;letter-spacing:0;">(merchant name)</span></div>
+            <div class="mini-grid">
+              <div class="c"><label>Text colour</label><div id="hdrColorSlot"></div></div>
+              <div class="c"><label>Font</label><select id="hdrFont"></select></div>
+              <div class="c"><label>Weight</label>
+                <select id="hdrWeight">
+                  <option value="">Default</option>
+                  <option value="400">Regular</option>
+                  <option value="500">Medium</option>
+                  <option value="600">Semibold</option>
+                  <option value="700">Bold</option>
+                  <option value="800">Extra bold</option>
+                </select>
+              </div>
+              <div class="c"><label>Size</label><div class="blk-seg" id="hdrSize"><button type="button" data-v="s">S</button><button type="button" data-v="" class="on">M</button><button type="button" data-v="l">L</button><button type="button" data-v="xl">XL</button></div></div>
+            </div>
+          </div>
         </div>
         <div class="fld">
           <label>Font</label>
@@ -157,13 +217,13 @@
       </div>
       <div class="grp">
         <div class="grp-h">Merchant Branding 2</div>
-        <details class="cb-section">
+        <details class="cb-section" id="secInputs">
           <summary>Style → Merchant Input</summary>
           <div class="cb-section-body">
         <div class="fld">
-          <label>Merchant input font &amp; background</label>
+          <div class="cb-sub-h">Section defaults — every merchant input</div>
           <div class="blk-seg" id="ibgMode">
-            <button type="button" data-v="default" class="on">Default</button>
+            <button type="button" data-v="default" class="on" title="White #ffffff">White</button>
             <button type="button" data-v="solid">Solid</button>
             <button type="button" data-v="gradient">Gradient</button>
           </div>
@@ -182,11 +242,11 @@
           </div>
           <div class="fld-row" style="align-items:center;gap:8px;margin-top:9px;">
             <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:74px;">Label Text</span>
-            <input type="color" id="inpLabelColor" value="#ffffff" title="Label text colour (defaults from Accent 2)">
+            <input type="color" id="inpLabelColor" value="#2a2f45" title="Label text colour">
           </div>
           <div class="fld-row" style="align-items:center;gap:8px;margin-top:6px;">
             <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:74px;">Input Text</span>
-            <input type="color" id="inpInputColor" value="#333333" title="Input text colour (defaults from Accent 2)">
+            <input type="color" id="inpInputColor" value="#2a2f45" title="Input text colour">
           </div>
           <div class="fld-row" style="align-items:center;gap:8px;margin-top:6px;">
             <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:74px;">Border</span>
@@ -199,15 +259,25 @@
             </div>
           </div>
         </div>
+        <div class="cb-sub-h" style="margin-top:14px;">Inputs column</div>
+        <div class="seg-row"><span>Position</span>
+          <div class="blk-seg" id="inPos"><button type="button" data-v="left" class="on">◧ Left</button><button type="button" data-v="right">◨ Right</button><button type="button" data-v="top">⬒ Top</button></div>
+        </div>
+        <div class="seg-row"><span>Width</span>
+          <div class="blk-seg" id="inWidth"><button type="button" data-v="narrow">Narrow</button><button type="button" data-v="normal" class="on">Normal</button><button type="button" data-v="wide">Wide</button></div>
+        </div>
+        <div class="cb-sub-h" style="margin-top:14px;">Fields — drag ⣿ to reorder · width · ✎ style · 👁</div>
+        <div class="lay-list" id="fldList"></div>
+        <div class="hint">Width <b>A</b> = the page's own grid; 1 / ⅔ / ½ / ⅓ = share of the inputs column. Hidden fields keep their link values. A field's own style overrides the section defaults. Compact density keeps its grouped layout (styles + hide still apply). Colours apply in the default theme; Project Midnight keeps its own look.</div>
           </div>
         </details>
-        <details class="cb-section">
+        <details class="cb-section" id="secLayout">
           <summary>Style → Layout</summary>
           <div class="cb-section-body">
-            <div class="cb-sub-h">Layout — drag to reorder, 👁 to show/hide</div>
+            <div class="cb-sub-h">Blocks — drag ⣿ to reorder · width · ✎ style · 👁</div>
         <div class="lay-list" id="layList"></div>
         <button class="cb-btn ghost" id="addBlock" style="margin-top:9px;width:100%;background:#eef1ff;color:var(--accent);border:1px dashed var(--accent);">➕ Add text block</button>
-        <div class="hint">Feature sections (Returns, Cashback) only appear when that feature is on in the underlying calc. Text blocks you add render in the proposal at their position.</div>
+        <div class="hint">Widths are a share of the results column (<b>A</b> = default: the two cards side by side, everything else full). Returns / Cashback / Guarantee only appear when that feature is on, and are separate blocks on the merchant view only (on the rep calc those results sit inside the cards). Compact density keeps its 4-box layout: order and hide apply there, widths don't.</div>
           </div>
         </details>
       </div>
@@ -227,6 +297,16 @@
       </div>
     </div>
     <div class="preview">
+      <div class="pv-bar">
+        <button type="button" class="pv-edit" id="editCanvasBtn" title="Edit blocks directly on the preview">✏️ Edit on canvas</button>
+        <span class="pv-hint" id="pvHint">Turn on to drag, resize, style and hide blocks right on the proposal.</span>
+        <span class="pv-col" id="pvCol" style="display:none;">
+          <span class="pv-col-l">Inputs column</span>
+          <span class="blk-seg" id="pvPos"><button type="button" data-v="left" title="Inputs on the left">◧</button><button type="button" data-v="right" title="Inputs on the right">◨</button><button type="button" data-v="top" title="Inputs on top">⬒</button></span>
+          <span class="blk-seg" id="pvWidth"><button type="button" data-v="narrow" title="Narrow column">S</button><button type="button" data-v="normal" title="Normal column">M</button><button type="button" data-v="wide" title="Wide column">L</button></span>
+        </span>
+        <span class="pv-sel" id="pvSel"></span>
+      </div>
       <iframe id="preview" title="Proposal preview"></iframe>
     </div>
   </main>
@@ -300,20 +380,25 @@
   const DEFAULT_BASE = 'mname=Acme+Co&orders=10000&aov=80&claims=1.5&share=25&attach=68&premium=3&minp=0.98&avg_premium=2.40&view=monthly&template=percentage';
   let baseParams = DEFAULT_BASE;
 
-  const SECTIONS = [
-    { k: 'metrics',   label: 'Key Metric Pills', styleable: true },
-    { k: 'hero',      label: 'Net Benefit Hero', styleable: true },
-    { k: 'cards',     label: 'Revenue / Cost Cards', styleable: true },
-    { k: 'returns',   label: 'Returns Savings' },
-    { k: 'cashback',  label: 'Cashback' },
-  ];
+  // Block vocabulary is shared with the pages (cb-layout.js): the same keys drive the merchant
+  // view (proposal.html) and the rep calc (index.html).
+  const SECTIONS = SICB.BLOCKS;
+  const FIELD_DEFS = SICB.FIELDS;
   const SWATCHES = ['#6675ff','#1f9d63','#e0007a','#c0641a','#0f8f56','#2a2f45','#d4af37','#7c3aed'];
+  const FONTS = ['', 'Inter', 'Poppins', 'Montserrat', 'DM Sans', 'Oswald', 'Lora', 'Playfair Display', 'Roboto Slab', 'Georgia'];
+  // New merchant-input defaults (white section, navy text, soft border)
+  const IN_DEF = { bg: '#ffffff', label: '#2a2f45', text: '#2a2f45', border: '#d0d4e8' };
 
-  let layout = SECTIONS.map(s => ({ k: s.k, v: true }));
-  let blocks = [];          // [{ id, heading, body, style:{align,color,size,weight,bw,bc,radius,pad,margin} }]
+  let layout = SICB.normLayout([], []);
+  let blocks = [];          // [{ id, heading, body, style:{align,color,size,weight,bw,bc,radius,pad,margin,bg,font} }]
+  let inputsCfg = SICB.normInputs(null);   // { pos, width, ordered, fields:[{k,v,w,style}] }
   let _blkSeq = 0;
   let _openBlk = null;      // id of the block whose inline editor is expanded
   let _openSec = null;      // key of the section whose style editor is expanded
+  let _openFld = null;      // key of the merchant input field whose style editor is expanded
+  let _sel = null;          // { g:'b'|'f'|'p', k } — block selected on the canvas / in a list
+  let _edit = false;        // on-canvas editing
+  let _hdrColor = '', _hdrSize = '';
 
   const $ = id => document.getElementById(id);
   const proposalBase = () => new URL('proposal.html', location.href).href;
@@ -330,9 +415,6 @@
     const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
     return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
   }
-  // Derived defaults from Accent 2 (used until the rep overrides them)
-  const labelColorDefault = () => { const a2 = _accent2Val(); return (a2 && _isDark(a2)) ? '#ffffff' : undefined; };
-  const inputColorDefault = () => _accent2Val() || undefined;
   function computeInputBg() {
     if (_ibgMode === 'solid') return $('ibgColorHex').value.trim() || '#1B1B1B';
     if (_ibgMode === 'gradient') {
@@ -340,8 +422,7 @@
       const ang = parseInt($('ibgAngle').value, 10);
       return `linear-gradient(${isNaN(ang) ? 90 : ang}deg, ${a} 0%, ${b} 60%, ${c} 100%)`;
     }
-    // Default background matches Accent 2 (when the rep has picked one)
-    return _accent2Val() || undefined;
+    return IN_DEF.bg;               // Default: white
   }
   function cfg() {
     return {
@@ -353,13 +434,19 @@
         logoUrl: $('logoUrl').value.trim() || undefined,
         bannerUrl: $('bannerUrl').value.trim() || undefined,
         inputBg: computeInputBg(),
-        inputLabelColor: _inpLabelSet ? $('inpLabelColor').value : labelColorDefault(),
-        inputInputColor: _inpInputSet ? $('inpInputColor').value : inputColorDefault(),
+        inputLabelColor: _inpLabelSet ? $('inpLabelColor').value : IN_DEF.label,
+        inputInputColor: _inpInputSet ? $('inpInputColor').value : IN_DEF.text,
         inputBorderW: _inpBorderW !== '' ? _inpBorderW : undefined,
-        inputBorderColor: _inpBorderSet ? $('inpBorderColor').value : undefined,
+        inputBorderColor: _inpBorderSet ? $('inpBorderColor').value : IN_DEF.border,
+        hdrColor: _hdrColor || undefined,
+        hdrFont: $('hdrFont').value || undefined,
+        hdrWeight: $('hdrWeight').value || undefined,
+        hdrSize: _hdrSize || undefined,
       },
       layout: layout,
       blocks: blocks,
+      inputs: inputsCfg,
+      v: 2,
     };
   }
   function buildUrl() {
@@ -375,13 +462,29 @@
     return url;
   }
 
-  let _t = null;
+  // Parts of the build the preview can only pick up by reloading (data, accent, page font, logo,
+  // banner, name, card rows / hero options). Everything else — layout, widths, styles, inputs,
+  // header — is applied live inside the preview (no reload, edit mode stays on).
+  function _reloadSig(c) {
+    const b = c.branding || {};
+    const L = c.layout || [];
+    const cards = L.find(l => l.k === 'cards'), hero = L.find(l => l.k === 'hero');
+    return JSON.stringify([baseParams, b.accent, b.font, b.logoUrl, b.bannerUrl, b.hideName, _logoImg,
+      cards && cards.style && cards.style.rows, hero && hero.style && [hero.style.subHidden, hero.style.perPremium]]);
+  }
+  let _t = null, _srcSig = null, _loadedSig = null;
+  function _pvWin() { try { const w = $('preview').contentWindow; return (w && w.SICB && w.document.readyState !== 'loading') ? w : null; } catch (e) { return null; } }
   function refresh(immediate) {
     const url = buildUrl();
     $('linkOut').value = url;
     clearTimeout(_t);
-    const doIt = () => { $('preview').src = url; };
-    if (immediate) doIt(); else _t = setTimeout(doIt, 400);
+    const c = cfg(), sig = _reloadSig(c), w = _pvWin();
+    if (w && sig === _loadedSig && sig === _srcSig) {
+      try { w.SICB.apply(c); syncEdit(); } catch (e) { console.warn('[CB] live apply failed', e); }
+    } else {
+      const doIt = () => { _srcSig = _reloadSig(cfg()); $('preview').src = buildUrl(); };
+      if (immediate) doIt(); else _t = setTimeout(doIt, 400);
+    }
     // Live branding sync: when stacked under the ROI Builder, push the current branding
     // to the hub so it can re-brand the calc above without reloading it.
     try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'branding', cfg: cfg() }, '*'); } catch (e) {}
@@ -427,15 +530,19 @@
   // so default merchant links keep the theme's own header colour. Picking it also
   // drives the input background + label/input text defaults (until manually overridden).
   let _accent2Set = false;
-  function _syncDerived() {
-    if (!_inpLabelSet) $('inpLabelColor').value = labelColorDefault() || '#333333';
-    if (!_inpInputSet) $('inpInputColor').value = inputColorDefault() || '#333333';
-  }
-  $('accent2').addEventListener('input', e => { _accent2Set = true; $('accent2Hex').value = e.target.value; _syncDerived(); refresh(true); });
+  $('accent2').addEventListener('input', e => { _accent2Set = true; $('accent2Hex').value = e.target.value; refresh(true); });
   $('accent2Hex').addEventListener('input', e => {
     const v = e.target.value.trim(); _accent2Set = true;
-    if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent2').value = v; _syncDerived(); refresh(true); } else { refresh(false); }
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) { $('accent2').value = v; refresh(true); } else { refresh(false); }
   });
+  // Header text (merchant name in the header): colour / font / weight / size
+  $('hdrFont').innerHTML = FONTS.map(f => '<option value="' + f + '">' + (f || 'Brand font') + '</option>').join('');
+  $('hdrColorSlot').appendChild(colorCtl(() => _hdrColor, v => { _hdrColor = v || ''; }, '#ffffff'));
+  $('hdrFont').addEventListener('change', () => refresh(true));
+  $('hdrWeight').addEventListener('change', () => refresh(true));
+  document.querySelectorAll('#hdrSize button').forEach(btn => btn.addEventListener('click', () => {
+    _hdrSize = btn.dataset.v; document.querySelectorAll('#hdrSize button').forEach(b => b.classList.toggle('on', b === btn)); refresh(true);
+  }));
   $('font').addEventListener('change', () => refresh(true));
   $('logoUrl').addEventListener('input', () => refresh(false));
   $('bannerUrl').addEventListener('input', () => refresh(false));
@@ -618,115 +725,260 @@
   segPick('inpBorderW', v => _inpBorderW = v);
   segPick('hideNameSeg', v => _hideName = v);
 
-  // ── Layout drag-and-drop ──
-  let dragKey = null;
+  // ── Shared UI helpers ──
+  // Colour control with an "unset" state (✕ = back to the page default).
+  function colorCtl(get, set, placeholder) {
+    const w = document.createElement('div'); w.className = 'cc';
+    const i = document.createElement('input'); i.type = 'color'; i.value = get() || placeholder || '#ffffff';
+    const d = document.createElement('span'); d.className = 'cc-def'; d.textContent = 'Default';
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'cc-x'; x.title = 'Clear — use the default'; x.textContent = '✕';
+    const sync = () => w.classList.toggle('unset', !get());
+    i.addEventListener('input', () => { set(i.value); sync(); refresh(true); });
+    x.addEventListener('click', e => { e.preventDefault(); set(undefined); i.value = placeholder || '#ffffff'; sync(); refresh(true); });
+    sync(); w.append(i, d, x); return w;
+  }
+  const W_OPTS = [['', 'Auto (page default)', 'A'], ['full', 'Full width', '1'], ['twothirds', 'Two-thirds width', '⅔'], ['half', 'Half width', '½'], ['third', 'One-third width', '⅓']];
+  function wSeg(cur, onPick) {
+    const seg = document.createElement('span'); seg.className = 'w-seg';
+    W_OPTS.forEach(([v, t, lbl]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.title = t; b.textContent = lbl;
+      if ((cur || '') === v) b.classList.add('on');
+      b.addEventListener('click', e => { e.stopPropagation(); onPick(v); });
+      seg.appendChild(b);
+    });
+    return seg;
+  }
+  function segCtl(opts, cur, onPick) {          // [[value,label,title?]]
+    const seg = document.createElement('div'); seg.className = 'blk-seg';
+    opts.forEach(([v, lbl, t]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = lbl; if (t) b.title = t;
+      if (String(cur == null ? '' : cur) === v) b.classList.add('on');
+      b.addEventListener('click', () => { seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); onPick(v); });
+      seg.appendChild(b);
+    });
+    return seg;
+  }
+  function fontSelect(cur, onPick) {
+    const sel = document.createElement('select');
+    sel.innerHTML = FONTS.map(f => '<option value="' + f + '"' + ((cur || '') === f ? ' selected' : '') + '>' + (f || 'Default') + '</option>').join('');
+    sel.addEventListener('change', () => onPick(sel.value));
+    return sel;
+  }
+  const cell = (label, el, full) => { const c = document.createElement('div'); c.className = 'c' + (full ? ' full' : ''); const l = document.createElement('label'); l.textContent = label; c.append(l, el); return c; };
+  const clean = o => { Object.keys(o).forEach(k => { if (o[k] === undefined || o[k] === '') delete o[k]; }); return o; };
+
+  // Style editor for a results block (kind 'block') or a merchant input field (kind 'field').
+  function buildStyleEditor(owner, kind) {
+    const st = owner.style || (owner.style = {});
+    const set = (k, v) => { if (v === undefined || v === '') delete st[k]; else st[k] = v; };
+    const wrap = document.createElement('div'); wrap.className = 'blk-edit';
+    const g = document.createElement('div'); g.className = 'mini-grid';
+    g.appendChild(cell('Background', colorCtl(() => st.bg, v => set('bg', v), '#ffffff')));
+    if (kind === 'field') {
+      g.appendChild(cell('Label colour', colorCtl(() => st.label, v => set('label', v), IN_DEF.label)));
+      g.appendChild(cell('Input text', colorCtl(() => st.color, v => set('color', v), IN_DEF.text)));
+    } else {
+      g.appendChild(cell('Text colour', colorCtl(() => st.color, v => set('color', v), '#1f2430')));
+    }
+    g.appendChild(cell('Font', fontSelect(st.font, v => { set('font', v); refresh(true); })));
+    g.appendChild(cell('Size', segCtl([['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']], st.size || '', v => { set('size', v); refresh(true); })));
+    g.appendChild(cell('Border px', segCtl([['', 'Def'], ['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']], st.bw == null ? '' : String(st.bw), v => { set('bw', v); refresh(true); })));
+    g.appendChild(cell('Border colour', colorCtl(() => st.bc, v => set('bc', v), kind === 'field' ? IN_DEF.border : '#e3e6f0')));
+    if (kind !== 'field') {
+      const rad = document.createElement('input'); rad.type = 'number'; rad.min = '0'; rad.max = '40'; rad.placeholder = 'Def'; rad.value = st.radius != null ? st.radius : '';
+      rad.addEventListener('input', () => { const n = parseInt(rad.value, 10); set('radius', isNaN(n) ? undefined : n); refresh(false); });
+      g.appendChild(cell('Corner radius px', rad));
+    }
+    wrap.appendChild(g);
+    if (kind !== 'field' && owner.k === 'cards') wrap.appendChild(cardRowsEditor(st));
+    if (kind !== 'field' && owner.k === 'hero') wrap.appendChild(heroOptsEditor(st));
+    const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cb-btn ghost';
+    reset.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
+    reset.textContent = 'Reset style';
+    reset.addEventListener('click', () => {
+      // Keep the Extra Revenue card's row setup + hero options; clear the visual style only.
+      const keep = {}; ['rows', 'subHidden', 'perPremium'].forEach(k => { if (st[k] !== undefined) keep[k] = st[k]; });
+      owner.style = keep; if (!Object.keys(keep).length) delete owner.style;
+      renderLists(); refresh(true);
+    });
+    wrap.appendChild(reset);
+    return wrap;
+  }
+  const CARD_ROW_LABELS = { value: 'Extra Revenue Value', revshare: 'Revenue Share', funded: 'Funded by Premiums' };
+  function cardRowsEditor(st) {
+    const box = document.createElement('div');
+    box.innerHTML = '<div class="blk-sub" style="margin:8px 0 4px;">Card rows — order &amp; show/hide</div><div class="se-rows"></div>';
+    if (!Array.isArray(st.rows)) st.rows = [{ k: 'value', v: true }, { k: 'revshare', v: true }, { k: 'funded', v: true }];
+    const rowsEl = box.querySelector('.se-rows');
+    const draw = () => {
+      rowsEl.innerHTML = st.rows.map((r, i) =>
+        '<div class="se-row"><span class="se-row-name">' + (CARD_ROW_LABELS[r.k] || r.k) + '</span>' +
+        '<button type="button" class="lay-mini se-up" ' + (i === 0 ? 'disabled' : '') + '>▲</button>' +
+        '<button type="button" class="lay-mini se-down" ' + (i === st.rows.length - 1 ? 'disabled' : '') + '>▼</button>' +
+        '<button type="button" class="lay-mini se-eye">' + (r.v !== false ? '👁' : '🚫') + '</button></div>').join('');
+      [...rowsEl.querySelectorAll('.se-row')].forEach((rowEl, i) => {
+        rowEl.querySelector('.se-up').addEventListener('click', () => { if (i > 0) { const [m] = st.rows.splice(i, 1); st.rows.splice(i - 1, 0, m); draw(); refresh(true); } });
+        rowEl.querySelector('.se-down').addEventListener('click', () => { if (i < st.rows.length - 1) { const [m] = st.rows.splice(i, 1); st.rows.splice(i + 1, 0, m); draw(); refresh(true); } });
+        rowEl.querySelector('.se-eye').addEventListener('click', () => { st.rows[i].v = st.rows[i].v === false; draw(); refresh(true); });
+      });
+    };
+    draw();
+    return box;
+  }
+  function heroOptsEditor(st) {
+    const box = document.createElement('div'); box.style.marginTop = '8px';
+    const row = (name, seg) => { const r = document.createElement('div'); r.className = 'se-row'; r.style.marginBottom = '4px'; const n = document.createElement('span'); n.className = 'se-row-name'; n.textContent = name; r.append(n, seg); return r; };
+    box.appendChild(row('Sub line ($/period)', segCtl([['0', 'Show'], ['1', 'Hide']], st.subHidden ? '1' : '0', v => { st.subHidden = v === '1'; refresh(true); })));
+    box.appendChild(row('Show $ of avg premium', segCtl([['0', 'Off'], ['1', 'On']], st.perPremium ? '1' : '0', v => { st.perPremium = v === '1'; refresh(true); })));
+    return box;
+  }
+
+  // Drag-to-reorder for a sidebar list (HTML5 DnD). arr items carry .k
+  function wireDrag(row, arr, key, after) {
+    row.draggable = true;
+    row.addEventListener('dragstart', e => { row.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', key); e.dataTransfer.effectAllowed = 'move'; } catch (er) {} row._list = arr; window._cbDrag = { arr, key }; });
+    row.addEventListener('dragend', () => { row.classList.remove('dragging'); window._cbDrag = null; document.querySelectorAll('.lay-item.over').forEach(c => c.classList.remove('over')); });
+    row.addEventListener('dragover', e => { const d = window._cbDrag; if (!d || d.arr !== arr) return; e.preventDefault(); row.classList.add('over'); });
+    row.addEventListener('dragleave', () => row.classList.remove('over'));
+    row.addEventListener('drop', e => {
+      e.preventDefault(); row.classList.remove('over');
+      const d = window._cbDrag; if (!d || d.arr !== arr || d.key === key) return;
+      moveKey(arr, d.key, key, false); after();
+    });
+  }
+  function moveKey(arr, k, target, placeAfter) {
+    const from = arr.findIndex(x => x.k === k); if (from < 0) return false;
+    const [m] = arr.splice(from, 1);
+    let to = arr.findIndex(x => x.k === target); if (to < 0) { arr.splice(from, 0, m); return false; }
+    arr.splice(placeAfter ? to + 1 : to, 0, m);
+    return true;
+  }
+
+  // ── Merchant input fields list ──
+  const fieldLabel = k => (FIELD_DEFS.find(f => f.k === k) || {}).label || k;
+  function renderFields() {
+    const list = $('fldList'); if (!list) return; list.innerHTML = '';
+    inputsCfg.fields.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'lay-item' + (f.v === false ? ' hidden' : '') + (_sel && _sel.g === 'f' && _sel.k === f.k ? ' sel' : '');
+      row.dataset.k = f.k;
+      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + fieldLabel(f.k) + (f.style && Object.keys(f.style).length ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
+      row.appendChild(wSeg(f.w, v => { if (v) f.w = v; else delete f.w; renderFields(); refresh(true); }));
+      const ed = document.createElement('button'); ed.className = 'lay-mini'; ed.title = 'Style'; ed.textContent = '✎';
+      ed.addEventListener('click', e => { e.stopPropagation(); _openFld = (_openFld === f.k) ? null : f.k; select('f', f.k, false); });
+      const eye = document.createElement('button'); eye.className = 'lay-eye'; eye.title = 'Show / hide'; eye.textContent = f.v === false ? '🚫' : '👁';
+      eye.addEventListener('click', e => { e.stopPropagation(); f.v = f.v === false; renderFields(); refresh(true); });
+      row.append(ed, eye);
+      row.querySelector('.lay-name').addEventListener('click', () => select('f', f.k, false));
+      wireDrag(row, inputsCfg.fields, f.k, () => { inputsCfg.ordered = true; renderFields(); refresh(true); });
+      list.appendChild(row);
+      if (_openFld === f.k) list.appendChild(buildStyleEditor(f, 'field'));
+    });
+    document.querySelectorAll('#inPos button, #pvPos button').forEach(b => b.classList.toggle('on', b.dataset.v === inputsCfg.pos));
+    document.querySelectorAll('#inWidth button, #pvWidth button').forEach(b => b.classList.toggle('on', b.dataset.v === inputsCfg.width));
+  }
+  document.querySelectorAll('#inPos button, #pvPos button').forEach(b => b.addEventListener('click', () => { inputsCfg.pos = b.dataset.v; renderLists(); refresh(true); }));
+  document.querySelectorAll('#inWidth button, #pvWidth button').forEach(b => b.addEventListener('click', () => { inputsCfg.width = b.dataset.v; renderLists(); refresh(true); }));
+
+  // ── Results blocks list ──
+  function blockLabel(k) {
+    const meta = SECTIONS.find(s => s.k === k); if (meta) return meta.label;
+    const blk = blockById(k);
+    return (blk && (blk.heading || blk.body)) ? '¶ ' + (blk.heading || blk.body).slice(0, 22) : '¶ Text block';
+  }
   function renderLayout() {
     const list = $('layList'); list.innerHTML = '';
+    // Pinned: the inputs column (position + width live in Merchant Input; summarised here)
+    const pin = document.createElement('div'); pin.className = 'lay-item pinned' + (_sel && _sel.g === 'p' ? ' sel' : '');
+    pin.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name">Inputs column</span>';
+    pin.appendChild(segCtl([['left', '◧'], ['right', '◨'], ['top', '⬒']].map(([v, l]) => [v, l, 'Inputs ' + v]), inputsCfg.pos, v => { inputsCfg.pos = v; renderLists(); refresh(true); }));
+    pin.querySelector('.lay-name').addEventListener('click', () => select('p', 'inputs', false));
+    list.appendChild(pin);
     layout.forEach(item => {
-      const meta = SECTIONS.find(s => s.k === item.k);
-      const blk = meta ? null : blockById(item.k);
-      const label = meta ? meta.label
-        : ((blk && (blk.heading || blk.body)) ? (blk.heading || blk.body).slice(0, 24) : 'Text block');
+      const blk = SECTIONS.some(s => s.k === item.k) ? null : blockById(item.k);
       const row = document.createElement('div');
-      row.className = 'lay-item' + (item.v ? '' : ' hidden') + (blk ? ' is-block' : '');
-      row.draggable = true;
+      row.className = 'lay-item' + (item.v === false ? ' hidden' : '') + (blk ? ' is-block' : '') + (_sel && _sel.g === 'b' && _sel.k === item.k ? ' sel' : '');
       row.dataset.k = item.k;
-      const styleable = !!(meta && meta.styleable);
-      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name">' + label + '</span>' +
-                      (blk ? '<button class="lay-mini blk-edit-btn" title="Edit block">✎</button>' : '') +
-                      (styleable ? '<button class="lay-mini sec-edit-btn" title="Style">✎</button>' : '') +
-                      '<button class="lay-eye" title="Show / hide">' + (item.v ? '👁' : '🚫') + '</button>' +
-                      (blk ? '<button class="lay-mini blk-del-btn" title="Delete block">🗑</button>' : '');
-      row.querySelector('.lay-eye').addEventListener('click', e => {
+      const styled = blk ? false : !!(item.style && Object.keys(item.style).some(k => !['rows', 'subHidden', 'perPremium'].includes(k)));
+      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
+      row.appendChild(wSeg(item.w, v => { if (v) item.w = v; else delete item.w; renderLayout(); refresh(true); }));
+      const ed = document.createElement('button'); ed.className = 'lay-mini'; ed.title = blk ? 'Edit block' : 'Style'; ed.textContent = '✎';
+      ed.addEventListener('click', e => {
         e.stopPropagation();
-        item.v = !item.v; renderLayout(); refresh(true);
+        if (blk) _openBlk = (_openBlk === item.k) ? null : item.k; else _openSec = (_openSec === item.k) ? null : item.k;
+        select('b', item.k, false);
       });
-      if (styleable) {
-        row.querySelector('.sec-edit-btn').addEventListener('click', e => { e.stopPropagation(); _openSec = (_openSec === item.k) ? null : item.k; renderLayout(); });
-      }
+      const eye = document.createElement('button'); eye.className = 'lay-eye'; eye.title = 'Show / hide'; eye.textContent = item.v === false ? '🚫' : '👁';
+      eye.addEventListener('click', e => { e.stopPropagation(); item.v = item.v === false; renderLayout(); refresh(true); });
+      row.append(ed, eye);
       if (blk) {
-        row.querySelector('.blk-edit-btn').addEventListener('click', e => { e.stopPropagation(); _openBlk = (_openBlk === item.k) ? null : item.k; renderLayout(); });
-        row.querySelector('.blk-del-btn').addEventListener('click', e => {
+        const del = document.createElement('button'); del.className = 'lay-mini'; del.title = 'Delete block'; del.textContent = '🗑';
+        del.addEventListener('click', e => {
           e.stopPropagation();
           blocks = blocks.filter(b => b.id !== item.k);
           layout = layout.filter(l => l.k !== item.k);
           if (_openBlk === item.k) _openBlk = null;
           renderLayout(); refresh(true);
         });
+        row.appendChild(del);
       }
-      row.addEventListener('dragstart', () => { dragKey = item.k; row.classList.add('dragging'); });
-      row.addEventListener('dragend', () => { dragKey = null; row.classList.remove('dragging'); [...list.children].forEach(c => c.classList.remove('over')); });
-      row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('over'); });
-      row.addEventListener('dragleave', () => row.classList.remove('over'));
-      row.addEventListener('drop', e => {
-        e.preventDefault(); row.classList.remove('over');
-        if (!dragKey || dragKey === item.k) return;
-        const from = layout.findIndex(l => l.k === dragKey);
-        const to = layout.findIndex(l => l.k === item.k);
-        const [moved] = layout.splice(from, 1);
-        layout.splice(to, 0, moved);
-        renderLayout(); refresh(true);
-      });
+      row.querySelector('.lay-name').addEventListener('click', () => select('b', item.k, false));
+      wireDrag(row, layout, item.k, () => { renderLayout(); refresh(true); });
       list.appendChild(row);
       if (blk && _openBlk === item.k) list.appendChild(buildBlockEditor(blk));
-      if (styleable && _openSec === item.k) list.appendChild(buildSectionEditor(item));
+      if (!blk && _openSec === item.k) list.appendChild(buildStyleEditor(item, 'block'));
     });
   }
+  function renderLists() { renderFields(); renderLayout(); }
 
-  // Inline style editor for a result section: background + border.
-  const CARD_ROW_LABELS = { value: 'Extra Revenue Value', revshare: 'Revenue Share', funded: 'Funded by Premiums' };
-  function buildSectionEditor(item) {
-    const st = item.style || (item.style = {});
-    const wrap = document.createElement('div');
-    wrap.className = 'blk-edit';
-    let inner =
-      '<div class="blk-ctrls">' +
-        '<div class="c"><label>Background</label><input type="color" class="se-bg" value="' + (st.bg || '#ffffff') + '"></div>' +
-        '<div class="c"><label>Border color</label><input type="color" class="se-bc" value="' + (st.bc || '#e3e6f0') + '"></div>' +
-        '<div class="c"><label>Border px</label><div class="blk-seg se-bw"><button data-v="">Def</button><button data-v="0">0</button><button data-v="1">1</button><button data-v="2">2</button></div></div>' +
-      '</div>';
-    if (item.k === 'cards') inner += '<div class="blk-sub" style="margin-top:6px;">Card Rows — order &amp; show/hide</div><div class="se-rows"></div>';
-    if (item.k === 'hero') inner +=
-      '<div class="se-row" style="margin-top:6px;"><span class="se-row-name">Sub line ($/period)</span>' +
-        '<div class="blk-seg se-hero-sub"><button data-v="0">Show</button><button data-v="1">Hide</button></div></div>' +
-      '<div class="se-row"><span class="se-row-name">Show $ of avg premium</span>' +
-        '<div class="blk-seg se-hero-pp"><button data-v="0">Off</button><button data-v="1">On</button></div></div>';
-    inner += '<button type="button" class="cb-btn ghost se-clear" style="background:#f4f5fb;color:var(--muted);border:1px solid var(--line);">Clear section style</button>';
-    wrap.innerHTML = inner;
-    const q = s => wrap.querySelector(s);
-    q('.se-bg').addEventListener('input', e => { st.bg = e.target.value; refresh(true); });
-    q('.se-bc').addEventListener('input', e => { st.bc = e.target.value; refresh(true); });
-    wrap.querySelectorAll('.se-bw button').forEach(b => {
-      if ((st.bw || '') === b.dataset.v && (st.bw != null)) b.classList.add('on');
-      b.addEventListener('click', () => { wrap.querySelectorAll('.se-bw button').forEach(x => x.classList.remove('on')); b.classList.add('on'); st.bw = b.dataset.v; refresh(true); });
-    });
-    if (item.k === 'cards') {
-      if (!Array.isArray(st.rows)) st.rows = [{ k: 'value', v: true }, { k: 'revshare', v: true }, { k: 'funded', v: true }];
-      const rowsEl = q('.se-rows');
-      const drawRows = () => {
-        rowsEl.innerHTML = st.rows.map((r, i) =>
-          '<div class="se-row"><span class="se-row-name">' + (CARD_ROW_LABELS[r.k] || r.k) + '</span>' +
-          '<button type="button" class="lay-mini se-up" ' + (i === 0 ? 'disabled' : '') + '>▲</button>' +
-          '<button type="button" class="lay-mini se-down" ' + (i === st.rows.length - 1 ? 'disabled' : '') + '>▼</button>' +
-          '<button type="button" class="lay-mini se-eye">' + (r.v !== false ? '👁' : '🚫') + '</button></div>').join('');
-        [...rowsEl.querySelectorAll('.se-row')].forEach((rowEl, i) => {
-          rowEl.querySelector('.se-up').addEventListener('click', () => { if (i > 0) { const [m] = st.rows.splice(i, 1); st.rows.splice(i - 1, 0, m); drawRows(); refresh(true); } });
-          rowEl.querySelector('.se-down').addEventListener('click', () => { if (i < st.rows.length - 1) { const [m] = st.rows.splice(i, 1); st.rows.splice(i + 1, 0, m); drawRows(); refresh(true); } });
-          rowEl.querySelector('.se-eye').addEventListener('click', () => { st.rows[i].v = st.rows[i].v === false; drawRows(); refresh(true); });
-        });
-      };
-      drawRows();
-    }
-    if (item.k === 'hero') {
-      const segInit = (sel, on) => { wrap.querySelectorAll(sel + ' button').forEach(b => { b.classList.toggle('on', (b.dataset.v === '1') === !!on); b.addEventListener('click', () => { wrap.querySelectorAll(sel + ' button').forEach(x => x.classList.remove('on')); b.classList.add('on'); }); }); };
-      segInit('.se-hero-sub', st.subHidden);
-      wrap.querySelectorAll('.se-hero-sub button').forEach(b => b.addEventListener('click', () => { st.subHidden = b.dataset.v === '1'; refresh(true); }));
-      segInit('.se-hero-pp', st.perPremium);
-      wrap.querySelectorAll('.se-hero-pp button').forEach(b => b.addEventListener('click', () => { st.perPremium = b.dataset.v === '1'; refresh(true); }));
-    }
-    q('.se-clear').addEventListener('click', () => { delete item.style; renderLayout(); refresh(true); });
-    return wrap;
+  // Select a block (from a list or from the canvas): highlight it in both places, open its editor.
+  function select(g, k, fromCanvas, openStyle) {
+    _sel = { g, k };
+    if (openStyle) { if (g === 'f') _openFld = k; else if (g === 'b') { if (blockById(k)) _openBlk = k; else _openSec = k; } }
+    const sec = g === 'f' || g === 'p' ? $('secInputs') : $('secLayout');
+    if (sec && !sec.open) sec.open = true;
+    renderLists();
+    const pv = $('pvSel'); if (pv) pv.textContent = '● ' + (g === 'f' ? fieldLabel(k) : g === 'p' ? 'Inputs column' : blockLabel(k));
+    if (fromCanvas) {
+      const row = document.querySelector((g === 'f' ? '#fldList' : '#layList') + ' .lay-item' + (g === 'p' ? '.pinned' : '[data-k="' + k + '"]'));
+      if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else syncEdit();
   }
+  function syncEdit() {
+    const w = _pvWin(); if (!w) return;
+    try { w.SICB.setEdit(_edit, _sel); } catch (e) {}
+  }
+  $('editCanvasBtn').addEventListener('click', () => {
+    _edit = !_edit;
+    $('editCanvasBtn').classList.toggle('on', _edit);
+    $('editCanvasBtn').textContent = _edit ? '✓ Editing on canvas — drag ⣿ · resize · 🎨 · 👁' : '✏️ Edit on canvas';
+    $('pvHint').textContent = _edit ? 'Drag ⣿ to move · 1 ⅔ ½ ⅓ resize · 🎨 style · 👁 hide' : 'Turn on to drag, resize, style and hide blocks right on the proposal.';
+    $('pvCol').style.display = _edit ? '' : 'none';
+    document.querySelector('.pv-bar').classList.toggle('editing', _edit);
+    $('editCanvasBtn').title = _edit ? 'Drag ⣿ to move · 1 ⅔ ½ ⅓ resize · 🎨 style · 👁 hide · click a block to select it' : 'Edit blocks directly on the preview';
+    syncEdit();
+  });
+  // Canvas → editor: edits made on the preview come back as ops; this editor owns the config.
+  window.addEventListener('message', e => {
+    const d = e.data; if (!d || d.siCBx !== 'op') return;
+    let src = null; try { src = $('preview').contentWindow; } catch (er) {}
+    if (e.source !== src) return;
+    const arr = d.g === 'f' ? inputsCfg.fields : layout;
+    const it = d.k ? arr.find(x => x.k === d.k) : null;
+    switch (d.op) {
+      case 'move': if (moveKey(arr, d.k, d.target, !!d.after)) { if (d.g === 'f') inputsCfg.ordered = true; select(d.g, d.k, true); refresh(true); } return;
+      case 'width': if (it) { if (it.w === d.w) delete it.w; else it.w = d.w; select(d.g, d.k, true); refresh(true); } return;
+      case 'toggle': if (it) { it.v = it.v === false; select(d.g, d.k, true); refresh(true); } return;
+      case 'pos': inputsCfg.pos = d.pos; select('p', 'inputs', true); refresh(true); return;
+      case 'pwidth': inputsCfg.width = d.width; select('p', 'inputs', true); refresh(true); return;
+      case 'select': select(d.g, d.k, true, !!d.style); return;
+    }
+  });
+  $('preview').addEventListener('load', () => {
+    _loadedSig = _srcSig;
+    // The page applied the build from its URL; re-apply the editor's latest state + edit mode.
+    setTimeout(() => { const w = _pvWin(); if (w) { try { w.SICB.apply(cfg()); } catch (e) {} syncEdit(); } }, 60);
+  });
 
   // Inline editor for a text block: content + per-element type & border controls.
   function buildBlockEditor(blk) {
@@ -738,6 +990,8 @@
       '<div class="blk-sub">Body</div><textarea class="be-b"></textarea>' +
       '<div class="blk-ctrls">' +
         '<div class="c"><label>Text color</label><input type="color" class="be-color"></div>' +
+        '<div class="c"><label>Background</label><div class="be-bg"></div></div>' +
+        '<div class="c"><label>Font</label><div class="be-font"></div></div>' +
         '<div class="c"><label>Size</label><div class="blk-seg be-size"><button data-v="s">S</button><button data-v="m">M</button><button data-v="l">L</button></div></div>' +
         '<div class="c"><label>Weight</label><div class="blk-seg be-weight"><button data-v="400">Normal</button><button data-v="800">Bold</button></div></div>' +
         '<div class="c"><label>Align</label><div class="blk-seg be-align"><button data-v="left">L</button><button data-v="center">C</button><button data-v="right">R</button></div></div>' +
@@ -748,6 +1002,9 @@
         '<div class="c"><label>Margin px</label><input type="text" class="be-margin" inputmode="numeric"></div>' +
       '</div>';
     const q = s => wrap.querySelector(s);
+    q('.be-bg').appendChild(colorCtl(() => st.bg, v => { if (v) st.bg = v; else delete st.bg; }, '#ffffff'));
+    const fs = fontSelect(st.font, v => { if (v) st.font = v; else delete st.font; refresh(true); }); fs.style.cssText = 'width:100%;font-family:inherit;font-size:.76rem;padding:4px 6px;border:1px solid #d0d4e8;border-radius:6px;';
+    q('.be-font').appendChild(fs);
     q('.be-h').value = blk.heading || ''; q('.be-b').value = blk.body || '';
     q('.be-color').value = st.color || '#1f2430'; q('.be-bc').value = st.bc || '#e3e6f0';
     q('.be-bw').value = st.bw != null ? st.bw : ''; q('.be-radius').value = st.radius != null ? st.radius : '';
@@ -771,9 +1028,12 @@
   $('addBlock').addEventListener('click', () => {
     const id = 'b' + (++_blkSeq);
     blocks.push({ id, heading: 'Custom heading', body: 'Add your message here…', style: { align: 'left', size: 'm', weight: '400', pad: 12, bw: 1, bc: '#e3e6f0', radius: 10, margin: 0 } });
-    layout.push({ k: id, v: true });
+    // New text blocks land just above the breakdown
+    const bi = layout.findIndex(l => l.k === 'breakdown');
+    if (bi >= 0) layout.splice(bi, 0, { k: id, v: true }); else layout.push({ k: id, v: true });
     _openBlk = id;
-    renderLayout(); refresh(true);
+    select('b', id, false);
+    refresh(true);
   });
 
   // ── Base link ──
@@ -854,8 +1114,13 @@
   // a bare scenario save wiping an existing merchant folder's branding.
   function _cbHasBranding() {
     return _accent2Set || !!_logoImg || !!$('logoUrl').value.trim() || !!$('bannerUrl').value.trim()
-      || _ibgMode !== 'default' || ($('accentHex').value || '').toLowerCase() !== '#6675ff'
-      || (Array.isArray(layout) && layout.some(l => l.style));
+      || _ibgMode !== 'default' || _inpLabelSet || _inpInputSet || _inpBorderSet || _inpBorderW !== ''
+      || ($('accentHex').value || '').toLowerCase() !== '#6675ff'
+      || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize)
+      || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
+      || inputsCfg.fields.some(f => f.w || f.v === false || (f.style && Object.keys(f.style).length))
+      || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false))
+      || blocks.length > 0;
   }
   // Shared by ☁ Cloud Save and by Copy Custom Link (when a logo image is embedded):
   // sign in, upsert the MERCHANT folder branding (single source), save this SCENARIO
@@ -909,19 +1174,31 @@
     if (!bldRaw) return null;
     let bld; try { bld = JSON.parse(bldRaw); } catch (e) { return null; }
     const b = bld.branding || {};
-    const solid = (typeof b.inputBg === 'string' && /^#[0-9a-fA-F]{6}$/.test(b.inputBg));
+    const a2 = (b.accent2 || '').toLowerCase();
+    const low = v => String(v || '').toLowerCase();
+    // Values the old editor DERIVED from Accent 2 (input bg = header colour, white labels on a
+    // dark header, input text = header colour) weren't the rep's choice: open them as the new
+    // defaults. Anything else the rep picked is kept.
+    const bgDerived = !b.inputBg || (a2 && low(b.inputBg) === a2) || low(b.inputBg) === IN_DEF.bg;
+    const solid = !bgDerived && /^#[0-9a-fA-F]{6}$/.test(b.inputBg || '');
+    const gm = !bgDerived && !solid ? String(b.inputBg || '').match(/linear-gradient\((\d+)deg,\s*(#[0-9a-f]{6})\s+0%,\s*(#[0-9a-f]{6})\s+60%,\s*(#[0-9a-f]{6})\s+100%\)/i) : null;
+    const lblDerived = b.inputLabelColor == null || (low(b.inputLabelColor) === '#ffffff' && a2 && _isDark(a2)) || low(b.inputLabelColor) === IN_DEF.label;
+    const txtDerived = b.inputInputColor == null || (a2 && low(b.inputInputColor) === a2) || low(b.inputInputColor) === IN_DEF.text;
+    const bdDerived = b.inputBorderColor == null || low(b.inputBorderColor) === IN_DEF.border;
     return {
       branding: {
         accentHex: b.accent, accent2Hex: b.accent2, accent2Set: !!b.accent2,
         font: b.font, logoUrl: b.logoUrl, bannerUrl: b.bannerUrl,
         hideName: b.hideName ? '1' : '',
-        ibgMode: solid ? 'solid' : 'default', ibgColorHex: solid ? b.inputBg : '#1B1B1B',
-        inpLabelColor: b.inputLabelColor, inpLabelSet: b.inputLabelColor != null,
-        inpInputColor: b.inputInputColor, inpInputSet: b.inputInputColor != null,
-        inpBorderColor: b.inputBorderColor, inpBorderSet: b.inputBorderColor != null,
-        inpBorderW: b.inputBorderW || '', logoImg: ''
+        ibgMode: solid ? 'solid' : gm ? 'gradient' : 'default', ibgColorHex: solid ? b.inputBg : '#1B1B1B',
+        ibgAngle: gm ? gm[1] : undefined, ibgA: gm ? gm[2] : undefined, ibgB: gm ? gm[3] : undefined, ibgC: gm ? gm[4] : undefined,
+        inpLabelColor: lblDerived ? IN_DEF.label : b.inputLabelColor, inpLabelSet: !lblDerived,
+        inpInputColor: txtDerived ? IN_DEF.text : b.inputInputColor, inpInputSet: !txtDerived,
+        inpBorderColor: bdDerived ? IN_DEF.border : b.inputBorderColor, inpBorderSet: !bdDerived,
+        inpBorderW: b.inputBorderW || '', logoImg: '',
+        hdrColor: b.hdrColor || '', hdrFont: b.hdrFont || '', hdrWeight: b.hdrWeight || '', hdrSize: b.hdrSize || ''
       },
-      layout: bld.layout || [], blocks: bld.blocks || []
+      layout: bld.layout || [], blocks: bld.blocks || [], inputs: bld.inputs || null
     };
   }
 
@@ -973,19 +1250,23 @@
         inpInputColor: $('inpInputColor').value, inpInputSet: _inpInputSet,
         inpBorderColor: $('inpBorderColor').value, inpBorderSet: _inpBorderSet, inpBorderW: _inpBorderW,
         hideName: _hideName, logoImg: _logoImg,
+        hdrColor: _hdrColor, hdrFont: $('hdrFont').value, hdrWeight: $('hdrWeight').value, hdrSize: _hdrSize,
       },
       layout: JSON.parse(JSON.stringify(layout)),
       blocks: JSON.parse(JSON.stringify(blocks)),
+      inputs: JSON.parse(JSON.stringify(inputsCfg)),
     };
   }
 
   function cbRestore(snap, includeBranding) {
-    if (snap.layout) layout = JSON.parse(JSON.stringify(snap.layout));
     if (Array.isArray(snap.blocks)) {
       blocks = JSON.parse(JSON.stringify(snap.blocks));
       _blkSeq = blocks.reduce((m, b) => Math.max(m, parseInt(String(b.id).replace(/\D/g, ''), 10) || 0), 0);
     }
-    _openSec = null; _openBlk = null;
+    // Builds saved before blocks/inputs existed open with today's defaults (nothing lost).
+    if (snap.layout) layout = SICB.normLayout(JSON.parse(JSON.stringify(snap.layout)), blocks);
+    inputsCfg = SICB.normInputs(snap.inputs ? JSON.parse(JSON.stringify(snap.inputs)) : null);
+    _openSec = null; _openBlk = null; _openFld = null; _sel = null;
     if (includeBranding && snap.branding) {
       const b = snap.branding;
       const setv = (id, v) => { const e = $(id); if (e && v != null) e.value = v; };
@@ -1005,8 +1286,15 @@
       _hideName = b.hideName || '';
       document.querySelectorAll('#hideNameSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === (_hideName || '0')));
       _logoImg = b.logoImg || ''; _renderLogoThumb();
+      // Older snapshots: inputs that were left on "Default" now open as the new white / #2a2f45 defaults.
+      if (!b.inpLabelSet) $('inpLabelColor').value = IN_DEF.label;
+      if (!b.inpInputSet) $('inpInputColor').value = IN_DEF.text;
+      if (!b.inpBorderSet) $('inpBorderColor').value = IN_DEF.border;
+      _hdrColor = b.hdrColor || ''; setv('hdrFont', b.hdrFont || ''); setv('hdrWeight', b.hdrWeight || ''); _hdrSize = b.hdrSize || '';
+      document.querySelectorAll('#hdrSize button').forEach(x => x.classList.toggle('on', x.dataset.v === _hdrSize));
+      const hc = $('hdrColorSlot'); hc.innerHTML = ''; hc.appendChild(colorCtl(() => _hdrColor, v => { _hdrColor = v || ''; }, '#ffffff'));
     }
-    renderSwatches(); renderLayout(); refresh(true);
+    renderSwatches(); renderLists(); refresh(true);
   }
 
   function renderPresetList() {
@@ -1046,7 +1334,7 @@
   });
 
   renderSwatches();
-  renderLayout();
+  renderLists();
   renderPresetList();
   refresh(true);
 </script>
