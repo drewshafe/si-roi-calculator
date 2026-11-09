@@ -1399,7 +1399,126 @@
             letter-spacing:.14em; text-transform:uppercase; font-family:inherit; }
         .theme-midnight #mnAnimBtn .mn-dot { width:8px; height:8px; border-radius:50%; background:#5e6577; transition:all .25s; }
         .theme-midnight #mnAnimBtn.on .mn-dot { background:#e9c46a; box-shadow:0 0 9px #e9c46a; }
+
+        /* ═══════════════ LIQUID GLASS (default theme; Project Midnight keeps its own look) ═══════════════
+           The calc body gets a soft pastel wallpaper; the input boxes, output boxes, the impact box and
+           the Extra Revenue / Current Cost cards become tinted glass over it. Their colour is the tint
+           (indigo inputs, white outputs, green "with", red "without"). Things sitting ON a glass box
+           (the metric tiles in the cards, the fields in the inputs) are translucent fills, never more
+           glass. The impact box, output boxes and cards also get a samasante/liquid-glass backplate
+           (.lgc-plate, module script at the end) that bends the wallpaper at the rim in Chrome / Edge;
+           the CSS frost here is the look until it loads, or if it can't. */
+        :root {
+            --lgc-wall:
+                radial-gradient(38% 34% at 6% 8%, rgba(107,127,215,.34) 0%, rgba(107,127,215,0) 70%),
+                radial-gradient(34% 30% at 94% 4%, rgba(139,92,246,.24) 0%, rgba(139,92,246,0) 70%),
+                radial-gradient(42% 40% at 88% 96%, rgba(40,167,69,.20) 0%, rgba(40,167,69,0) 70%),
+                radial-gradient(40% 36% at 14% 94%, rgba(236,72,153,.16) 0%, rgba(236,72,153,0) 70%),
+                radial-gradient(30% 28% at 52% 46%, rgba(74,95,193,.16) 0%, rgba(74,95,193,0) 72%),
+                linear-gradient(180deg, #f4f5fc 0%, #eceffa 100%);
+            --lgc-frost: blur(16px) saturate(1.8);
+            --lgc-rim: inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(255,255,255,.55);
+            --lgc-lift: 0 10px 28px rgba(31,36,90,.12);
+        }
+        body:not(.theme-midnight) .calc-body { background: var(--lgc-wall); }
+        body:not(.theme-midnight) .calc-left,
+        body:not(.theme-midnight) .outputs-strip,
+        body:not(.theme-midnight) .middle-section { background: transparent; }
+        body:not(.theme-midnight) .calc-left { border-right-color: rgba(74,95,193,.10); }
+        body:not(.theme-midnight) .outputs-strip { border-bottom-color: rgba(74,95,193,.10); }
+
+        /* Output boxes (both densities): clear glass */
+        body:not(.theme-midnight) .output-metric,
+        body:not(.theme-midnight) .co2-box:not(.co2-keep) {
+            background: rgba(255,255,255,.52); border: 1px solid rgba(255,255,255,.75); border-radius: 16px;
+            -webkit-backdrop-filter: var(--lgc-frost); backdrop-filter: var(--lgc-frost);
+            box-shadow: var(--lgc-lift), var(--lgc-rim);
+        }
+        body:not(.theme-midnight) .output-metric.primary-metric {
+            background: linear-gradient(135deg, rgba(240,255,244,.70) 0%, rgba(212,244,221,.48) 100%); border-color: rgba(255,255,255,.75);
+        }
+
+        /* Impact box: "Premiums You Keep" (+ Upfront bubble), compact twin, compact upfront bar: indigo glass */
+        body:not(.theme-midnight) .revenue-impact-box,
+        body:not(.theme-midnight) .co2-box.co2-keep,
+        body:not(.theme-midnight) .co2-upfront {
+            background: linear-gradient(135deg, rgba(74,95,193,.80) 0%, rgba(107,127,215,.62) 100%);
+            border: 1px solid rgba(255,255,255,.38); border-radius: 22px;
+            -webkit-backdrop-filter: var(--lgc-frost); backdrop-filter: var(--lgc-frost);
+            box-shadow: 0 14px 34px rgba(74,95,193,.30), inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 0 1px rgba(255,255,255,.16);
+        }
+        body:not(.theme-midnight) .co2-box.co2-keep, body:not(.theme-midnight) .co2-upfront { border-radius: 16px; }
+        body:not(.theme-midnight) .revenue-impact-box.upfront-box {
+            background: linear-gradient(135deg, rgba(183,121,31,.82) 0%, rgba(224,184,76,.66) 100%);
+            box-shadow: 0 14px 34px rgba(183,121,31,.28), inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 0 1px rgba(255,255,255,.18);
+        }
+        body:not(.theme-midnight) .impact-pct-line, body:not(.theme-midnight) .co2-pill { background: rgba(255,255,255,.20); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+
+        /* Extra Revenue With ShipInsure: green glass · Current Cost (without ShipInsure): red glass.
+           The old 4px side stripe becomes a soft inner glow on the same edge. */
+        body:not(.theme-midnight) .result-card,
+        body:not(.theme-midnight) .co2-green { border: 1px solid rgba(255,255,255,.75); border-radius: 22px; -webkit-backdrop-filter: var(--lgc-frost); backdrop-filter: var(--lgc-frost); }
+        body:not(.theme-midnight) .result-card.positive,
+        body:not(.theme-midnight) .co2-green {
+            background: linear-gradient(135deg, rgba(236,252,242,.74) 0%, rgba(205,242,219,.52) 100%);
+            box-shadow: 0 14px 34px rgba(40,167,69,.14), inset 4px 0 0 rgba(40,167,69,.55), var(--lgc-rim);
+        }
+        body:not(.theme-midnight) .result-card.negative {
+            background: linear-gradient(135deg, rgba(255,243,243,.76) 0%, rgba(255,226,226,.54) 100%);
+            box-shadow: 0 14px 34px rgba(220,53,69,.12), inset 4px 0 0 rgba(220,53,69,.5), var(--lgc-rim);
+        }
+        body:not(.theme-midnight) .co2-redbox {
+            background: linear-gradient(135deg, rgba(239,106,90,.86) 0%, rgba(232,96,79,.74) 100%);
+            border: 1px solid rgba(255,255,255,.4); border-radius: 16px;
+            -webkit-backdrop-filter: var(--lgc-frost); backdrop-filter: var(--lgc-frost);
+            box-shadow: 0 10px 26px rgba(220,53,69,.26), inset 0 1px 0 rgba(255,255,255,.5);
+        }
+        /* Tiles inside the cards: fills on the glass */
+        body:not(.theme-midnight) .result-card .metric-item { background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.85); border-radius: 12px; box-shadow: 0 1px 2px rgba(31,36,90,.05); }
+        body:not(.theme-midnight) .result-card .metric-item.returns-highlight { background: rgba(254,249,243,.72); border-color: rgba(230,126,34,.45); }
+        body:not(.theme-midnight) .result-card .metric-item.cashback-highlight { background: rgba(245,243,255,.72); border-color: rgba(139,92,246,.45); }
+        body:not(.theme-midnight) .result-card .metric-item.guarantee-highlight { background: rgba(248,243,255,.72); border-color: rgba(155,89,182,.45); }
+
+        /* Merchant input boxes: indigo glass (orange for returns, violet for cashback); fields are fills */
+        body:not(.theme-midnight) .input-group,
+        body:not(.theme-midnight) .container.density-compact .input-group.si-input {
+            background: linear-gradient(135deg, rgba(91,109,209,.86) 0%, rgba(123,141,232,.72) 100%) !important;
+            border: 1px solid rgba(255,255,255,.35); border-radius: 16px;
+            -webkit-backdrop-filter: var(--lgc-frost); backdrop-filter: var(--lgc-frost);
+            box-shadow: 0 8px 22px rgba(74,95,193,.20), inset 0 1px 0 rgba(255,255,255,.45);
+        }
+        body:not(.theme-midnight) .input-group.returns { background: linear-gradient(135deg, rgba(230,126,34,.86) 0%, rgba(240,160,75,.72) 100%) !important; box-shadow: 0 8px 22px rgba(230,126,34,.20), inset 0 1px 0 rgba(255,255,255,.45); }
+        body:not(.theme-midnight) .input-group.cashback { background: linear-gradient(135deg, rgba(124,58,237,.84) 0%, rgba(167,139,250,.70) 100%) !important; box-shadow: 0 8px 22px rgba(124,58,237,.20), inset 0 1px 0 rgba(255,255,255,.45); }
+        body:not(.theme-midnight) .input-group input { background: rgba(255,255,255,.90); border-radius: 10px; box-shadow: inset 0 1px 2px rgba(31,36,90,.08); }
+        body:not(.theme-midnight) .input-group input:focus { background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.45); }
+        body:not(.theme-midnight) .input-with-type input { border-radius: 10px 0 0 10px; }
+        body:not(.theme-midnight) .input-with-type .itype-btn:last-child { border-radius: 0 10px 10px 0; }
+        /* Compact density: "Your Metrics" / "Additional" fields stay plain labelled fields (no box), as before */
+        body:not(.theme-midnight) .container.density-compact .input-group:not(.si-input) { background: transparent !important; border: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; }
+        body:not(.theme-midnight) .container.density-compact .input-group:not(.si-input) input { background: rgba(255,255,255,.72) !important; }
+
+        /* Library backplate: sits behind the box's content inside its own stacking context, so the box's
+           tint is part of what it frosts; the box drops its own CSS frost once the plate is mounted. */
+        .lgc-host { isolation: isolate; }
+        .lgc-host.lgc-rel { position: relative; }
+        .lgc-plate { position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; }
+        body:not(.theme-midnight) .lgc-host.lgc-on { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+        .theme-midnight .lgc-plate { display: none; }
+
+        @media (prefers-reduced-transparency: reduce) {
+            body:not(.theme-midnight) .lgc-plate { display: none; }
+            body:not(.theme-midnight) .output-metric, body:not(.theme-midnight) .co2-box:not(.co2-keep) { background: #fff; }
+            body:not(.theme-midnight) .result-card.positive, body:not(.theme-midnight) .co2-green { background: #e6f7ec; }
+            body:not(.theme-midnight) .result-card.negative { background: #fde9e9; }
+        }
     </style>
+    <script type="importmap">
+        { "imports": {
+            "react": "https://esm.sh/react@19.2.0",
+            "react/jsx-runtime": "https://esm.sh/react@19.2.0/jsx-runtime",
+            "react-dom/client": "https://esm.sh/react-dom@19.2.0/client?external=react"
+        } }
+    </script>
     <script src="sb.js"></script>
     <script src="portal-templates.js"></script>
 </head>
@@ -4946,10 +5065,16 @@
             const prevAccent = document.getElementById('cb-calc-accent'); if (prevAccent) prevAccent.remove();
             if (b.accent) {
                 const a = b.accent, d = _calcShade(a, -22);
+                // Liquid Glass (default theme): the accent becomes the impact box's glass tint.
+                const glass = c => { const h = c.replace('#', ''), n = parseInt(h.length === 3 ? h.replace(/./g, '$&$&') : h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255].join(','); };
+                const tint = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(a) && /^#[0-9a-f]{6}$/i.test(d)
+                    ? 'linear-gradient(135deg,rgba(' + glass(a) + ',.82) 0%,rgba(' + glass(d) + ',.66) 100%)'
+                    : 'linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)';
                 const st = document.createElement('style'); st.id = 'cb-calc-accent';
                 st.textContent =
-                    '.co2-box.co2-keep{background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
-                    '.revenue-impact-box:not(.upfront-box){background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
+                    '.theme-midnight .co2-box.co2-keep{background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
+                    '.theme-midnight .revenue-impact-box:not(.upfront-box){background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
+                    'body:not(.theme-midnight) .co2-box.co2-keep,body:not(.theme-midnight) .co2-upfront,body:not(.theme-midnight) .revenue-impact-box:not(.upfront-box){background:' + tint + '!important;}' +
                     '.generate-link-btn{background:linear-gradient(135deg,' + a + ' 0%,' + d + ' 100%)!important;}' +
                     '.container.density-compact .input-with-type .itype-btn.active{background:' + a + '!important;border-color:' + a + '!important;}' +
                     '.container.density-compact .input-group input:focus{border-color:' + a + '!important;}' +
@@ -5140,7 +5265,7 @@
         function applyDisplaySettings(d) {
             const c = document.querySelector('.container');
             if (!c) return;
-            if (d.zoom != null)      c.style.zoom = d.zoom;
+            if (d.zoom != null)      { c.style.zoom = d.zoom; window.dispatchEvent(new Event('lgc-refit')); }
             if (d.textScale != null) c.style.fontSize = (16 * d.textScale) + 'px';
             if (typeof d.density === 'string') c.classList.toggle('density-compact', d.density === 'compact');
             if (typeof d.layout === 'string') {
@@ -5321,5 +5446,54 @@
     </script>
     <script src="mobile.js"></script>
 
+    <script type="module">
+        // Liquid glass backplates from samasante/liquid-glass (React, loaded from esm.sh). The impact box,
+        // the output boxes and the Extra Revenue / Current Cost cards each get a <Glass> material behind
+        // their content: it frosts the box's tint over the wallpaper, adds the bright rim + sheen, and in
+        // Chrome / Edge bends the wallpaper at the edge. Optional: without it the CSS frost stays.
+        import { createElement as h } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Glass } from 'https://esm.sh/*@samasante/liquid-glass@0.1.1';
+        // Wide cards: no centre dome (it would bloom an oval), just the liquid rim. Small boxes: a gentle dome.
+        const RIM  = { curvature: 0, depth: 0.35, bend: 0.5, bendWidth: 0.12, dispersion: 0.3, frost: 16, saturate: 1.8, sheen: 0.4, sheenWidth: 3 };
+        const DOME = { curvature: 0.25, bend: 0.45, bendWidth: 0.22, dispersion: 0.32, frost: 16, saturate: 1.8, sheen: 0.38 };
+        // The page is drawn with CSS `zoom` (0.67), but the glass sizes its refraction map from
+        // getBoundingClientRect (zoomed px) while drawing it in the element's own (unzoomed) px, so
+        // the map would cover only ~2/3 of the box. Giving the plate the inverse zoom makes its
+        // effective zoom 1, where the two agree.
+        // The Display "Size" control zooms the container too, so multiply every ancestor's zoom, and
+        // refit when Display settings change.
+        const fitZoom = plate => {
+            let z = 1;
+            for (let n = plate.parentElement; n; n = n.parentElement) z *= parseFloat(getComputedStyle(n).zoom) || 1;
+            plate.style.zoom = Math.abs(z - 1) < 1e-3 ? '' : String(1 / z);
+        };
+        // (A zoom change doesn't fire the glass's ResizeObserver; a window resize makes it re-measure.)
+        window.addEventListener('lgc-refit', () => {
+            document.querySelectorAll('.lgc-plate').forEach(fitZoom);
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+        });
+        const HOSTS = [
+            ['.revenue-impact-box', DOME], ['.co2-box.co2-keep', DOME], ['.co2-redbox', DOME],
+            ['.output-metric', DOME], ['.co2-box:not(.co2-keep)', DOME],
+            ['.result-card', RIM], ['.co2-green', RIM], ['.co2-upfront', RIM],
+        ];
+        HOSTS.forEach(([sel, optics]) => document.querySelectorAll(sel).forEach(el => {
+            if (el.classList.contains('lgc-host')) return;
+            const cs = getComputedStyle(el);
+            el.classList.add('lgc-host');
+            if (cs.position === 'static') el.classList.add('lgc-rel');
+            const plate = document.createElement('div');
+            plate.className = 'lgc-plate';
+            el.appendChild(plate);
+            fitZoom(plate);
+            createRoot(plate).render(h(Glass, {
+                optics,
+                radius: parseFloat(cs.borderTopLeftRadius) || 16,
+                style: { position: 'absolute', inset: 0, borderRadius: 'inherit', background: 'transparent' },
+            }, ''));
+            el.classList.add('lgc-on');
+        }));
+    </script>
 </body>
 </html>
