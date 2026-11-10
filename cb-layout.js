@@ -212,6 +212,7 @@
       L.splice(ci + 1, 0, cost);
     }
     if (!has('banner')) L.unshift({ k: 'banner', v: true });   // the banner sat at the top of the results
+    L.forEach(it => { if (it.k === 'banner' && it.place === 'inputs') it.place = 'header'; });   // briefly: inputs column → header
     (blocks || []).forEach(b => { if (b && b.id && !has(b.id)) L.push({ k: b.id, v: true }); });
     return L;
   }
@@ -602,6 +603,12 @@
           el = tw;
         }
         if (it.k === 'billing') { el = billingEl(P, grid, layout, it); if (!el) return; }
+        if (it.k === 'banner' && it.place === 'header') {   // background of the Accent 2 header, no block of its own
+          const old = document.getElementById('cbx-banner'); if (old) old.remove();
+          const hd = document.querySelector(P.header);
+          if (hd && okImg(b.bannerUrl)) { hd.setAttribute('data-cbk', 'banner'); hd.setAttribute('data-cbx-hdr', '1'); css += bannerHeaderCss(P, it, b); }
+          return;
+        }
         if (it.k === 'banner') { el = bannerEl(P, grid, it, b); if (!el) return; css += bannerCss(P, it); }
         if (!el) {
           const blk = blocks.find(b => b.id === it.k);
@@ -911,19 +918,8 @@
     }
     let host = grid, before = null;
     if (it.place === 'top') { const w = document.querySelector(P.wrap); if (w && w.parentElement) { host = w.parentElement; before = w; } }
-    else if (it.place === 'inputs') {
-      const p = document.querySelector(P.panel);
-      if (p) {
-        // Under the merchant header when it lives in the inputs column (merchant view), else first.
-        let hd = document.querySelector(P.header);
-        while (hd && hd.parentElement !== p) hd = hd.parentElement;
-        let first = hd ? hd.nextSibling : p.firstChild;
-        if (first === el) first = el.nextSibling;
-        host = p; before = first;
-      }
-    }
     if (el.parentElement !== host || (before ? el.nextSibling !== before : false)) host.insertBefore(el, before);
-    el.setAttribute('data-cbx-place', it.place === 'top' || it.place === 'inputs' ? it.place : 'results');
+    el.setAttribute('data-cbx-place', it.place === 'top' ? 'top' : 'results');
     return el;
   }
   // Colours / border / radius go through styleCss (default theme only); the padding default
@@ -940,17 +936,37 @@
     const r = st.radius != null && st.radius !== '' ? (parseInt(st.radius, 10) || 0) : (it.theme === 'liquid' ? 20 : themed ? 18 : 10);
     const h = parseInt(st.h, 10);
     const pos = { top: 'center top', bottom: 'center bottom' }[st.focus] || 'center center';
-    const place = it.place === 'top' || it.place === 'inputs' ? it.place : 'results';
+    const place = it.place === 'top' ? 'top' : 'results';
     const w = it.w && SPAN[it.w] ? it.w : 'full';
     let css = S + '{display:block;box-sizing:border-box;min-width:0;overflow:hidden;border-radius:' + r + 'px;padding:' + pad + 'px;';
     if (place === 'results') css += 'margin:0' + (P === PAGES.proposal ? ' 0 12px' : '') + ';';
-    else css += 'width:' + (w === 'full' ? 'auto' : PCT[w]) + ';margin:' + (place === 'top' ? '12px 16px 4px' : '0 0 12px') + ';' + (w === 'full' ? '' : 'margin-left:auto;margin-right:auto;');
+    else css += 'width:' + (w === 'full' ? 'auto' : PCT[w]) + ';margin:12px 16px 4px;' + (w === 'full' ? '' : 'margin-left:auto;margin-right:auto;');
     css += '}';
     if (place === 'top' && w !== 'full') css += S + '{margin-top:12px;margin-bottom:4px;}';
     css += S + ' img{display:block;width:100%;' + (h > 0 ? 'height:' + Math.min(h, 900) + 'px;' : 'height:auto;max-height:150px;') +
       'object-fit:' + (st.fit === 'contain' ? 'contain' : 'cover') + ';object-position:' + pos + ';border-radius:' + Math.max(0, r - pad) + 'px;}';
     css += 'body:not(.cbx-edit) #cbx-banner[data-cbx-broken]{display:none !important;}';
     css += 'body.cbx-edit #cbx-banner[data-cbx-broken]{min-height:60px;background:repeating-linear-gradient(45deg,#f1f2f8 0 10px,#e7e9f3 10px 20px);}';
+    return css;
+  }
+
+  // Banner as the header's background (place 'header'): the image fills the Accent 2 header (Accent 2
+  // shows around a "whole image" fit), optional darkening for the merchant name, height = min height.
+  // Hidden = no image. Both themes: it's the merchant's picture, not a colour.
+  function bannerHeaderCss(P, it, br) {
+    if (it.v === false) return '';
+    const st = it.style || {}, H = P.header + BOOST2;
+    const url = String(br.bannerUrl).trim().replace(/["\\\n\r]/g, c => encodeURIComponent(c));
+    const dim = Math.max(0, Math.min(80, parseInt(st.dim, 10) || 0)) / 100;
+    const pos = { top: 'center top', bottom: 'center bottom' }[st.focus] || 'center center';
+    const h = parseInt(st.h, 10);
+    let css = H + '{background-image:' + (dim ? 'linear-gradient(rgba(0,0,0,' + dim + '),rgba(0,0,0,' + dim + ')),' : '') + 'url("' + url + '") !important;' +
+      'background-size:' + (dim ? '100% 100%,' : '') + (st.fit === 'contain' ? 'contain' : 'cover') + ' !important;' +
+      'background-position:' + (dim ? '0 0,' : '') + pos + ' !important;background-repeat:no-repeat !important;' +
+      (h > 0 ? 'min-height:' + Math.min(h, 600) + 'px;box-sizing:border-box;' : '') + '}';
+    if (okColor(st.bg) && !/gradient/i.test(st.bg)) css += LIGHT + H + '{background-color:' + st.bg + ' !important;}';
+    if (st.radius != null && st.radius !== '') css += H + '{border-radius:' + (parseInt(st.radius, 10) || 0) + 'px !important;}';
+    css += 'body.cbx-edit ' + P.header + '[data-cbx-hdr]>.cbx-bar{top:6px;}';
     return css;
   }
 
@@ -994,7 +1010,7 @@
     const bh = document.getElementById('cbx-billing-home'), bw = document.getElementById('cbx-billing');
     if (bh && bw) { [...bw.childNodes].forEach(n => bh.parentElement.insertBefore(n, bh)); }
     if (bh) bh.remove(); if (bw) bw.remove();
-    const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off', 'data-cbx-theme', 'data-cbx-inv'];
+    const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off', 'data-cbx-theme', 'data-cbx-inv', 'data-cbx-hdr'];
     document.querySelectorAll(A.map(a => '[' + a + ']').join(',')).forEach(el => A.forEach(a => el.removeAttribute(a)));
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
     // Copy Link: back to its home in the inputs column, original label
@@ -1090,12 +1106,13 @@
     const w = curW(g, k);
     const ws = [['full', 'Full width', '1'], ['twothirds', 'Two-thirds width', '⅔'], ['half', 'Half width', '½'], ['third', 'One-third width', '⅓']]
       .map(([v, t, s]) => '<button type="button" data-cbx="w" data-v="' + v + '" title="' + t + '"' + (w === v ? ' class="on"' : '') + '>' + s + '</button>').join('');
-    let place = '';
+    let place = '', hdr = false;
     if (g === 'b' && k === 'banner') {
       const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'banner') : null;
       const pl = (it && it.place) || 'results';
-      const nm = { results: 'Results', top: 'Top of page', inputs: 'Inputs column' };
-      const nx = { results: 'top', top: 'inputs', inputs: 'results' }[pl] || 'top';
+      hdr = pl === 'header';                               // header background: no width / theme
+      const nm = { results: 'Results', top: 'Top of page', header: 'Header' };
+      const nx = { results: 'top', top: 'header', header: 'results' }[pl] || 'top';
       place = '<button type="button" data-cbx="place" title="Sits in: ' + nm[pl] + ' — click to move it to ' + nm[nx] + '">⇅ ' + nm[pl] + '</button><span class="cbx-sep"></span>';
     }
     if (g === 'b' && k === 'copylink') {
@@ -1103,8 +1120,8 @@
       const out = !!(it && it.place === 'results');
       place = '<button type="button" data-cbx="place" title="' + (out ? 'Move back to the inputs column' : 'Move into the results') + '">' + (out ? '⇤ Inputs' : 'Results ⇥') + '</button><span class="cbx-sep"></span>';
     }
-    return '<span class="cbx-grip" title="Drag to move">⣿</span><span class="cbx-name">' + esc(labelOf(g, k)) + '</span>' + place + ws +
-      '<span class="cbx-sep"></span>' + (g === 'b' ? '<button type="button" data-cbx="theme" title="Theme: ' + themeName(g, k) + ' — click for the next (Classic → Frosted glass → Liquid glass)">✦ ' + themeName(g, k) + '</button>' : '') +
+    return '<span class="cbx-grip" title="Drag to move">⣿</span><span class="cbx-name">' + esc(labelOf(g, k)) + '</span>' + place + (hdr ? '' : ws +
+      '<span class="cbx-sep"></span>') + (g === 'b' && !hdr ? '<button type="button" data-cbx="theme" title="Theme: ' + themeName(g, k) + ' — click for the next (Classic → Frosted glass → Liquid glass)">✦ ' + themeName(g, k) + '</button>' : '') +
       '<button type="button" data-cbx="style" title="Style this block">🎨</button>' +
       '<button type="button" data-cbx="eye" title="' + (isHidden(g, k) ? 'Show' : 'Hide') + '">' + (isHidden(g, k) ? '🚫' : '👁') + '</button>';
   }

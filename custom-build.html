@@ -182,6 +182,9 @@
             <input type="color" id="accent2" value="#2a2f45">
             <input type="text" id="accent2Hex" value="#2a2f45" spellcheck="false">
           </div>
+          <label class="cb-hidename" style="justify-content:flex-start;gap:7px;margin:9px 0 2px;color:var(--ink);font-weight:700;text-transform:none;letter-spacing:0;" title="Set the image in Banner image below. Size, crop and darkening: Style → Layout → Banner image.">
+            <input type="checkbox" id="hdrBanner"> Use the banner image as the header background
+          </label>
           <div class="hdr-text">
             <div class="cb-sub-h" style="margin-bottom:7px;">Header text <span style="font-weight:600;text-transform:none;letter-spacing:0;">(merchant name)</span></div>
             <div class="mini-grid">
@@ -543,7 +546,8 @@
     txt('sumFont', $('font').value);
     txt('sumLogo', _logoImg ? 'uploaded' : ($('logoUrl').value.trim() ? 'URL' : ''));
     const bi = layout.find(l => l.k === 'banner');
-    const PL = { top: 'top of page', inputs: 'inputs column' };
+    const PL = { top: 'top of page', header: 'header', inputs: 'header' };
+    syncHdrBanner();
     txt('sumBanner', $('bannerUrl').value.trim() ? 'on' + (bi && bi.v === false ? ' · hidden' : bi && PL[bi.place] ? ' · ' + PL[bi.place] : '') : '');
     _renderBannerThumb();
   }
@@ -627,6 +631,12 @@
   $('logoUrl').addEventListener('input', () => refresh(false));
   $('bannerUrl').addEventListener('input', () => { renderLayout(); refresh(false); });
   $('periodText').addEventListener('change', () => refresh(true));
+  $('hdrBanner').addEventListener('change', e => {
+    const bi = layout.find(l => l.k === 'banner'); if (!bi) return;
+    if (e.target.checked) { bi.place = 'header'; if (bi.v === false) bi.v = true; } else delete bi.place;
+    if (e.target.checked && !$('bannerUrl').value.trim()) { $('secBanner').open = true; _bannerStatus('Add a banner image here for the header to use.', true); }
+    renderLayout(); refresh(true);
+  });
 
   // ── Uploaded / lock-built logo ───────────────────────────────────────────
   // Downscale an uploaded image to a small PNG (keeps transparency) so it embeds
@@ -996,16 +1006,18 @@
   function bannerEditor(item) {
     const st = item.style || (item.style = {});
     const set = (k, v) => { if (v === undefined || v === '' || (typeof v === 'number' && isNaN(v))) delete st[k]; else st[k] = v; };
+    if (item.place === 'inputs') item.place = 'header';
+    const hdr = item.place === 'header';
     const wrap = document.createElement('div'); wrap.className = 'blk-edit';
-    wrap.appendChild(themeCtl(item));
+    if (!hdr) wrap.appendChild(themeCtl(item));
     const g = document.createElement('div'); g.className = 'mini-grid';
     if (!$('bannerUrl').value.trim()) {
       const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;color:#c0392b;';
       h.textContent = 'No banner yet: add a URL, upload one or pick one from the Merchant Folder in Merchant Branding 1 → Banner image.';
       g.appendChild(h);
     }
-    g.appendChild(cell('Sits in', segCtl([['results', 'Results'], ['top', 'Top of page'], ['inputs', 'Inputs column']], item.place || 'results', v => {
-      if (v === 'results') delete item.place; else item.place = v; renderLayout(); refresh(true);
+    g.appendChild(cell('Sits in', segCtl([['results', 'Results'], ['top', 'Top of page'], ['header', 'Header (Accent 2)', 'The image becomes the background of the Accent 2 header']], item.place || 'results', v => {
+      if (v === 'results') delete item.place; else item.place = v; syncHdrBanner(); renderLayout(); refresh(true);
     }), true));
     const num = (val, ph, max) => { const i = document.createElement('input'); i.type = 'number'; i.min = '0'; i.max = String(max); i.placeholder = ph; i.value = val != null ? val : ''; return i; };
     const hIn = num(st.h, 'Auto', 900);
@@ -1016,10 +1028,24 @@
       hSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === (st.h == null ? '' : String(st.h))));
       refresh(false);
     });
-    g.appendChild(cell('Height', hSeg));
-    g.appendChild(cell('Height px', hIn));
+    g.appendChild(cell(hdr ? 'Header height' : 'Height', hSeg));
+    g.appendChild(cell(hdr ? 'Min height px' : 'Height px', hIn));
     g.appendChild(cell('Fit', segCtl([['cover', 'Fill (crop)'], ['contain', 'Whole image']], st.fit === 'contain' ? 'contain' : 'cover', v => { set('fit', v === 'contain' ? 'contain' : undefined); refresh(true); })));
     g.appendChild(cell('Crop focus', segCtl([['top', 'Top'], ['', 'Center'], ['bottom', 'Bottom']], st.focus || '', v => { set('focus', v); refresh(true); })));
+    if (hdr) {
+      g.appendChild(cell('Darken (for the name)', segCtl([['', '0'], ['20', '20%'], ['40', '40%'], ['60', '60%']], st.dim == null ? '' : String(st.dim), v => { set('dim', v ? +v : undefined); refresh(true); }), true));
+      g.appendChild(cell('Background behind', colorCtl(() => st.bg, v => set('bg', v), $('accent2Hex').value || '#2a2f45')));
+      const hh = document.createElement('div'); hh.className = 'hint'; hh.style.cssText = 'grid-column:1/-1;margin:0;';
+      hh.textContent = 'The image fills the header behind the logo and merchant name. Auto height = the header\'s own height. Accent 2 (or "Background behind") shows around a "Whole image" fit. Header text colour lives in Accent 2. Shows in both themes.';
+      g.appendChild(hh);
+      wrap.appendChild(g);
+      const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'cb-btn ghost';
+      rs.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
+      rs.textContent = 'Reset banner';
+      rs.addEventListener('click', () => { delete item.style; delete item.place; delete item.theme; delete item.w; syncHdrBanner(); renderLayout(); refresh(true); });
+      wrap.appendChild(rs);
+      return wrap;
+    }
     g.appendChild(cell('Background', colorCtl(() => st.bg, v => set('bg', v), '#ffffff')));
     const pad = num(st.pad, item.theme ? '10' : '0', 60);
     pad.addEventListener('input', () => { set('pad', parseInt(pad.value, 10)); refresh(false); });
@@ -1036,9 +1062,14 @@
     const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cb-btn ghost';
     reset.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
     reset.textContent = 'Reset banner';
-    reset.addEventListener('click', () => { delete item.style; delete item.place; delete item.theme; delete item.w; renderLayout(); refresh(true); });
+    reset.addEventListener('click', () => { delete item.style; delete item.place; delete item.theme; delete item.w; syncHdrBanner(); renderLayout(); refresh(true); });
     wrap.appendChild(reset);
     return wrap;
+  }
+  // Accent 2 → "Use the banner image as the header background" (same switch as Banner → Sits in: Header)
+  function syncHdrBanner() {
+    const bi = layout.find(l => l.k === 'banner'), c = $('hdrBanner');
+    if (c) c.checked = !!(bi && (bi.place === 'header' || bi.place === 'inputs'));
   }
   function buildStyleEditor(owner, kind) {
     if (kind !== 'field' && owner.k === 'banner') return bannerEditor(owner);
@@ -1357,7 +1388,7 @@
       row.dataset.k = item.k;
       const styled = blk ? false : !!(item.style && Object.keys(item.style).some(k => !['rows', 'subHidden', 'perPremium'].includes(k)));
       const where = (item.k === 'copylink' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.place === 'results' ? 'results' : 'inputs') + '</span>' : '') +
-        (item.k === 'banner' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (!$('bannerUrl').value.trim() ? 'no image' : ({ top: 'top of page', inputs: 'inputs' })[item.place] || 'results') + '</span>' : '') +
+        (item.k === 'banner' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (!$('bannerUrl').value.trim() ? 'no image' : ({ top: 'top of page', header: 'header', inputs: 'header' })[item.place] || 'results') + '</span>' : '') +
         (item.theme ? ' <span title="' + (item.theme === 'liquid' ? 'Liquid glass' : 'Frosted glass') + '" style="font-size:.62rem;font-weight:800;padding:1px 5px;border-radius:5px;' + (item.theme === 'liquid' ? 'background:#151831;color:#c9b8ff;' : 'background:#eef1ff;color:#4a5fc1;border:1px solid #d5d9f0;') + '">' + (item.theme === 'liquid' ? 'LIQ' : 'FRO') + '</span>' : '');
       row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + where + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
       row.appendChild(wSeg(item.w, v => { if (v) item.w = v; else delete item.w; renderLayout(); refresh(true); }));
@@ -1451,7 +1482,7 @@
       }
       case 'theme': if (it) { const i = THEME_OPTS.findIndex(o => o[0] === (it.theme || '')); const nx = THEME_OPTS[(i + 1) % THEME_OPTS.length][0]; if (nx) it.theme = nx; else delete it.theme; select(d.g, d.k, true); refresh(true); } return;
       case 'place':
-        if (it && it.k === 'banner') { const nx = { top: 'inputs', inputs: '' }[it.place || ''] ; if (nx === undefined) it.place = 'top'; else if (nx) it.place = nx; else delete it.place; select(d.g, d.k, true); refresh(true); return; }
+        if (it && it.k === 'banner') { const nx = { top: 'header', header: '', inputs: '' }[it.place || '']; if (nx === undefined) it.place = 'top'; else if (nx) it.place = nx; else delete it.place; syncHdrBanner(); select(d.g, d.k, true); refresh(true); return; }
         if (it) { if (it.place === 'results') delete it.place; else it.place = 'results'; select(d.g, d.k, true); refresh(true); } return;
       case 'width': if (it) { if (it.w === d.w) delete it.w; else it.w = d.w; select(d.g, d.k, true); refresh(true); } return;
       case 'toggle': if (it) { it.v = it.v === false; select(d.g, d.k, true); refresh(true); } return;
