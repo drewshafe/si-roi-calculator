@@ -30,6 +30,7 @@
   const BLOCKS = [
     { k: 'metrics',   label: 'Output Strip' },
     { k: 'hero',      label: 'Premiums You Keep' },
+    { k: 'upfront',   label: 'Upfront Rev Share Payment' },
     { k: 'cards',     label: 'Extra Revenue card' },
     { k: 'cost',      label: 'Current Cost card' },
     { k: 'returns',   label: 'Returns Savings' },
@@ -52,10 +53,13 @@
       wrap: '.proposal-layout', panel: '.left-panel', results: '.right-panel',
       panelW: { narrow: 300, normal: 370, wide: 460 }, stackBelow: 740,
       grid: '#resultsSection', gridOn: '#resultsSection.visible.cbx-grid',
-      contents: ['#resultCardsRow'],
+      contents: ['#resultsSection > .hero-row', '#resultCardsRow'],
+      upAuto: 2,                                                     // Upfront beside Premiums You Keep: 4 + 2 columns
+      heroRow: '#resultsSection > .hero-row',
       blocks: {
         metrics: q('#resultsSection > .key-metrics'),
-        hero: q('#resultsSection > .hero-row'),
+        hero: q('#resultsSection > .hero-row > .result-hero:not(.upfront-hero)'),
+        upfront: byId('p-upfrontHero'),
         cards: q('#resultCardsRow > .result-card-positive'),
         cost: byId('costCard'),
         returns: byId('returnsResultBlock'),
@@ -63,7 +67,7 @@
         guarantee: byId('guaranteeResultBlock'),
         breakdown: byId('p-calcBreakdown'),
       },
-      paint: { hero: ' .result-hero:not(.upfront-hero)' },          // where a block's background goes
+      paint: {},                                                     // where a block's background goes (default: the block)
       compactBox: '#compactOpt',                                     // compact density's stand-in for metrics/hero/cards/cost
       costHiddenRow: '#resultCardsRow.cost-hidden',
       fieldBox: '#primaryInputsGrid', fieldGrid: true,
@@ -85,15 +89,18 @@
       wrap: '.calc-body', panel: '.calc-left', results: '.calc-right',
       panelW: { narrow: 280, normal: 320, wide: 400 }, stackBelow: 900, notStacked: ':not(.force-stacked)',
       grid: '.calc-right', gridOn: '.calc-right.cbx-grid',
-      contents: ['#widgetMiddleWrapper', '.calc-right .middle-section', '#cardsRow'],
+      contents: ['#widgetMiddleWrapper', '.calc-right .middle-section', '.calc-right .revenue-impact-row', '#cardsRow'],
+      upAuto: 3, centerAuto: true,                                   // impact boxes keep their natural width, centred
+      heroRow: '.calc-right .revenue-impact-row',
       blocks: {
         metrics: q('.calc-right > .outputs-strip'),
-        hero: q('.calc-right .revenue-impact-row'),
+        hero: q('.calc-right .revenue-impact-row > .revenue-impact-box:not(.upfront-box)'),
+        upfront: byId('upfrontBubble'),
         cards: q('#cardsRow > .result-card.positive'),
         cost: byId('currentCostCard'),
         breakdown: q('.calc-right > .calc-breakdown'),
       },
-      paint: { hero: ' .revenue-impact-box:not(.upfront-box)' },
+      paint: {},
       compactBox: '#compactOutputs, #compactOpt',
       costHiddenRow: '#cardsRow.cost-hidden',
       bleed: { metrics: 1, breakdown: 1 },   // full-bleed strips: reach the column edges when full width
@@ -128,11 +135,15 @@
     const idx = k => L.findIndex(it => it.k === k);
     if (!L.length) L = BLOCKS.filter(b => b.k !== 'cost').map(b => ({ k: b.k, v: true }));
     BLOCKS.forEach(b => {
-      if (b.k === 'cost' || has(b.k)) return;
+      if (b.k === 'cost' || b.k === 'upfront' || has(b.k)) return;
       if (b.k === 'breakdown') { L.push({ k: b.k, v: true }); return; }
       const bi = idx('breakdown');
       if (bi >= 0) L.splice(bi, 0, { k: b.k, v: true }); else L.push({ k: b.k, v: true });
     });
+    if (!has('upfront')) {                                // older builds: Upfront lived inside the hero row
+      const hi = idx('hero');
+      L.splice(hi + 1, 0, { k: 'upfront', v: L[hi].v !== false });
+    }
     if (!has('cost')) {                                   // older builds: 'cards' was the whole row
       const ci = idx('cards');
       const cost = { k: 'cost', v: L[ci].v !== false };
@@ -182,6 +193,7 @@
     if (P === PAGES.proposal) {
       css += P.gridOn + '{column-gap:10px;}';
       css += N + ' #resultCardsRow.cbx-contents>[data-cbk]{margin-bottom:10px;}';
+      css += N + ' #resultsSection>.hero-row.cbx-contents>[data-cbk]:not(#cbx-none){margin-bottom:10px;}';
       css += P.gridOn + '>.cb-block{margin-bottom:10px;}';
     } else {
       css += N + ' ' + P.gridOn + '{column-gap:12px;row-gap:12px;padding:14px 16px;}';
@@ -341,9 +353,14 @@
     // ── Results blocks: order / width / style / hide + text blocks ──
     const layout = normLayout(cfg.layout, cfg.blocks);
     const grid = document.querySelector(P.grid);
+    // Premiums You Keep + Upfront both on Auto and next to each other: keep the page's own row
+    // (exactly today's look); unwrap it once either one is moved apart, resized or hidden.
+    const hi = layout.findIndex(x => x.k === 'hero'), ui = layout.findIndex(x => x.k === 'upfront');
+    const keepRow = hi >= 0 && ui >= 0 && Math.abs(hi - ui) === 1 && layout[hi].v !== false && layout[ui].v !== false &&
+      !(layout[hi].w && SPAN[layout[hi].w]) && !(layout[ui].w && SPAN[layout[ui].w]);
     if (grid) {
       grid.classList.add('cbx-grid');
-      P.contents.forEach(s => { const e = document.querySelector(s); if (e) e.classList.add('cbx-contents'); });
+      P.contents.forEach(s => { if (keepRow && s === P.heroRow) return; const e = document.querySelector(s); if (e) e.classList.add('cbx-contents'); });
       const blocks = Array.isArray(cfg.blocks) ? cfg.blocks : [];
       // Drop text blocks that are gone
       grid.querySelectorAll('.cb-block').forEach(el => { if (!blocks.some(b => 'cb-blk-' + b.id === el.id)) el.remove(); });
@@ -363,7 +380,9 @@
         if (!isVis(it)) el.setAttribute('data-cbx-hide', '1');
         else { if (firstVis == null) firstVis = el; lastVis = el; }
         const w = it.w && SPAN[it.w] ? it.w : ((it.k === 'cards' || it.k === 'cost') ? 'half' : 'full');
-        css += N + ' [data-cbk="' + it.k + '"]' + BOOST2 + '{grid-column:span ' + SPAN[w] + ';}';
+        if ((it.k === 'hero' || it.k === 'upfront') && keepRow) { /* inside the page's own row */ }
+        else if (it.k === 'hero' || it.k === 'upfront') css += pairCss(P, N, layout, it, w);
+        else css += N + ' [data-cbk="' + it.k + '"]' + BOOST2 + '{grid-column:span ' + SPAN[w] + ';}';
         if (it.k === 'cards') css += N + ' ' + P.costHiddenRow + '>[data-cbk="cards"]' + BOOST2 + '{grid-column:1/-1;justify-self:center;width:' + (w === 'full' ? '100%' : PCT[w === 'half' ? 'half' : w]) + ';}';
         if (P.bleed && P.bleed[it.k] && w === 'full') el.setAttribute('data-cbx-bleed', '1');
         const textBlk = blocks.find(b => b.id === it.k);
@@ -373,16 +392,21 @@
       if (lastVis) lastVis.setAttribute('data-cbx-last', '1');
       // Unmanaged grid children keep their DOM position relative to the managed blocks.
       const kids = [];
-      [...grid.children].forEach(c => { if (P.contents.some(s => c.matches(s))) collect(c, kids, P); else kids.push(c); });
+      [...grid.children].forEach(c => { if (c.classList.contains('cbx-contents')) collect(c, kids, P); else kids.push(c); });
       let pending = [];
       kids.forEach(c => {
         if (c.hasAttribute('data-cbk')) { pending.forEach(p => { p.style.order = String(ordOf[c.getAttribute('data-cbk')] - 1); }); pending = []; return; }
         c.setAttribute('data-cbx-ord', '1'); pending.push(c);
       });
       pending.forEach(p => { p.style.order = '9999'; });
+      if (keepRow) {
+        const row = document.querySelector(P.heroRow);
+        if (row) { row.setAttribute('data-cbx-ord', '1'); row.style.order = String(Math.min(ordOf.hero, ordOf.upfront)); }
+        css += P.heroRow + BOOST + '{grid-column:1/-1;min-width:0;}';
+      }
       // Compact density's summary box stands in for the output strip / hero / cards: it takes
       // the earliest of their positions so text blocks around them stay where the rep put them.
-      const o = ['metrics', 'hero', 'cards', 'cost'].map(k => ordOf[k]).filter(n => n != null);
+      const o = ['metrics', 'hero', 'upfront', 'cards', 'cost'].map(k => ordOf[k]).filter(n => n != null);
       if (P.compactBox && o.length) document.querySelectorAll(P.compactBox).forEach(cb => {
         if (cb.parentElement !== grid) return;
         cb.setAttribute('data-cbx-ord', '1'); cb.style.order = String(Math.min.apply(null, o) - 1);
@@ -393,8 +417,36 @@
     afterLayout();
     if (EDIT) renderBars();
   }
+  // Premiums You Keep + Upfront Rev Share Payment. Upfront only exists while a tier is picked (the
+  // page toggles its inline display), so "Auto" widths follow it live: side by side when it shows
+  // and they're next to each other in the order, Premiums alone otherwise (full on the merchant
+  // view, natural width centred on the rep calc — the look before blocks existed).
+  function pairCss(P, N, layout, it, w) {
+    const S = '[data-cbk="' + it.k + '"]' + BOOST2;
+    const other = it.k === 'hero' ? 'upfront' : 'hero';
+    const i = layout.findIndex(x => x.k === it.k), j = layout.findIndex(x => x.k === other);
+    const paired = j >= 0 && Math.abs(i - j) === 1 && layout[j].v !== false && it.v !== false;
+    const first = paired && i < j;
+    const otherIt = j >= 0 ? layout[j] : null;
+    const explicit = !!(it.w && SPAN[it.w]);
+    const otherSpan = otherIt && otherIt.w && SPAN[otherIt.w] ? SPAN[otherIt.w] : null;
+    // Upfront visible = shown by the page and not hidden by the build
+    const upOn = P.gridOn + ':has([data-cbk="upfront"]:not([style*="none"]):not([data-cbx-hide]))';
+    let css = '';
+    if (explicit) return N + ' ' + S + '{grid-column:span ' + SPAN[w] + ';}';
+    css += N + ' ' + S + '{grid-column:span 6;' + (P.centerAuto ? 'justify-self:center;' : '') + '}';
+    if (!paired) return css;
+    // Paired auto width: share the row with the other one
+    let span;
+    if (it.k === 'upfront') span = otherSpan && otherSpan < 6 ? 6 - otherSpan : P.upAuto;
+    else span = otherSpan ? (otherSpan < 6 ? 6 - otherSpan : 6) : 6 - P.upAuto;
+    const rule = 'grid-column:span ' + span + ';' + (P.centerAuto && span < 6 ? 'justify-self:' + (first ? 'end' : 'start') + ';' : '');
+    if (it.k === 'upfront') css += N + ' ' + S + '{' + rule + '}';
+    else css += N + ' ' + upOn + ' ' + S + '{' + rule + '}';
+    return css;
+  }
   function collect(node, out, P) {
-    [...node.children].forEach(c => { if (P.contents.some(s => c.matches(s))) collect(c, out, P); else out.push(c); });
+    [...node.children].forEach(c => { if (c.classList.contains('cbx-contents')) collect(c, out, P); else out.push(c); });
   }
 
   // Per-block / per-field style → CSS. Colours (bg, text, border) only in the default theme.
