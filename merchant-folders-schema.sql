@@ -4,7 +4,8 @@
 --
 -- What it adds
 --   • merchant_assets — one row per saved item in a merchant folder:
---       kind = checkout | email | claim | proposal | msa | mnda
+--       kind = checkout | email | claim | proposal | msa | mnda | onepager
+--       (databases set up before One-Pagers: run si-rep-hub/onepager-kind.sql once)
 --       data = the tool's saved state (the same bundle its share link carries)
 --       doc_url = the generated Google Doc (MSA / MNDA), when there is one
 --   • merchants — team-wide editing (any rep can rename / re-logo / archive a folder),
@@ -32,7 +33,7 @@ create policy merchants_team_update on public.merchants for update to authentica
 create table if not exists public.merchant_assets (
   id               text primary key default substr(replace(gen_random_uuid()::text,'-',''),1,12),
   merchant_ref     text not null references public.merchants(id) on delete cascade,
-  kind             text not null check (kind in ('checkout','email','claim','proposal','msa','mnda')),
+  kind             text not null check (kind in ('checkout','email','claim','proposal','msa','mnda','onepager')),
   title            text not null default '',
   data             jsonb not null default '{}'::jsonb,
   doc_url          text,

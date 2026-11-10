@@ -126,8 +126,9 @@
 
   // ── Merchant folders (Rep Hub) — needs merchant-folders-schema.sql ─────
   // A folder = a merchants row. Every tool's saves live in merchant_assets
-  // (kind: checkout | email | claim | proposal | msa | mnda), team-wide.
-  const ASSET_KINDS = ['checkout', 'email', 'claim', 'proposal', 'msa', 'mnda'];
+  // (kind: checkout | email | claim | proposal | msa | mnda | onepager), team-wide.
+  // onepager needs onepager-kind.sql (si-rep-hub) run once.
+  const ASSET_KINDS = ['checkout', 'email', 'claim', 'proposal', 'msa', 'mnda', 'onepager'];
   // source / file_path: set on uploaded or linked docs (data.source = 'upload' | 'link').
   const ASSET_COLS = 'id, merchant_ref, kind, title, doc_url, rep_email, updated_by_email, created_at, updated_at, source:data->>source, file_path:data->file->>path';
 
