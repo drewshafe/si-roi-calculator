@@ -57,13 +57,17 @@
   const PARTS = {
     hero:    { label: '.impact-label,.hero-label,.co2-lbl', value: '.impact-value,.hero-value,.co2-val', chips: '.impact-pct-line,.co2-pills > *', sub: '#revenueImpactSub,.impact-returns-note,.hero-sub' },
     upfront: { label: '.impact-label,.hero-label,.co2-up-lbl', value: '.impact-value,.hero-value,.co2-up-val', sub: '.upfront-mo,.hero-sub,.co2-up-mo' },
-    cost:    { label: '.card-header h3,.rc-label,.co2-rb-lbl', value: '.card-total,.rc-total,.co2-rb-val', chips: '.metric-item,.rc-metric', sub: '.metric-item h4,.sub-section-label,.co2-rb-rows' },
+    cost:    { label: '.card-header h3,.rc-label,.co2-rb-lbl', value: '.card-total,.rc-total,.co2-rb-val', chips: '.metric-item,.rc-metric', sub: '.metric-item h4,.sub-section-label,.co2-rb-rows',
+               rowLabel: '.metric-item h4,.rc-metric-label,.rc-sub-label,.sub-section-label', rowValue: '.metric-item .value,.rc-metric-value,.co2-rb-rows' },
+    cards:   { label: '.card-header h3,.rc-label,.co2-green-hd', value: '.card-total,.rc-total,.co2-green-val', sub: '.er-value-sub,.co2-green-sub,.er-sub',
+               rowLabel: '.er-k,.er-fh-lbl,.metric-item h4,.sub-section-label', rowValue: '.er-v,.er-fh-total,.metric-item .value' },
     pill:    { label: '.om-label,.kmp-label,.co2-lbl', value: '.om-value,.om-pair-v,.kmp-value,.kmp-pv,.co2-val', sub: '.om-pair-k,.om-badge,.kmp-pk,.kmp-sub,.kmp-badge,.co2-sub' },
   };
   const LABEL_TEXT = {                                   // the element whose words a "Label text" replaces
     hero: '#impactLabel,#heroLabel,#coKeepLbl',
     upfront: '#upfrontBubble .impact-label,#p-upfrontHero .hero-label,#coUpfront2 .co2-up-lbl',
     cost: '#lostRevenueLabel,#costCard .rc-label,#coRbLbl',
+    cards: '#p-erLabel,#cardsRow > .result-card.positive .card-header h3,#coGreenHd,#coErHd',
   };
   const ZOOM = { s: 0.88, l: 1.15, xl: 1.32 };
   // Block themes (Custom Build): 'frosted' = light glass tinted with the merchant colour,
@@ -315,6 +319,12 @@
     }
     if (zoomOf(st.labelSize)) css += under(H(host), parts.label) + '{zoom:' + zoomOf(st.labelSize) + ';}';
     if (zoomOf(st.valueSize)) css += under(H(host), parts.value) + '{zoom:' + zoomOf(st.valueSize) + ';}';
+    // Rows inside a card (Revenue Share / Claims… · Cost per Reship…): labels and values apart.
+    // After the detail / tile colours, so they win over those.
+    if (parts.rowLabel && okColor(st.rowLabelColor)) css += L(parts.rowLabel, 'color:' + st.rowLabelColor + ' !important;') + L(parts.rowLabel.split(',').map(x => x + ' *').join(','), 'color:' + st.rowLabelColor + ' !important;');
+    if (parts.rowValue && okColor(st.rowValueColor)) css += L(parts.rowValue, 'color:' + st.rowValueColor + ' !important;');
+    if (parts.rowLabel && zoomOf(st.rowLabelSize)) css += under(H(host), parts.rowLabel) + '{zoom:' + zoomOf(st.rowLabelSize) + ';}';
+    if (parts.rowValue && zoomOf(st.rowValueSize)) css += under(H(host), parts.rowValue) + '{zoom:' + zoomOf(st.rowValueSize) + ';}';
     return css;
   }
 
@@ -754,8 +764,13 @@
   // output strip's pills (+ the compact strip boxes that mirror them), and label text overrides.
   function detailCss(P, layout, swap) {
     let css = '';
-    ['hero', 'upfront', 'cost'].forEach(k => {
+    ['hero', 'upfront', 'cost', 'cards'].forEach(k => {
       const it = layout.find(x => x.k === k); if (!it) return;
+      if (k === 'cards') {                                 // Extra Revenue + the compact green card
+        css += partCss('[data-cbk="cards"]', PARTS.cards, it.style) + partCss(THEME_TWINS.cards, PARTS.cards, it.style);
+        if (typeof it.label === 'string' && it.label.trim()) document.querySelectorAll(LABEL_TEXT.cards).forEach(e => overrideText(e, it.label.trim()));
+        return;
+      }
       const tw = document.querySelector(TWINS[k]);
       if (tw && !swap[k]) {
         tw.setAttribute('data-cbx-twin', k);

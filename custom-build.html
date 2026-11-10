@@ -1176,17 +1176,25 @@
   const DETAIL_KEYS = {
     hero:    { label: 'Premiums You Keep', chips: 'Breakdown pills' },
     upfront: { label: 'Upfront Rev Share Payment', compact: true },
-    cost:    { label: 'Current Cost Without ShipInsure', chips: 'Metric tiles', compact: true },
+    cost:    { label: 'Current Cost Without ShipInsure', chips: 'Metric tiles', compact: true, rows: true, title: 'Title', total: 'Total', defLabel: '#1f2430', defValue: '#c0392b', defRow: '#1f2430', defRowVal: '#c0392b' },
+    cards:   { label: 'Extra Revenue With ShipInsure', rows: true, title: 'Title', total: 'Total', defLabel: '#1f2430', defValue: '#1f9d63', defRow: '#1f2430', defRowVal: '#1f9d63' },
   };
   function partsGrid(st, opts) {
     const set = (k, v) => { if (v === undefined || v === '' || v === false) delete st[k]; else st[k] = v; };
     const SZ = [['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']];
     const g = document.createElement('div'); g.className = 'mini-grid';
-    g.appendChild(cell('Label colour', colorCtl(() => st.labelColor, v => set('labelColor', v), '#ffffff')));
-    g.appendChild(cell('Label size', segCtl(SZ, st.labelSize || '', v => { set('labelSize', v); refresh(true); })));
-    g.appendChild(cell('Value colour', colorCtl(() => st.valueColor, v => set('valueColor', v), '#ffffff')));
-    g.appendChild(cell('Value size', segCtl(SZ, st.valueSize || '', v => { set('valueSize', v); refresh(true); })));
-    g.appendChild(cell('Detail text colour', colorCtl(() => st.subColor, v => set('subColor', v), '#ffffff')));
+    const T = (opts && opts.title) || 'Label', V = (opts && opts.total) || 'Value';
+    g.appendChild(cell(T + ' colour', colorCtl(() => st.labelColor, v => set('labelColor', v), (opts && opts.defLabel) || '#ffffff')));
+    g.appendChild(cell(T + ' size', segCtl(SZ, st.labelSize || '', v => { set('labelSize', v); refresh(true); })));
+    g.appendChild(cell(V + ' colour', colorCtl(() => st.valueColor, v => set('valueColor', v), (opts && opts.defValue) || '#ffffff')));
+    g.appendChild(cell(V + ' size', segCtl(SZ, st.valueSize || '', v => { set('valueSize', v); refresh(true); })));
+    if (opts && opts.rows) {
+      g.appendChild(cell('Row label colour', colorCtl(() => st.rowLabelColor, v => set('rowLabelColor', v), opts.defRow)));
+      g.appendChild(cell('Row label size', segCtl(SZ, st.rowLabelSize || '', v => { set('rowLabelSize', v); refresh(true); })));
+      g.appendChild(cell('Row value colour', colorCtl(() => st.rowValueColor, v => set('rowValueColor', v), opts.defRowVal)));
+      g.appendChild(cell('Row value size', segCtl(SZ, st.rowValueSize || '', v => { set('rowValueSize', v); refresh(true); })));
+    }
+    g.appendChild(cell('Detail text colour', colorCtl(() => st.subColor, v => set('subColor', v), (opts && opts.rows) ? '#6b7090' : '#ffffff')));
     if (opts && opts.chips) {
       g.appendChild(cell(opts.chips, segCtl([['0', 'Show'], ['1', 'Hide']], st.hideChips ? '1' : '0', v => { set('hideChips', v === '1'); refresh(true); })));
       g.appendChild(cell(opts.chips + ' bg', colorCtl(() => st.chipBg, v => set('chipBg', v), '#ffffff')));
@@ -1200,7 +1208,7 @@
     const box = document.createElement('div');
     box.innerHTML = '<div class="blk-sub" style="margin:8px 0 6px;">Details — comfort + compact versions</div>';
     const top = document.createElement('div'); top.className = 'mini-grid'; top.style.marginBottom = '7px';
-    top.appendChild(cell('Label text', textCtl(item.label, meta.label, v => { if (v) item.label = v; else delete item.label; }), true));
+    top.appendChild(cell(meta.title ? 'Title text' : 'Label text', textCtl(item.label, meta.label, v => { if (v) item.label = v; else delete item.label; }), true));
     if (meta.compact) {
       const lab = document.createElement('label'); lab.style.cssText = 'display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0;cursor:pointer;';
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!item.useCompact;
