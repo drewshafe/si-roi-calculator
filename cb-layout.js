@@ -28,6 +28,7 @@
     { k: 'share',   label: 'Rev Share' },
   ];
   const BLOCKS = [
+    { k: 'banner',    label: 'Banner image' },
     { k: 'metrics',   label: 'Output Strip' },
     { k: 'hero',      label: 'Premiums You Keep' },
     { k: 'upfront',   label: 'Upfront Rev Share Payment' },
@@ -187,9 +188,9 @@
     L = L.filter(it => it && it.k && it.k !== 'guarantee');
     const has = k => L.some(it => it.k === k);
     const idx = k => L.findIndex(it => it.k === k);
-    if (!L.length) L = BLOCKS.filter(b => b.k !== 'cost').map(b => ({ k: b.k, v: true }));
+    if (!L.length) L = BLOCKS.filter(b => b.k !== 'cost' && b.k !== 'banner').map(b => ({ k: b.k, v: true }));
     BLOCKS.forEach(b => {
-      if (b.k === 'cost' || b.k === 'upfront' || b.k === 'billing' || has(b.k)) return;
+      if (b.k === 'cost' || b.k === 'upfront' || b.k === 'billing' || b.k === 'banner' || has(b.k)) return;
       if (b.k === 'breakdown' || b.k === 'copylink') { L.push({ k: b.k, v: true }); return; }
       const bi = idx('breakdown');
       if (bi >= 0) L.splice(bi, 0, { k: b.k, v: true }); else L.push({ k: b.k, v: true });
@@ -210,6 +211,7 @@
       if (st) { const c = {}; ['bg', 'bc', 'bw', 'radius'].forEach(k => { if (st[k] != null && st[k] !== '') c[k] = st[k]; }); if (Object.keys(c).length) cost.style = c; }
       L.splice(ci + 1, 0, cost);
     }
+    if (!has('banner')) L.unshift({ k: 'banner', v: true });   // the banner sat at the top of the results
     (blocks || []).forEach(b => { if (b && b.id && !has(b.id)) L.push({ k: b.id, v: true }); });
     return L;
   }
@@ -243,6 +245,30 @@
 
   // ── Text overrides (labels, button text) ── kept in place when the page re-renders its text.
   let OV = [];
+  // ── Monthly / Annual words ── Custom text follows the calc's View the way the page's own labels
+  // do: Monthly / month / mo (/mo, mo.) ↔ Annual(ly) / year / yr (/yr, yr.). Written either way.
+  let PERIOD = true;                                     // branding.periodText === 0 turns it off
+  function isAnnualView() {
+    if (document.querySelector('.proposal-layout')) return (window._urlView || 'monthly') === 'annual';
+    const t = document.getElementById('timeframe');
+    return !!(t && t.value === 'annual');
+  }
+  const caseLike = (src, w) => (src.length > 1 && src === src.toUpperCase()) ? w.toUpperCase()
+    : (src[0] === src[0].toUpperCase() ? w[0].toUpperCase() + w.slice(1) : w);
+  function periodize(text, annual) {
+    if (!text || !PERIOD) return text;
+    const t = String(text);
+    if (annual) return t
+      .replace(/\bmonthly\b(?=\s+[A-Za-z$(#%])/gi, m => caseLike(m, 'annual'))      // Monthly Orders → Annual Orders
+      .replace(/\bmonthly\b/gi, m => caseLike(m, 'annually'))                        // billed monthly → billed annually
+      .replace(/\bmonth\b/gi, m => caseLike(m, 'year'))
+      .replace(/\bmo\b/gi, m => caseLike(m, 'yr'));                                   // /mo, mo., per mo
+    return t
+      .replace(/\b(annually|annual|yearly)\b/gi, m => caseLike(m, 'monthly'))
+      .replace(/\byear\b/gi, m => caseLike(m, 'month'))
+      .replace(/\byr\b/gi, m => caseLike(m, 'mo'));
+  }
+  const viewText = text => periodize(text, isAnnualView());
   function lastText(el) {
     let t = null;
     el.childNodes.forEach(n => { if (n.nodeType === 3 && n.data.trim()) t = n; });
@@ -254,9 +280,11 @@
     const read = () => mixed() ? ((lastText(el) || {}).data || '') : el.textContent;
     const rec = { el, orig: read(), mixed: mixed() };
     const put = () => {
-      if (rec.mixed) { const t = lastText(el); const want = ' ' + text; if (t && t.data !== want) t.data = want; }
-      else if (el.textContent !== text) el.textContent = text;
+      const tx = viewText(text);
+      if (rec.mixed) { const t = lastText(el); const want = ' ' + tx; if (t && t.data !== want) t.data = want; }
+      else if (el.textContent !== tx) el.textContent = tx;
     };
+    rec.put = put;
     put();
     rec.mo = new MutationObserver(put);
     rec.mo.observe(el, { childList: true, characterData: true, subtree: true });
@@ -436,6 +464,8 @@
     watchDensity(P);
     if (!cfg) { st.textContent = ''; afterLayout(); syncPlates(); return; }
     const b = cfg.branding || {};
+    PERIOD = b.periodText !== 0;
+    watchView();
     const N = P.root + ':not(.density-compact)';
     let css = '';
 
@@ -572,6 +602,7 @@
           el = tw;
         }
         if (it.k === 'billing') { el = billingEl(P, grid, layout, it); if (!el) return; }
+        if (it.k === 'banner') { el = bannerEl(P, grid, it, b); if (!el) return; css += bannerCss(P, it); }
         if (!el) {
           const blk = blocks.find(b => b.id === it.k);
           if (blk) el = textBlock(grid, blk);
@@ -590,7 +621,7 @@
         if (it.k === 'cards') css += N + ' ' + P.costHiddenRow + '>[data-cbk="cards"]' + BOOST2 + '{grid-column:1/-1;justify-self:center;width:' + (w === 'full' ? '100%' : PCT[w === 'half' ? 'half' : w]) + ';}';
         if (P.bleed && P.bleed[it.k] && w === 'full') el.setAttribute('data-cbx-bleed', '1');
         const textBlk = blocks.find(b => b.id === it.k);
-        if (!textBlk) css += styleCss('[data-cbk="' + it.k + '"]', it.style, { paint: P.paint[it.k], P });
+        if (!textBlk) css += styleCss('[data-cbk="' + it.k + '"]', it.k === 'banner' ? bannerStyle(it.style) : it.style, { paint: P.paint[it.k], P });
       });
       css += detailCss(P, layout, swap);
       if (firstVis) firstVis.setAttribute('data-cbx-first', '1');
@@ -794,7 +825,7 @@
     [btnIn, btnOut].forEach(b => {
       if (!b) return;
       if (!b.hasAttribute('data-cbx-orig')) b.setAttribute('data-cbx-orig', b.innerHTML);
-      if (lbl) { b.textContent = lbl; b.setAttribute('data-cbx-label', lbl); }
+      if (lbl) { b.textContent = viewText(lbl); b.setAttribute('data-cbx-label', viewText(lbl)); }
     });
     css += styleCss(S, it.style, { P });
     return css;
@@ -861,6 +892,68 @@
     return css;
   }
 
+  // ── Banner image (branding.bannerUrl) ── A block of its own. place: 'results' (default — the top
+  // of the results, where it always sat; moves / sizes like any block), 'top' (full width under the
+  // header) or 'inputs' (top of the inputs column). style: h (px; empty = up to 150px, as before),
+  // fit cover|contain, focus top|center|bottom, pad, bg, bw, bc, radius (10px default) + theme.
+  const okImg = u => typeof u === 'string' && /^(https?:\/\/|data:image\/)/i.test(u.trim());
+  function bannerEl(P, grid, it, br) {
+    let el = document.getElementById('cbx-banner');
+    const url = br && okImg(br.bannerUrl) ? br.bannerUrl.trim() : '';
+    if (!url) { if (el) el.remove(); return null; }
+    if (!el) { el = document.createElement('div'); el.id = 'cbx-banner'; el.innerHTML = '<img alt="Merchant banner">'; }
+    const img = el.querySelector('img');
+    if (img.getAttribute('src') !== url) {
+      el.removeAttribute('data-cbx-broken');
+      img.onerror = () => el.setAttribute('data-cbx-broken', '1');
+      img.onload = () => { el.removeAttribute('data-cbx-broken'); afterLayout(); };
+      img.src = url;
+    }
+    let host = grid, before = null;
+    if (it.place === 'top') { const w = document.querySelector(P.wrap); if (w && w.parentElement) { host = w.parentElement; before = w; } }
+    else if (it.place === 'inputs') {
+      const p = document.querySelector(P.panel);
+      if (p) {
+        // Under the merchant header when it lives in the inputs column (merchant view), else first.
+        let hd = document.querySelector(P.header);
+        while (hd && hd.parentElement !== p) hd = hd.parentElement;
+        let first = hd ? hd.nextSibling : p.firstChild;
+        if (first === el) first = el.nextSibling;
+        host = p; before = first;
+      }
+    }
+    if (el.parentElement !== host || (before ? el.nextSibling !== before : false)) host.insertBefore(el, before);
+    el.setAttribute('data-cbx-place', it.place === 'top' || it.place === 'inputs' ? it.place : 'results');
+    return el;
+  }
+  // Colours / border / radius go through styleCss (default theme only); the padding default
+  // gives a themed banner a visible glass frame.
+  function bannerStyle(st) {
+    if (!st) return st;
+    const o = {}; ['bg', 'bw', 'bc', 'radius'].forEach(k => { if (st[k] != null && st[k] !== '') o[k] = st[k]; });
+    return o;
+  }
+  function bannerCss(P, it) {
+    const st = it.style || {}, S = '#cbx-banner' + BOOST;
+    const themed = THEMES.indexOf(it.theme) > 0;
+    const pad = st.pad != null && st.pad !== '' ? Math.max(0, parseInt(st.pad, 10) || 0) : (themed ? 10 : 0);
+    const r = st.radius != null && st.radius !== '' ? (parseInt(st.radius, 10) || 0) : (it.theme === 'liquid' ? 20 : themed ? 18 : 10);
+    const h = parseInt(st.h, 10);
+    const pos = { top: 'center top', bottom: 'center bottom' }[st.focus] || 'center center';
+    const place = it.place === 'top' || it.place === 'inputs' ? it.place : 'results';
+    const w = it.w && SPAN[it.w] ? it.w : 'full';
+    let css = S + '{display:block;box-sizing:border-box;min-width:0;overflow:hidden;border-radius:' + r + 'px;padding:' + pad + 'px;';
+    if (place === 'results') css += 'margin:0' + (P === PAGES.proposal ? ' 0 12px' : '') + ';';
+    else css += 'width:' + (w === 'full' ? 'auto' : PCT[w]) + ';margin:' + (place === 'top' ? '12px 16px 4px' : '0 0 12px') + ';' + (w === 'full' ? '' : 'margin-left:auto;margin-right:auto;');
+    css += '}';
+    if (place === 'top' && w !== 'full') css += S + '{margin-top:12px;margin-bottom:4px;}';
+    css += S + ' img{display:block;width:100%;' + (h > 0 ? 'height:' + Math.min(h, 900) + 'px;' : 'height:auto;max-height:150px;') +
+      'object-fit:' + (st.fit === 'contain' ? 'contain' : 'cover') + ';object-position:' + pos + ';border-radius:' + Math.max(0, r - pad) + 'px;}';
+    css += 'body:not(.cbx-edit) #cbx-banner[data-cbx-broken]{display:none !important;}';
+    css += 'body.cbx-edit #cbx-banner[data-cbx-broken]{min-height:60px;background:repeating-linear-gradient(45deg,#f1f2f8 0 10px,#e7e9f3 10px 20px);}';
+    return css;
+  }
+
   function textBlock(grid, blk) {
     let d = document.getElementById('cb-blk-' + blk.id);
     if (!d) { d = document.createElement('div'); d.className = 'cb-block'; d.id = 'cb-blk-' + blk.id; grid.appendChild(d); }
@@ -878,8 +971,8 @@
     const bw = (st.bw != null ? +st.bw : 0);
     d.setAttribute('data-cbx-light', JSON.stringify({ color: st.color || '', bg: st.bg || '', border: bw > 0 ? (bw + 'px solid ' + (st.bc || '#e3e6f0')) : '' }));
     let html = '';
-    if (blk.heading) html += '<div class="cb-block-h" style="font-weight:800;margin-bottom:4px;">' + esc(blk.heading) + '</div>';
-    if (blk.body) html += '<div class="cb-block-b" style="white-space:pre-wrap;line-height:1.5;">' + esc(blk.body) + '</div>';
+    if (blk.heading) html += '<div class="cb-block-h" style="font-weight:800;margin-bottom:4px;">' + esc(viewText(blk.heading)) + '</div>';
+    if (blk.body) html += '<div class="cb-block-b" style="white-space:pre-wrap;line-height:1.5;">' + esc(viewText(blk.body)) + '</div>';
     const bar = d.querySelector(':scope > .cbx-bar');
     d.innerHTML = html;
     if (bar) d.appendChild(bar);
@@ -914,6 +1007,7 @@
     document.querySelectorAll('.cbx-grid,.cbx-contents,.cbx-fgrid,.cbx-fmode').forEach(el => el.classList.remove('cbx-grid', 'cbx-contents', 'cbx-fgrid', 'cbx-fmode'));
     document.querySelectorAll('.cbx-bar').forEach(el => el.remove());
     if (!LAST || !CFG) document.querySelectorAll('.cb-block').forEach(el => { if (!CFG) el.remove(); });
+    if (!CFG) { const bn = document.getElementById('cbx-banner'); if (bn) bn.remove(); }
     // Legacy markers from the pre-SICB applyCustomBuild
     document.querySelectorAll('[data-cb-hidden]').forEach(el => el.removeAttribute('data-cb-hidden'));
   }
@@ -929,6 +1023,16 @@
       if (d !== _dens) { _dens = d; if (CFG) apply(CFG); }
     });
     _densMo.observe(r, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // The View (Monthly / Annual) flips live: custom text follows it.
+  let _viewOn = false;
+  function watchView() {
+    if (_viewOn) return; _viewOn = true;
+    document.addEventListener('change', e => {
+      const t = e.target; if (!t || (t.id !== 'timeframe' && t.id !== 'p-view')) return;
+      setTimeout(() => { if (CFG) apply(CFG); }, 30);
+    }, true);
   }
 
   let _fitT = null;
@@ -987,6 +1091,13 @@
     const ws = [['full', 'Full width', '1'], ['twothirds', 'Two-thirds width', '⅔'], ['half', 'Half width', '½'], ['third', 'One-third width', '⅓']]
       .map(([v, t, s]) => '<button type="button" data-cbx="w" data-v="' + v + '" title="' + t + '"' + (w === v ? ' class="on"' : '') + '>' + s + '</button>').join('');
     let place = '';
+    if (g === 'b' && k === 'banner') {
+      const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'banner') : null;
+      const pl = (it && it.place) || 'results';
+      const nm = { results: 'Results', top: 'Top of page', inputs: 'Inputs column' };
+      const nx = { results: 'top', top: 'inputs', inputs: 'results' }[pl] || 'top';
+      place = '<button type="button" data-cbx="place" title="Sits in: ' + nm[pl] + ' — click to move it to ' + nm[nx] + '">⇅ ' + nm[pl] + '</button><span class="cbx-sep"></span>';
+    }
     if (g === 'b' && k === 'copylink') {
       const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'copylink') : null;
       const out = !!(it && it.place === 'results');

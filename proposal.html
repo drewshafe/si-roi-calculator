@@ -3189,15 +3189,7 @@
                     if (_imgs && _imgs.logo) { const lg = document.querySelector('.header-logo-new'); if (lg) { lg.src = _imgs.logo; lg.style.display = ''; lg.onerror = null; } }
                 }
             } catch (e) {}
-            if (b.bannerUrl) {
-                const rp = document.querySelector('.right-panel');
-                if (rp && !document.getElementById('cb-banner')) {
-                    const img = document.createElement('img');
-                    img.id = 'cb-banner'; img.src = b.bannerUrl; img.alt = 'Merchant banner'; img.onerror = function(){ this.style.display = 'none'; };
-                    img.style.cssText = 'display:block;width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin-bottom:12px;';
-                    rp.insertBefore(img, rp.firstChild);
-                }
-            }
+            // Banner image: a layout block of its own (placement / size / style) — cb-layout.js.
             if (b.accent) {
                 const a = b.accent, st = document.createElement('style'); st.id = 'cb-accent';
                 st.textContent = '.kmp-value{color:' + a + ' !important;}' +

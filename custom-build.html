@@ -120,6 +120,15 @@
   .pv-col .blk-seg button{ padding:3px 7px; font-size:.72rem; }
   .preview iframe{ flex:1; height:auto; min-height:0; }
   .lb-swatch{ border:2px solid transparent; box-shadow:0 0 0 1px #d5d9f0; }
+  .cb-section>summary .sum-dot{ display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-left:4px; border:1px solid rgba(0,0,0,.15); }
+  .cb-section>summary .sum-val{ font-weight:600; color:var(--muted); margin-left:4px; }
+  .bn-picker{ margin-top:8px; border:1px solid var(--line); border-radius:8px; padding:8px; background:#f7f8fc; max-height:330px; overflow:auto; }
+  .bn-picker .bn-h{ display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:.68rem; font-weight:800; color:var(--ink); margin-bottom:6px; }
+  .bn-picker .bn-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .bn-picker button.bn-it{ display:flex; flex-direction:column; gap:3px; padding:4px; border:1px solid #d5d9f0; border-radius:7px; background:#fff; cursor:pointer; text-align:left; font-family:inherit; min-width:0; }
+  .bn-picker button.bn-it:hover{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(102,117,255,.18); }
+  .bn-picker button.bn-it img{ width:100%; height:58px; object-fit:cover; border-radius:4px; background:repeating-linear-gradient(45deg,#f1f2f8 0 6px,#e7e9f3 6px 12px); }
+  .bn-picker button.bn-it span{ font-size:.62rem; font-weight:700; color:#4a5068; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lb-swatch.active{ border-color:#6675ff; box-shadow:0 0 0 2px #6675ff; }
 </style>
 <script src="sb.js"></script>
@@ -152,16 +161,23 @@
             </span>
           </label>
         </div>
-        <div class="fld">
-          <label>Accent 1 — highlights <span style="font-weight:400;color:var(--muted);">(Premiums box / buttons / text)</span></label>
+        <details class="cb-section" id="secAccent1">
+          <summary>Accent 1 — highlights <span class="sum-dot" id="sumAccent1"></span></summary>
+          <div class="cb-section-body">
+            <div class="hint" style="margin:0 0 7px;">Premiums box, buttons and highlighted text.</div>
+          <div class="fld" style="margin:0;">
           <div class="fld-row">
             <input type="color" id="accent" value="#6675ff">
             <input type="text" id="accentHex" value="#6675ff" spellcheck="false">
           </div>
           <div class="swatches" id="swatches"></div>
-        </div>
-        <div class="fld">
-          <label>Accent 2 — header background</label>
+          </div></div>
+        </details>
+        <details class="cb-section" id="secAccent2">
+          <summary>Accent 2 — header <span class="sum-dot" id="sumAccent2"></span></summary>
+          <div class="cb-section-body">
+            <div class="hint" style="margin:0 0 7px;">Header background, and the merchant name on it.</div>
+          <div class="fld" style="margin:0;">
           <div class="fld-row">
             <input type="color" id="accent2" value="#2a2f45">
             <input type="text" id="accent2Hex" value="#2a2f45" spellcheck="false">
@@ -184,18 +200,24 @@
               <div class="c"><label>Size</label><div class="blk-seg" id="hdrSize"><button type="button" data-v="s">S</button><button type="button" data-v="" class="on">M</button><button type="button" data-v="l">L</button><button type="button" data-v="xl">XL</button></div></div>
             </div>
           </div>
-        </div>
-        <div class="fld">
-          <label>Font</label>
-          <select id="font">
+          </div></div>
+        </details>
+        <details class="cb-section" id="secFont">
+          <summary>Font <span class="sum-val" id="sumFont"></span></summary>
+          <div class="cb-section-body">
+          <div class="fld" style="margin:0;"><select id="font">
             <option value="">System default</option>
             <option value="Poppins">Poppins</option>
             <option value="Montserrat">Montserrat</option>
             <option value="Inter">Inter</option>
             <option value="Lora">Lora (serif)</option>
             <option value="Georgia">Georgia (serif)</option>
-          </select>
-        </div>
+          </select></div>
+          </div>
+        </details>
+        <details class="cb-section" id="secLogo">
+          <summary>Logo <span class="sum-val" id="sumLogo"></span></summary>
+          <div class="cb-section-body">
         <div class="fld">
           <label>Logo image URL</label>
           <input type="text" id="logoUrl" placeholder="https://…/logo.png" spellcheck="false">
@@ -209,14 +231,36 @@
             <button type="button" class="cb-up-clear" id="logoImgClear" style="display:none;" title="Remove uploaded image">✕</button>
           </div>
         </div>
+            <div class="hint">Uploaded logos travel inside the share link (compressed), no hosting needed. An uploaded or Lock-built image overrides the Logo URL.</div>
+          </div>
+        </details>
+        <details class="cb-section" id="secBanner">
+          <summary>Banner image <span class="sum-val" id="sumBanner"></span></summary>
+          <div class="cb-section-body">
         <div class="fld">
           <label>Banner image URL</label>
           <input type="text" id="bannerUrl" placeholder="https://…/banner.jpg" spellcheck="false">
         </div>
-        <div class="hint">Uploaded logos travel inside the share link (compressed) — no hosting needed. An uploaded/locked image overrides the Logo URL. Banner still needs a URL. Brandfetch auto-fill is coming.</div>
+        <div class="fld">
+          <label>Or upload / use one from the Merchant Folder</label>
+          <div class="cb-logo-up">
+            <label class="cb-up-btn" title="Upload an image. It's hosted in ShipInsure's cloud (sign-in needed) and its link goes in the URL box.">↑ Upload<input type="file" id="bannerFile" accept=".png,.jpg,.jpeg,.gif,.webp,.svg,.avif" style="display:none;"></label>
+            <button type="button" class="cb-up-btn" id="bannerFolderBtn" title="Pick a banner or image saved in this merchant's folder">📁 From Merchant Folder</button>
+            <img id="bannerThumb" alt="" style="display:none;height:34px;max-width:120px;object-fit:cover;border:1px solid var(--line);border-radius:6px;background:#fff;">
+            <button type="button" class="cb-up-clear" id="bannerClear" style="display:none;" title="Remove the banner">✕</button>
+          </div>
+          <div id="bannerStatus" class="hint" style="display:none;margin-top:6px;"></div>
+          <div id="bannerPicker" class="bn-picker" style="display:none;"></div>
+        </div>
+        <button type="button" class="cb-btn ghost" id="bannerStyleBtn" style="width:100%;background:#eef1ff;color:var(--accent);border:1px dashed var(--accent);">Placement, size &amp; style → Style → Layout · Banner image</button>
+          </div>
+        </details>
       </div>
       <div class="grp">
         <div class="grp-h">Merchant Branding 2</div>
+        <label class="cb-hidename" style="justify-content:flex-start;gap:7px;margin:0 0 8px;color:var(--ink);font-weight:700;" title="Monthly / month / mo (/mo, mo.) switch to Annual(ly) / year / yr (/yr, yr.) when the View is Annual, and back, the way the calc's own labels do. Write them either way.">
+          <input type="checkbox" id="periodText" checked> Custom text follows the View (Monthly ↔ Annual)
+        </label>
         <details class="cb-section" id="secInputs">
           <summary>Style → Merchant Input</summary>
           <div class="cb-section-body">
@@ -274,7 +318,7 @@
         </div>
         <div class="cb-sub-h" style="margin-top:14px;">Fields — drag ⣿ to reorder · width · ✎ style · 👁</div>
         <div class="lay-list" id="fldList"></div>
-        <div class="hint">Width <b>A</b> = the page's own grid; 1 / ⅔ / ½ / ⅓ = share of the inputs column. Hidden fields keep their link values. ✎ on a field changes its label text (type your own or pick an alternative) and its own colours, fonts and sizes, which override the section defaults. Compact density keeps its grouped layout (styles + hide still apply). Colours apply in the default theme; Project Midnight keeps its own look.</div>
+        <div class="hint">Width <b>A</b> = the page's own grid; 1 / ⅔ / ½ / ⅓ = share of the inputs column. Hidden fields keep their link values. ✎ on a field changes its label text (type your own or pick an alternative; Monthly / mo / month switch to Annual / yr / year with the View) and its own colours, fonts and sizes, which override the section defaults. Compact density keeps its grouped layout (styles + hide still apply). Colours apply in the default theme; Project Midnight keeps its own look.</div>
           </div>
         </details>
         <details class="cb-section" id="secLayout">
@@ -457,6 +501,7 @@
         hdrFont: $('hdrFont').value || undefined,
         hdrWeight: $('hdrWeight').value || undefined,
         hdrSize: _hdrSize || undefined,
+        periodText: $('periodText').checked ? undefined : 0,
       },
       layout: layout,
       blocks: blocks,
@@ -484,12 +529,26 @@
     const b = c.branding || {};
     const L = c.layout || [];
     const cards = L.find(l => l.k === 'cards'), hero = L.find(l => l.k === 'hero');
-    return JSON.stringify([baseParams, b.accent, b.font, b.logoUrl, b.bannerUrl, b.hideName, _logoImg,
+    return JSON.stringify([baseParams, b.accent, b.font, b.logoUrl, b.hideName, _logoImg,
       cards && cards.style && cards.style.rows, hero && hero.style && [hero.style.subHidden, hero.style.perPremium]]);
   }
   let _t = null, _srcSig = null, _loadedSig = null;
   function _pvWin() { try { const w = $('preview').contentWindow; return (w && w.SICB && w.document.readyState !== 'loading') ? w : null; } catch (e) { return null; } }
+  // Closed dropdowns show what's set (Merchant Branding 1)
+  function syncSummaries() {
+    const dot = (id, c) => { const e = $(id); if (e) { e.style.background = c || 'transparent'; e.style.display = c ? '' : 'none'; } };
+    dot('sumAccent1', $('accentHex').value.trim());
+    dot('sumAccent2', _accent2Set ? $('accent2Hex').value.trim() : '');
+    const txt = (id, t) => { const e = $(id); if (e) e.textContent = t ? '· ' + t : ''; };
+    txt('sumFont', $('font').value);
+    txt('sumLogo', _logoImg ? 'uploaded' : ($('logoUrl').value.trim() ? 'URL' : ''));
+    const bi = layout.find(l => l.k === 'banner');
+    const PL = { top: 'top of page', inputs: 'inputs column' };
+    txt('sumBanner', $('bannerUrl').value.trim() ? 'on' + (bi && bi.v === false ? ' · hidden' : bi && PL[bi.place] ? ' · ' + PL[bi.place] : '') : '');
+    _renderBannerThumb();
+  }
   function refresh(immediate) {
+    syncSummaries();
     const url = buildUrl();
     $('linkOut').value = url;
     clearTimeout(_t);
@@ -566,7 +625,8 @@
   }));
   $('font').addEventListener('change', () => refresh(true));
   $('logoUrl').addEventListener('input', () => refresh(false));
-  $('bannerUrl').addEventListener('input', () => refresh(false));
+  $('bannerUrl').addEventListener('input', () => { renderLayout(); refresh(false); });
+  $('periodText').addEventListener('change', () => refresh(true));
 
   // ── Uploaded / lock-built logo ───────────────────────────────────────────
   // Downscale an uploaded image to a small PNG (keeps transparency) so it embeds
@@ -599,6 +659,149 @@
   });
   $('logoImgClear').addEventListener('click', () => { setLogoImg(''); });
   $('openLockBtn').addEventListener('click', openLockBuilder);
+
+  // ── Banner image: URL, upload (hosted in the cloud) or one from the Merchant Folder ──
+  function _renderBannerThumb() {
+    const u = $('bannerUrl').value.trim(), t = $('bannerThumb'), c = $('bannerClear');
+    if (u) { if (t.getAttribute('src') !== u) t.src = u; t.style.display = ''; c.style.display = ''; }
+    else { t.removeAttribute('src'); t.style.display = 'none'; c.style.display = 'none'; }
+  }
+  function _bannerStatus(msg, warn) {
+    const e = $('bannerStatus'); e.style.display = msg ? '' : 'none'; e.textContent = msg || ''; e.style.color = warn ? '#c0392b' : '';
+  }
+  function setBanner(url) { $('bannerUrl').value = url || ''; _bannerStatus(''); renderLayout(); refresh(true); }
+  // Wide images stay sharp at up to 2400px; photos go to JPEG, transparent art stays PNG.
+  function _bannerPrep(dataUrl) {
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth || 1600, h = img.naturalHeight || 400;
+        const k = Math.min(1, 2400 / w, 1400 / h); w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k));
+        try {
+          const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(img, 0, 0, w, h);
+          let alpha = false; const d = x.getImageData(0, 0, w, h).data;
+          for (let i = 3; i < d.length; i += 4 * 97) { if (d[i] < 250) { alpha = true; break; } }
+          res(alpha ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.86));
+        } catch (e) { res(dataUrl); }
+      };
+      img.onerror = () => res(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+  async function _hostBanner(dataUrl) {
+    if (!window.SIsb) throw new Error('Cloud module not loaded.');
+    const u = await _cbEnsureSignedIn();
+    if (!u) return null;
+    return SIsb.uploadLogo(dataUrl);
+  }
+  $('bannerFile').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) { alert('Image must be under 15MB.'); return; }
+    _bannerStatus('Uploading…');
+    try {
+      const raw = await new Promise((res, rej) => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.onerror = rej; r.readAsDataURL(file); });
+      const url = await _hostBanner(file.type === 'image/svg+xml' ? raw : await _bannerPrep(raw));
+      if (!url) { _bannerStatus('Sign in first (check your email for the link), then upload again.', true); return; }
+      setBanner(url);
+    } catch (x) { _bannerStatus('Upload failed: ' + (x && x.message ? x.message : x), true); }
+  });
+  $('bannerClear').addEventListener('click', () => setBanner(''));
+  $('bannerStyleBtn').addEventListener('click', () => { _openSec = 'banner'; select('b', 'banner', false, true); const r = document.querySelector('#layList .lay-item[data-k="banner"]'); if (r) r.scrollIntoView({ block: 'center', behavior: 'smooth' }); });
+
+  // Images in a merchant folder: the folder's own branding + every save in it (tool saves, ROI
+  // scenarios, uploaded image files). Anything that looks like an image counts; keys that say
+  // banner / hero / cover come first.
+  const _IMG_RX = /https?:\/\/[^\s"'<>()]+?\.(?:png|jpe?g|webp|gif|svg|avif)(?:\?[^\s"'<>()]*)?(?=$|[\s"'<>()&,])/gi;
+  function _imgRank(key) { key = String(key || '').toLowerCase(); return /banner/.test(key) ? 0 : /hero|cover|header|bg|background/.test(key) ? 1 : /logo|icon|favicon/.test(key) ? 3 : 2; }
+  function _collectImages(node, key, push, depth) {
+    if (depth > 8 || node == null) return;
+    if (typeof node === 'string') {
+      const v = node.trim();
+      if (/^data:image\//i.test(v) && v.length > 1500) { push(v, key); return; }
+      if (/^https?:\/\//i.test(v) && (/\/storage\/v1\/object\/public\//.test(v) || /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(v))) { push(v, key); return; }
+      let dec = v; try { dec = decodeURIComponent(v); } catch (e) {}
+      // Query strings (ROI scenarios carry their build in bld=…)
+      if (/[?&]?bld=/.test(dec)) { try { const ps = new URLSearchParams(v.replace(/^[^?]*\?/, '')); const bld = ps.get('bld'); if (bld) _collectImages(JSON.parse(bld), key, push, depth + 1); } catch (e) {} }
+      (dec.match(_IMG_RX) || []).forEach(u => push(u, key));
+      return;
+    }
+    if (Array.isArray(node)) { node.forEach(n => _collectImages(n, key, push, depth + 1)); return; }
+    if (typeof node === 'object') Object.keys(node).forEach(k => _collectImages(node[k], k, push, depth + 1));
+  }
+  async function _folderRef() {
+    if (_cbMerchantId) return _cbMerchantId;
+    const act = SIsb.getActiveFolder && SIsb.getActiveFolder();
+    const name = (new URLSearchParams(baseParams).get('mname') || '').trim();
+    if (act && act.id && (!name || !act.name || act.name.toLowerCase() === name.toLowerCase())) return act.id;
+    if (name) { const m = await SIsb.getMerchantByName(name); if (m) return m.id; }
+    return act && act.id ? act.id : null;
+  }
+  async function folderImages() {
+    const ref = await _folderRef();
+    if (!ref) throw new Error('No Merchant Folder found for this merchant. Open it in Merchant Folders (or ☁ Cloud Save) first.');
+    const c = await SIsb.client();
+    const [m, as, cf] = await Promise.all([
+      c.from('merchants').select('id, name, bld, logo_path').eq('id', ref).single(),
+      c.from('merchant_assets').select('id, kind, title, data').eq('merchant_ref', ref).order('updated_at', { ascending: false }).limit(200),
+      c.from('configs').select('id, title, data, logo_path').eq('merchant_ref', ref).limit(100),
+    ]);
+    if (m.error) throw m.error;
+    const out = [], seen = new Set();
+    const add = (src, label, rank, extra) => { if (!src || seen.has(src)) return; seen.add(src); out.push(Object.assign({ src, label, rank }, extra || {})); };
+    const KIND = { checkout: 'Checkout', email: 'Email', claim: 'Claims', proposal: 'Proposal', msa: 'MSA', mnda: 'MNDA', onepager: 'One-Pager' };
+    const f = m.data || {};
+    _collectImages(f.bld, 'banner', (u, k) => add(u, 'Folder branding · ' + k, _imgRank(k)), 0);
+    if (f.logo_path) add(f.logo_path, 'Folder logo', 3);
+    (as.data || []).forEach(a => {
+      const d = a.data || {}, nm = (KIND[a.kind] || a.kind) + (a.title ? ' · ' + a.title : '');
+      if (d.file && d.file.path && /^image\//i.test(d.file.type || '')) { add('doc:' + d.file.path, nm + ' · uploaded image', 1, { doc: d.file.path }); return; }
+      _collectImages(d, '', (u, k) => add(u, nm + (k ? ' · ' + k : ''), _imgRank(k)), 0);
+    });
+    (cf.data || []).forEach(r => _collectImages(r.data, '', (u, k) => add(u, 'ROI · ' + (r.title || 'scenario') + (k ? ' · ' + k : ''), _imgRank(k)), 0));
+    out.sort((a, b) => a.rank - b.rank);
+    return { name: f.name || '', items: out };
+  }
+  async function _toPublicUrl(it) {
+    if (it.doc) {                                         // private upload → a public copy
+      const link = await SIsb.docLink(it.doc, 300);
+      const blob = await (await fetch(link)).blob();
+      const du = await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(blob); });
+      return _hostBanner(await _bannerPrep(du));
+    }
+    if (/^data:/i.test(it.src)) return _hostBanner(it.src); // keep the link short
+    return it.src;
+  }
+  $('bannerFolderBtn').addEventListener('click', async () => {
+    const pk = $('bannerPicker');
+    if (pk.style.display !== 'none') { pk.style.display = 'none'; return; }
+    if (!window.SIsb) { _bannerStatus('Cloud module not loaded.', true); return; }
+    _bannerStatus('Looking in the Merchant Folder…');
+    try {
+      const u = await _cbEnsureSignedIn();
+      if (!u) { _bannerStatus('Sign in first (check your email for the link), then try again.', true); return; }
+      const res = await folderImages();
+      _bannerStatus('');
+      pk.innerHTML = '<div class="bn-h"><span>📁 ' + (res.name || 'Merchant Folder').replace(/</g, '&lt;') + ' · ' + res.items.length + ' image' + (res.items.length === 1 ? '' : 's') + '</span><button type="button" class="lay-mini" data-x title="Close">✕</button></div>' +
+        (res.items.length ? '<div class="bn-grid"></div>' : '<div class="hint" style="margin:0;">No images in this folder yet. Upload one here, or save a branded tool (Checkout, Email, One-Pager…) to the folder first.</div>');
+      const grid = pk.querySelector('.bn-grid');
+      res.items.forEach(it => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'bn-it'; b.title = it.label;
+        const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy';
+        if (it.doc) SIsb.docLink(it.doc, 600).then(l => { im.src = l; }, () => {}); else im.src = it.src;
+        const sp = document.createElement('span'); sp.textContent = it.label;
+        b.append(im, sp);
+        b.addEventListener('click', async () => {
+          _bannerStatus('Using that image…');
+          try { const url = await _toPublicUrl(it); if (url) { setBanner(url); pk.style.display = 'none'; } else _bannerStatus('Sign in first, then pick it again.', true); }
+          catch (x) { _bannerStatus('Could not use that image: ' + (x && x.message ? x.message : x), true); }
+        });
+        grid.appendChild(b);
+      });
+      pk.querySelector('[data-x]').addEventListener('click', () => { pk.style.display = 'none'; });
+      pk.style.display = '';
+    } catch (x) { _bannerStatus((x && x.message) ? x.message : String(x), true); }
+  });
 
   // ── Lock Logo Builder (ported from si-widget-designer) ───────────────────
   const _LB_LOCK_SRC = 'https://raw.githubusercontent.com/drewshafe/si-roi-calculator/main/silocktemplate.png';
@@ -789,7 +992,56 @@
   const clean = o => { Object.keys(o).forEach(k => { if (o[k] === undefined || o[k] === '') delete o[k]; }); return o; };
 
   // Style editor for a results block (kind 'block') or a merchant input field (kind 'field').
+  // Banner image: where it sits, size / crop, frame (background, padding, border, corners) + theme.
+  function bannerEditor(item) {
+    const st = item.style || (item.style = {});
+    const set = (k, v) => { if (v === undefined || v === '' || (typeof v === 'number' && isNaN(v))) delete st[k]; else st[k] = v; };
+    const wrap = document.createElement('div'); wrap.className = 'blk-edit';
+    wrap.appendChild(themeCtl(item));
+    const g = document.createElement('div'); g.className = 'mini-grid';
+    if (!$('bannerUrl').value.trim()) {
+      const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;color:#c0392b;';
+      h.textContent = 'No banner yet: add a URL, upload one or pick one from the Merchant Folder in Merchant Branding 1 → Banner image.';
+      g.appendChild(h);
+    }
+    g.appendChild(cell('Sits in', segCtl([['results', 'Results'], ['top', 'Top of page'], ['inputs', 'Inputs column']], item.place || 'results', v => {
+      if (v === 'results') delete item.place; else item.place = v; renderLayout(); refresh(true);
+    }), true));
+    const num = (val, ph, max) => { const i = document.createElement('input'); i.type = 'number'; i.min = '0'; i.max = String(max); i.placeholder = ph; i.value = val != null ? val : ''; return i; };
+    const hIn = num(st.h, 'Auto', 900);
+    const hSeg = segCtl([['', 'Auto'], ['90', 'S'], ['150', 'M'], ['220', 'L'], ['320', 'XL']], st.h == null ? '' : String(st.h), v => { set('h', v ? +v : undefined); hIn.value = v; refresh(true); });
+    [...hSeg.querySelectorAll('button')].forEach((b, i) => { b.dataset.v = ['', '90', '150', '220', '320'][i]; });
+    hIn.addEventListener('input', () => {
+      const n = parseInt(hIn.value, 10); set('h', isNaN(n) || n <= 0 ? undefined : n);
+      hSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === (st.h == null ? '' : String(st.h))));
+      refresh(false);
+    });
+    g.appendChild(cell('Height', hSeg));
+    g.appendChild(cell('Height px', hIn));
+    g.appendChild(cell('Fit', segCtl([['cover', 'Fill (crop)'], ['contain', 'Whole image']], st.fit === 'contain' ? 'contain' : 'cover', v => { set('fit', v === 'contain' ? 'contain' : undefined); refresh(true); })));
+    g.appendChild(cell('Crop focus', segCtl([['top', 'Top'], ['', 'Center'], ['bottom', 'Bottom']], st.focus || '', v => { set('focus', v); refresh(true); })));
+    g.appendChild(cell('Background', colorCtl(() => st.bg, v => set('bg', v), '#ffffff')));
+    const pad = num(st.pad, item.theme ? '10' : '0', 60);
+    pad.addEventListener('input', () => { set('pad', parseInt(pad.value, 10)); refresh(false); });
+    g.appendChild(cell('Padding px', pad));
+    g.appendChild(cell('Border px', segCtl([['', 'Def'], ['0', '0'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']], st.bw == null ? '' : String(st.bw), v => { set('bw', v); refresh(true); })));
+    g.appendChild(cell('Border colour', colorCtl(() => st.bc, v => set('bc', v), '#e3e6f0')));
+    const rad = num(st.radius, '10', 60);
+    rad.addEventListener('input', () => { set('radius', parseInt(rad.value, 10)); refresh(false); });
+    g.appendChild(cell('Corner radius px', rad));
+    const hint = document.createElement('div'); hint.className = 'hint'; hint.style.cssText = 'grid-column:1/-1;margin:0;';
+    hint.textContent = 'Width (1 ⅔ ½ ⅓) sizes it in its spot. Auto height = up to 150px, as before. The background shows around a "Whole image" banner or inside the padding. Colours and border apply in the default theme; Project Midnight keeps its own look.';
+    g.appendChild(hint);
+    wrap.appendChild(g);
+    const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cb-btn ghost';
+    reset.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
+    reset.textContent = 'Reset banner';
+    reset.addEventListener('click', () => { delete item.style; delete item.place; delete item.theme; delete item.w; renderLayout(); refresh(true); });
+    wrap.appendChild(reset);
+    return wrap;
+  }
   function buildStyleEditor(owner, kind) {
+    if (kind !== 'field' && owner.k === 'banner') return bannerEditor(owner);
     const st = owner.style || (owner.style = {});
     const set = (k, v) => { if (v === undefined || v === '') delete st[k]; else st[k] = v; };
     const wrap = document.createElement('div'); wrap.className = 'blk-edit';
@@ -882,7 +1134,7 @@
     return w;
   }
   const FIELD_ALTS = {
-    orders:  ['Monthly Orders', 'Orders / Month', 'Order Volume', 'Monthly Shipments'],
+    orders:  ['Monthly Orders', 'Orders / mo', 'Orders / Month', 'Order Volume', 'Monthly Shipments'],
     aov:     ['AOV', 'Avg Order Value', 'Average Order Value', 'Avg Cart'],
     claims:  ['Claims Rate %', 'Claim Rate %', 'Issue Rate %', 'Lost / Damaged %'],
     premium: ['SI Premium %', 'Premium %', 'Protection Price %', 'Shipping Protection %'],
@@ -1105,6 +1357,7 @@
       row.dataset.k = item.k;
       const styled = blk ? false : !!(item.style && Object.keys(item.style).some(k => !['rows', 'subHidden', 'perPremium'].includes(k)));
       const where = (item.k === 'copylink' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.place === 'results' ? 'results' : 'inputs') + '</span>' : '') +
+        (item.k === 'banner' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (!$('bannerUrl').value.trim() ? 'no image' : ({ top: 'top of page', inputs: 'inputs' })[item.place] || 'results') + '</span>' : '') +
         (item.theme ? ' <span title="' + (item.theme === 'liquid' ? 'Liquid glass' : 'Frosted glass') + '" style="font-size:.62rem;font-weight:800;padding:1px 5px;border-radius:5px;' + (item.theme === 'liquid' ? 'background:#151831;color:#c9b8ff;' : 'background:#eef1ff;color:#4a5fc1;border:1px solid #d5d9f0;') + '">' + (item.theme === 'liquid' ? 'LIQ' : 'FRO') + '</span>' : '');
       row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + where + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
       row.appendChild(wSeg(item.w, v => { if (v) item.w = v; else delete item.w; renderLayout(); refresh(true); }));
@@ -1184,8 +1437,11 @@
     switch (d.op) {
       case 'move': {
         // Copy Link: dragging it among the results places it there; nothing drops onto it while it's in the inputs column.
-        const cl = layout.find(x => x.k === 'copylink');
+        const cl = layout.find(x => x.k === 'copylink'), bn = layout.find(x => x.k === 'banner');
         if (d.g === 'b' && d.target === 'copylink' && !(cl && cl.place === 'results')) return;
+        // Banner: dragged among the results it sits there; nothing drops onto it while it's elsewhere.
+        if (d.g === 'b' && d.target === 'banner' && bn && bn.place) return;
+        if (d.g === 'b' && d.k === 'banner' && bn) delete bn.place;
         if (moveKey(arr, d.k, d.target, !!d.after)) {
           if (d.g === 'f') inputsCfg.ordered = true;
           if (d.g === 'b' && d.k === 'copylink' && cl) cl.place = 'results';
@@ -1194,7 +1450,9 @@
         return;
       }
       case 'theme': if (it) { const i = THEME_OPTS.findIndex(o => o[0] === (it.theme || '')); const nx = THEME_OPTS[(i + 1) % THEME_OPTS.length][0]; if (nx) it.theme = nx; else delete it.theme; select(d.g, d.k, true); refresh(true); } return;
-      case 'place': if (it) { if (it.place === 'results') delete it.place; else it.place = 'results'; select(d.g, d.k, true); refresh(true); } return;
+      case 'place':
+        if (it && it.k === 'banner') { const nx = { top: 'inputs', inputs: '' }[it.place || ''] ; if (nx === undefined) it.place = 'top'; else if (nx) it.place = nx; else delete it.place; select(d.g, d.k, true); refresh(true); return; }
+        if (it) { if (it.place === 'results') delete it.place; else it.place = 'results'; select(d.g, d.k, true); refresh(true); } return;
       case 'width': if (it) { if (it.w === d.w) delete it.w; else it.w = d.w; select(d.g, d.k, true); refresh(true); } return;
       case 'toggle': if (it) { it.v = it.v === false; select(d.g, d.k, true); refresh(true); } return;
       case 'pos': inputsCfg.pos = d.pos; select('p', 'inputs', true); refresh(true); return;
@@ -1345,7 +1603,7 @@
     return _accent2Set || !!_logoImg || !!$('logoUrl').value.trim() || !!$('bannerUrl').value.trim()
       || _ibgMode !== 'default' || _inpLabelSet || _inpInputSet || _inpBorderSet || _inpBorderW !== ''
       || ($('accentHex').value || '').toLowerCase() !== '#6675ff'
-      || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize)
+      || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize) || !$('periodText').checked
       || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
       || !!($('inLblFont').value || $('inFontSel').value || _inLblSize || _inSize)
       || inputsCfg.fields.some(f => f.w || f.v === false || f.label || (f.style && Object.keys(f.style).length))
@@ -1427,7 +1685,8 @@
         inpBorderColor: bdDerived ? IN_DEF.border : b.inputBorderColor, inpBorderSet: !bdDerived,
         inpBorderW: b.inputBorderW || '', logoImg: '',
         hdrColor: b.hdrColor || '', hdrFont: b.hdrFont || '', hdrWeight: b.hdrWeight || '', hdrSize: b.hdrSize || '',
-        inLblFont: b.inputLabelFont || '', inLblSize: b.inputLabelSize || '', inFont: b.inputFont || '', inSize: b.inputSize || ''
+        inLblFont: b.inputLabelFont || '', inLblSize: b.inputLabelSize || '', inFont: b.inputFont || '', inSize: b.inputSize || '',
+        periodOff: b.periodText === 0
       },
       layout: bld.layout || [], blocks: bld.blocks || [], inputs: bld.inputs || null
     };
@@ -1483,6 +1742,7 @@
         hideName: _hideName, logoImg: _logoImg,
         hdrColor: _hdrColor, hdrFont: $('hdrFont').value, hdrWeight: $('hdrWeight').value, hdrSize: _hdrSize,
         inLblFont: $('inLblFont').value, inLblSize: _inLblSize, inFont: $('inFontSel').value, inSize: _inSize,
+        periodOff: !$('periodText').checked,
       },
       layout: JSON.parse(JSON.stringify(layout)),
       blocks: JSON.parse(JSON.stringify(blocks)),
@@ -1527,6 +1787,7 @@
       setv('inLblFont', b.inLblFont || ''); setv('inFontSel', b.inFont || ''); _inLblSize = b.inLblSize || ''; _inSize = b.inSize || '';
       document.querySelectorAll('#inLblSize button').forEach(x => x.classList.toggle('on', x.dataset.v === _inLblSize));
       document.querySelectorAll('#inSizeSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === _inSize));
+      $('periodText').checked = !b.periodOff;
       const hc = $('hdrColorSlot'); hc.innerHTML = ''; hc.appendChild(colorCtl(() => _hdrColor, v => { _hdrColor = v || ''; }, '#ffffff'));
     }
     renderSwatches(); renderLists(); refresh(true);
