@@ -65,6 +65,15 @@
     cost: '#lostRevenueLabel,#costCard .rc-label,#coRbLbl',
   };
   const ZOOM = { s: 0.88, l: 1.15, xl: 1.32 };
+  // Block themes (Custom Build): 'frosted' = light glass tinted with the merchant colour,
+  // 'liquid' = dark slowly-drifting background with glass cards. Absent = Classic (the page's look).
+  const THEMES = ['', 'frosted', 'liquid'];
+  // Inner tiles that become glass cards inside a themed block
+  const TILES = '.output-metric,.key-metric-pill,.co2-box,.impact-pct-line,.co2-pills > *,.metric-item,.rc-metric,.feature-result-item,.bd-col,.bd-shared-section';
+  // Blocks drawn white-on-colour: Frosted (a light surface) switches their text to ink
+  const INVERSE = { hero: 1, upfront: 1, copylink: 1 };
+  // Compact versions that follow a block's theme
+  const THEME_TWINS = { metrics: '#compactOpt .co2-strip', cards: '#compactOpt .co2-green' };
   // Compact density's versions of comfort blocks (same markup on both pages)
   const TWINS = { hero: '#compactOpt .co2-box.co2-keep', upfront: '#coUpfront2', cost: '#coRedBox' };
   const SPAN = { full: 6, twothirds: 4, half: 3, third: 2 };
@@ -280,6 +289,51 @@
     return css;
   }
 
+  // Theme CSS, tinted with the merchant accent. Default theme only (Midnight keeps its own look).
+  function rgbOf(hex) {
+    const h = String(hex || '').replace('#', '');
+    const f = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    if (!/^[0-9a-f]{6}$/i.test(f)) return '102,117,255';
+    const n = parseInt(f, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255].join(',');
+  }
+  function themeCss(accent) {
+    const A = rgbOf(accent);
+    const F = LIGHT + '[data-cbx-theme="frosted"]' + BOOST;
+    const Q = LIGHT + '[data-cbx-theme="liquid"]' + BOOST;
+    const tiles = (host) => under(host, TILES);
+    const NOT_UI = ':not(input):not(select):not(option):not(.cbx-bar):not(.cbx-bar *)';
+    let css = '';
+    // Frosted glass
+    css += F + '{background:linear-gradient(135deg,rgba(' + A + ',.22) 0%,rgba(255,255,255,.66) 52%,rgba(' + A + ',.12) 100%) !important;' +
+      'border:1px solid rgba(255,255,255,.85) !important;border-radius:18px !important;' +
+      '-webkit-backdrop-filter:blur(18px) saturate(1.7);backdrop-filter:blur(18px) saturate(1.7);' +
+      'box-shadow:0 12px 30px rgba(' + A + ',.18),inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.45) !important;}';
+    css += tiles(F) + '{background:rgba(255,255,255,.58) !important;border:1px solid rgba(255,255,255,.9) !important;border-radius:12px !important;box-shadow:0 2px 10px rgba(' + A + ',.08) !important;}';
+    css += F + '[data-cbx-inv],' + F + '[data-cbx-inv] *' + NOT_UI + '{color:#1f2430 !important;text-shadow:none !important;}';
+    css += under(F + '[data-cbx-inv]', '.impact-value,.hero-value,.co2-val,.co2-up-val') + '{color:rgb(' + A + ') !important;filter:brightness(.8);}';
+    css += under(F, '.co2-rb-val') + '{color:#c0392b !important;}';
+    // Liquid glass: dark, slowly drifting background
+    css += Q + '{background:' +
+      'radial-gradient(55% 75% at 18% 22%,rgba(' + A + ',.62) 0%,rgba(' + A + ',0) 62%),' +
+      'radial-gradient(48% 68% at 84% 28%,rgba(139,92,246,.5) 0%,rgba(139,92,246,0) 62%),' +
+      'radial-gradient(60% 80% at 50% 105%,rgba(20,184,166,.4) 0%,rgba(20,184,166,0) 62%),' +
+      'linear-gradient(160deg,#0d1020 0%,#080a16 100%) !important;' +
+      'background-size:190% 190%,210% 210%,230% 230%,100% 100% !important;' +
+      'background-position:var(--cbx-x1) var(--cbx-y1),var(--cbx-x2) var(--cbx-y2),var(--cbx-x3) var(--cbx-y3),0 0 !important;' +
+      'animation:cbxDrift 28s ease-in-out infinite alternate !important;' +
+      'border:1px solid rgba(255,255,255,.14) !important;border-radius:20px !important;' +
+      'box-shadow:0 18px 42px rgba(8,10,24,.34),inset 0 1px 0 rgba(255,255,255,.14) !important;color:#eef0fa !important;}';
+    css += Q + ',' + Q + ' *' + NOT_UI + '{color:#eef0fa !important;text-shadow:none !important;}';
+    css += under(Q, '.om-value,.kmp-value,.impact-value,.hero-value,.co2-val,.co2-up-val,.er-value,.co2-green-val') + '{color:#ffffff !important;}';
+    css += under(Q, '.card-total.positive,.rc-total.positive,.co2-green-val,.er-revshare .er-v,.positive .value,.flow-val:not(.neg)') + '{color:#6ee7b7 !important;}';
+    css += under(Q, '.card-total.negative,.rc-total.negative,.co2-rb-val,.negative .value,.flow-val.neg') + '{color:#ff9b8f !important;}';
+    css += tiles(Q) + '{background:rgba(255,255,255,.09) !important;border:1px solid rgba(255,255,255,.22) !important;border-radius:14px !important;' +
+      'box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 18px rgba(0,0,0,.28) !important;-webkit-backdrop-filter:blur(8px) saturate(1.5);backdrop-filter:blur(8px) saturate(1.5);}';
+    css += Q + '>.lgc-plate{display:none !important;}' + Q + '.lgc-on{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;}';
+    css += under(Q, 'input') + '{background:rgba(255,255,255,.14) !important;color:#fff !important;border-color:rgba(255,255,255,.28) !important;}';
+    return css;
+  }
+
   // ── Static CSS (grid machinery + editor chrome) ───────────────────────────────────────────
   function baseCss(P) {
     const N = P.root + ':not(.density-compact)';
@@ -306,6 +360,20 @@
       css += N + ' ' + P.gridOn + '>[data-cbx-last][data-cbx-bleed]{margin-bottom:-14px;}';
       css += N + ' ' + P.gridOn + ' .revenue-impact-row{margin:0;}';
     }
+    // Block themes: drift animation + glass backplates
+    // The drift animates registered custom properties: an !important background (needed to beat the
+    // pages' own !important gradients) would otherwise freeze an animated background-position.
+    ['x1', 'y1', 'x2', 'y2', 'x3', 'y3'].forEach(v => { css += '@property --cbx-' + v + '{syntax:"<percentage>";inherits:false;initial-value:0%;}'; });
+    css += '@keyframes cbxDrift{0%{--cbx-x1:0%;--cbx-y1:0%;--cbx-x2:100%;--cbx-y2:0%;--cbx-x3:50%;--cbx-y3:100%}' +
+      '50%{--cbx-x1:100%;--cbx-y1:60%;--cbx-x2:0%;--cbx-y2:100%;--cbx-x3:0%;--cbx-y3:20%}' +
+      '100%{--cbx-x1:35%;--cbx-y1:100%;--cbx-x2:70%;--cbx-y2:15%;--cbx-x3:100%;--cbx-y3:60%}}';
+    css += '@media (prefers-reduced-motion: reduce){[data-cbx-theme="liquid"]{animation:none !important;}}';
+    css += '.cbx-glass{isolation:isolate;}.cbx-glass.cbx-rel{position:relative;}';
+    // Once the library plate is mounted it does the frosting; the CSS frost would make the box a
+    // backdrop root (the plate would then only see the box's own tint, not the page behind it).
+    css += '.cbx-glass.cbx-on{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;}';
+    css += '.cbx-plate{position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;}';
+    css += '.theme-midnight .cbx-plate{display:none;}';
     // Compact versions placed in the comfort results (Upfront bar / Current Cost badge)
     css += '[data-cbx-off]{display:none !important;}';
     css += P.gridOn + ' #coRedBox[data-cbk]' + BOOST + '{position:relative;top:auto;right:auto;max-width:none;align-self:start;margin:0' + (P === PAGES.proposal ? ' 0 10px' : '') + ';}';
@@ -366,7 +434,7 @@
     document.head.appendChild(st);                       // keep it last so it wins ties with later branding styles
     clear(P);
     watchDensity(P);
-    if (!cfg) { st.textContent = ''; afterLayout(); return; }
+    if (!cfg) { st.textContent = ''; afterLayout(); syncPlates(); return; }
     const b = cfg.branding || {};
     const N = P.root + ':not(.density-compact)';
     let css = '';
@@ -510,6 +578,7 @@
         }
         if (!el) return;
         el.setAttribute('data-cbk', it.k);
+        tagTheme(el, it.theme, INVERSE[it.k] || swap[it.k]);
         ordOf[it.k] = (i + 1) * 10;
         css += '[data-cbk="' + it.k + '"]{order:' + ordOf[it.k] + ';}';
         if (!isVis(it)) el.setAttribute('data-cbx-hide', '1');
@@ -548,11 +617,77 @@
         cb.setAttribute('data-cbx-ord', '1'); cb.style.order = String(Math.min.apply(null, o) - 1);
       });
     }
+    if (document.querySelector('[data-cbx-theme]')) css += themeCss((cfg.branding || {}).accent);
     st.textContent = css;
     LAST = cfg;
     afterLayout();
+    syncPlates();
     if (EDIT) renderBars();
   }
+  function tagTheme(el, theme, inverse) {
+    if (!el || !theme || THEMES.indexOf(theme) < 1) return;
+    el.setAttribute('data-cbx-theme', theme);
+    if (inverse) el.setAttribute('data-cbx-inv', '1');
+  }
+
+  // ── Glass backplates (samasante/liquid-glass) for themed blocks ──
+  // Frosted blocks get one on the block (rim + sheen); in Liquid blocks every inner tile gets one,
+  // so it bends the drifting background in Chrome / Edge (Safari / Firefox: frost + rim only).
+  // The rep calc already mounts plates on its own boxes (.lgc-host) — those are reused, not doubled.
+  // Loaded on demand from esm.sh, only when a themed block exists.
+  const RIM = { curvature: 0, depth: 0.35, bend: 0.5, bendWidth: 0.12, dispersion: 0.3, frost: 14, saturate: 1.7, sheen: 0.45, sheenWidth: 3 };
+  const DOME = { curvature: 0.25, bend: 0.45, bendWidth: 0.22, dispersion: 0.35, frost: 10, saturate: 1.7, sheen: 0.4 };
+  let _glass = null;
+  const PLATES = new Map();
+  function glassLib() {
+    if (!_glass) _glass = Promise.all([
+      import('https://esm.sh/react@19.2.0'),
+      import('https://esm.sh/react-dom@19.2.0/client?deps=react@19.2.0'),
+      import('https://esm.sh/@samasante/liquid-glass@0.1.1?deps=react@19.2.0,react-dom@19.2.0'),
+    ]).then(([R, RD, G]) => ({ h: R.createElement, createRoot: RD.createRoot, Glass: G.Glass }))
+      .catch(e => { console.warn('[SICB] liquid-glass unavailable, CSS glass only:', e && e.message); return null; });
+    return _glass;
+  }
+  function fitZoom(plate) {
+    let z = 1;
+    for (let n = plate.parentElement; n; n = n.parentElement) z *= parseFloat(getComputedStyle(n).zoom) || 1;
+    plate.style.zoom = Math.abs(z - 1) < 1e-3 ? '' : String(1 / z);
+  }
+  function wantedPlates() {
+    const out = new Map();
+    const ok = el => el && !el.classList.contains('lgc-host') && !/^(BUTTON|INPUT|SELECT)$/.test(el.tagName) && !el.closest('.theme-midnight') && el.getClientRects().length > 0;
+    document.querySelectorAll('[data-cbx-theme="frosted"]').forEach(el => { if (ok(el)) out.set(el, RIM); });
+    document.querySelectorAll('[data-cbx-theme="liquid"]').forEach(blk => blk.querySelectorAll(TILES).forEach(t => { if (ok(t)) out.set(t, t.getBoundingClientRect().width > 260 ? RIM : DOME); }));
+    return out;
+  }
+  let _plT = null;
+  function syncPlates() {
+    clearTimeout(_plT);
+    _plT = setTimeout(async () => {
+      const want = wantedPlates();
+      PLATES.forEach((rec, host) => {
+        if (want.has(host) && rec.plate.isConnected && rec.plate.parentElement === host) return;
+        try { rec.root.unmount(); } catch (e) {}
+        rec.plate.remove(); host.classList.remove('cbx-glass', 'cbx-rel', 'cbx-on'); PLATES.delete(host);
+      });
+      const todo = [...want.keys()].filter(h => !PLATES.has(h));
+      if (!todo.length) return;
+      const lib = await glassLib(); if (!lib) return;
+      todo.forEach(host => {
+        if (!host.isConnected || PLATES.has(host)) return;
+        const cs = getComputedStyle(host);
+        host.classList.add('cbx-glass'); if (cs.position === 'static') host.classList.add('cbx-rel');
+        const plate = document.createElement('div'); plate.className = 'cbx-plate';
+        host.appendChild(plate); fitZoom(plate);
+        const root = lib.createRoot(plate);
+        root.render(lib.h(lib.Glass, { optics: want.get(host), radius: parseFloat(cs.borderTopLeftRadius) || 16,
+          style: { position: 'absolute', inset: 0, borderRadius: 'inherit', background: 'transparent' } }, ''));
+        host.classList.add('cbx-on');
+        PLATES.set(host, { plate, root });
+      });
+    }, 120);
+  }
+
   // Billing Explained. On Auto, unstyled and right after a visible breakdown it stays where the page
   // puts it (inside / under the breakdown); otherwise it moves into its own block.
   function billingEl(P, grid, layout, it) {
@@ -560,7 +695,7 @@
     const tog = document.querySelector(P.billing.toggle), body = document.querySelector(P.billing.body);
     if (!tog || !body) return null;
     const bi = layout.indexOf(it), di = layout.findIndex(x => x.k === 'breakdown');
-    const styled = !!(it.style && Object.keys(it.style).some(k => it.style[k] !== '' && it.style[k] != null));
+    const styled = !!(it.theme || (it.style && Object.keys(it.style).some(k => it.style[k] !== '' && it.style[k] != null)));
     const keep = !(it.w && SPAN[it.w]) && !styled && di >= 0 && bi === di + 1 && layout[di].v !== false;
     if (typeof it.label === 'string' && it.label.trim()) overrideText(tog, it.label.trim());
     if (keep) {
@@ -586,12 +721,15 @@
       const tw = document.querySelector(TWINS[k]);
       if (tw && !swap[k]) {
         tw.setAttribute('data-cbx-twin', k);
+        tagTheme(tw, it.theme, true);
         if (it.v === false) tw.setAttribute('data-cbx-hide', '1');
         css += styleCss('[data-cbx-twin="' + k + '"]', it.style, { P });
       }
       css += partCss('[data-cbk="' + k + '"]', PARTS[k], it.style) + partCss('[data-cbx-twin="' + k + '"]', PARTS[k], it.style);
       if (typeof it.label === 'string' && it.label.trim()) document.querySelectorAll(LABEL_TEXT[k]).forEach(e => overrideText(e, it.label.trim()));
     });
+    // Compact strip / green card follow the Output Strip / Extra Revenue themes
+    Object.keys(THEME_TWINS).forEach(k => { const it = layout.find(x => x.k === k); const e = document.querySelector(THEME_TWINS[k]); if (it && e) tagTheme(e, it.theme, false); });
     // Billing Explained's toggle paints its own background; let the block's colour show through.
     const bl = layout.find(x => x.k === 'billing');
     if (bl && bl.style && okColor(bl.style.bg)) css += LIGHT + '#cbx-billing' + BOOST2 + ' > .calc-toggle{background:transparent !important;}';
@@ -634,6 +772,7 @@
     const el = out ? btnOut : btnIn;
     if (!el) return '';
     el.setAttribute('data-cbk', 'copylink');
+    [btnIn, btnOut].forEach(b => { if (b) tagTheme(b, it.theme, true); });
     if (it.v === false) [btnIn, btnOut].forEach(b => { if (b) b.setAttribute('data-cbx-hide', '1'); });
     const S = '[data-cbx-copy]';
     if (out) {
@@ -762,7 +901,7 @@
     const bh = document.getElementById('cbx-billing-home'), bw = document.getElementById('cbx-billing');
     if (bh && bw) { [...bw.childNodes].forEach(n => bh.parentElement.insertBefore(n, bh)); }
     if (bh) bh.remove(); if (bw) bw.remove();
-    const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off'];
+    const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off', 'data-cbx-theme', 'data-cbx-inv'];
     document.querySelectorAll(A.map(a => '[' + a + ']').join(',')).forEach(el => A.forEach(a => el.removeAttribute(a)));
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
     // Copy Link: back to its home in the inputs column, original label
@@ -839,6 +978,10 @@
     if (g === 'f') { const f = normInputs(CFG.inputs).fields.find(x => x.k === k); return !!(f && f.v === false); }
     const it = normLayout(CFG.layout, CFG.blocks).find(x => x.k === k); return !!(it && it.v === false);
   }
+  function themeName(g, k) {
+    const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === k) : null;
+    return ({ frosted: 'Frosted', liquid: 'Liquid' })[it && it.theme] || 'Classic';
+  }
   function barHtml(g, k) {
     const w = curW(g, k);
     const ws = [['full', 'Full width', '1'], ['twothirds', 'Two-thirds width', '⅔'], ['half', 'Half width', '½'], ['third', 'One-third width', '⅓']]
@@ -850,7 +993,8 @@
       place = '<button type="button" data-cbx="place" title="' + (out ? 'Move back to the inputs column' : 'Move into the results') + '">' + (out ? '⇤ Inputs' : 'Results ⇥') + '</button><span class="cbx-sep"></span>';
     }
     return '<span class="cbx-grip" title="Drag to move">⣿</span><span class="cbx-name">' + esc(labelOf(g, k)) + '</span>' + place + ws +
-      '<span class="cbx-sep"></span><button type="button" data-cbx="style" title="Style this block">🎨</button>' +
+      '<span class="cbx-sep"></span>' + (g === 'b' ? '<button type="button" data-cbx="theme" title="Theme: ' + themeName(g, k) + ' — click for the next (Classic → Frosted glass → Liquid glass)">✦ ' + themeName(g, k) + '</button>' : '') +
+      '<button type="button" data-cbx="style" title="Style this block">🎨</button>' +
       '<button type="button" data-cbx="eye" title="' + (isHidden(g, k) ? 'Show' : 'Hide') + '">' + (isHidden(g, k) ? '🚫' : '👁') + '</button>';
   }
   function renderBars() {
@@ -920,6 +1064,7 @@
       else if (kind === 'eye') post({ op: 'toggle', g, k });
       else if (kind === 'style') post({ op: 'select', g, k, style: true });
       else if (kind === 'place') post({ op: 'place', g, k });
+      else if (kind === 'theme') post({ op: 'theme', g, k });
       else if (kind === 'pos') post({ op: 'pos', pos: v });
       else if (kind === 'pw') post({ op: 'pwidth', width: v });
       return;

@@ -280,10 +280,13 @@
         <details class="cb-section" id="secLayout">
           <summary>Style → Layout</summary>
           <div class="cb-section-body">
-            <div class="cb-sub-h">Blocks — drag ⣿ to reorder · width · ✎ style · 👁</div>
+            <div class="seg-row" style="margin-bottom:10px;"><span>Theme · all blocks</span>
+              <div class="blk-seg" id="themeAll"><button type="button" data-v="">Classic</button><button type="button" data-v="frosted">Frosted glass</button><button type="button" data-v="liquid">Liquid glass</button></div>
+            </div>
+            <div class="cb-sub-h">Blocks — drag ⣿ to reorder · width · ✎ style &amp; theme · 👁</div>
         <div class="lay-list" id="layList"></div>
         <button class="cb-btn ghost" id="addBlock" style="margin-top:9px;width:100%;background:#eef1ff;color:var(--accent);border:1px dashed var(--accent);">➕ Add text block</button>
-        <div class="hint">Widths are a share of the results column (<b>A</b> = default: the two cards side by side, everything else full). Upfront Rev Share Payment only appears when an upfront tier is picked (on Auto it sits beside Premiums You Keep). Styles on Premiums You Keep, Upfront and Current Cost also apply to their compact versions; Upfront and Current Cost can use the compact version in Comfort too. ✎ on Output Strip styles each pill. Returns / Cashback only appear when that feature is on, and are separate blocks on the merchant view only (on the rep calc those results sit inside the cards). Compact density keeps its 4-box layout: order and hide apply there, widths don't.</div>
+        <div class="hint">Themes: <b>Liquid glass</b> = dark, slowly moving background with glass cards; <b>Frosted glass</b> = light glass tinted with Accent 1; <b>Classic</b> = the page's own look (Project Midnight keeps its own). Set one per block in ✎, with ✦ on the canvas, or for all blocks above. Widths are a share of the results column (<b>A</b> = default: the two cards side by side, everything else full). Upfront Rev Share Payment only appears when an upfront tier is picked (on Auto it sits beside Premiums You Keep). Styles on Premiums You Keep, Upfront and Current Cost also apply to their compact versions; Upfront and Current Cost can use the compact version in Comfort too. ✎ on Output Strip styles each pill. Returns / Cashback only appear when that feature is on, and are separate blocks on the merchant view only (on the rep calc those results sit inside the cards). Compact density keeps its 4-box layout: order and hide apply there, widths don't.</div>
           </div>
         </details>
       </div>
@@ -821,6 +824,7 @@
     wrap.appendChild(g);
     if (kind !== 'field' && owner.k === 'cards') wrap.appendChild(cardRowsEditor(st));
     if (kind !== 'field' && owner.k === 'hero') wrap.appendChild(heroOptsEditor(st));
+    if (kind !== 'field') wrap.insertBefore(themeCtl(owner), g);
     if (kind !== 'field' && owner.k === 'copylink') wrap.insertBefore(copyOptsEditor(owner), g);
     if (kind !== 'field' && DETAIL_KEYS[owner.k]) wrap.insertBefore(detailsEditor(owner), wrap.querySelector('.cb-btn') || null);
     if (kind !== 'field' && owner.k === 'billing') wrap.insertBefore(labelOnlyEditor(owner, '▶ 💳 Billing Explained', 'Button text'), g);
@@ -837,6 +841,23 @@
     wrap.appendChild(reset);
     return wrap;
   }
+  // Block theme: Classic / Frosted glass / Liquid glass (one per block)
+  const THEME_OPTS = [['', 'Classic'], ['frosted', 'Frosted glass'], ['liquid', 'Liquid glass']];
+  function themeCtl(item) {
+    const box = document.createElement('div'); box.className = 'mini-grid'; box.style.marginBottom = '6px';
+    box.appendChild(cell('Theme', segCtl(THEME_OPTS, item.theme || '', v => { if (v) item.theme = v; else delete item.theme; renderLayout(); refresh(true); }), true));
+    return box;
+  }
+  function syncThemeAll() {
+    const ts = layout.map(l => l.theme || '');
+    const same = ts.length && ts.every(t => t === ts[0]) ? ts[0] : null;
+    document.querySelectorAll('#themeAll button').forEach(b => b.classList.toggle('on', same !== null && b.dataset.v === same));
+  }
+  document.querySelectorAll('#themeAll button').forEach(b => b.addEventListener('click', () => {
+    layout.forEach(l => { if (b.dataset.v) l.theme = b.dataset.v; else delete l.theme; });
+    renderLayout(); refresh(true);
+  }));
+
   // Text input (optionally with suggested alternatives); empty = the page's own words.
   let _dlSeq = 0;
   function textCtl(val, placeholder, set, alts) {
@@ -1083,7 +1104,8 @@
       row.className = 'lay-item' + (item.v === false ? ' hidden' : '') + (blk ? ' is-block' : '') + (_sel && _sel.g === 'b' && _sel.k === item.k ? ' sel' : '');
       row.dataset.k = item.k;
       const styled = blk ? false : !!(item.style && Object.keys(item.style).some(k => !['rows', 'subHidden', 'perPremium'].includes(k)));
-      const where = item.k === 'copylink' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.place === 'results' ? 'results' : 'inputs') + '</span>' : '';
+      const where = (item.k === 'copylink' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.place === 'results' ? 'results' : 'inputs') + '</span>' : '') +
+        (item.theme ? ' <span title="' + (item.theme === 'liquid' ? 'Liquid glass' : 'Frosted glass') + '" style="font-size:.62rem;font-weight:800;padding:1px 5px;border-radius:5px;' + (item.theme === 'liquid' ? 'background:#151831;color:#c9b8ff;' : 'background:#eef1ff;color:#4a5fc1;border:1px solid #d5d9f0;') + '">' + (item.theme === 'liquid' ? 'LIQ' : 'FRO') + '</span>' : '');
       row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + where + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
       row.appendChild(wSeg(item.w, v => { if (v) item.w = v; else delete item.w; renderLayout(); refresh(true); }));
       const ed = document.createElement('button'); ed.className = 'lay-mini'; ed.title = blk ? 'Edit block' : 'Style'; ed.textContent = '✎';
@@ -1112,6 +1134,7 @@
       if (blk && _openBlk === item.k) list.appendChild(buildBlockEditor(blk));
       if (!blk && _openSec === item.k) list.appendChild(buildStyleEditor(item, 'block'));
     });
+    syncThemeAll();
   }
   function renderLists() { renderFields(); renderLayout(); }
 
@@ -1170,6 +1193,7 @@
         }
         return;
       }
+      case 'theme': if (it) { const i = THEME_OPTS.findIndex(o => o[0] === (it.theme || '')); const nx = THEME_OPTS[(i + 1) % THEME_OPTS.length][0]; if (nx) it.theme = nx; else delete it.theme; select(d.g, d.k, true); refresh(true); } return;
       case 'place': if (it) { if (it.place === 'results') delete it.place; else it.place = 'results'; select(d.g, d.k, true); refresh(true); } return;
       case 'width': if (it) { if (it.w === d.w) delete it.w; else it.w = d.w; select(d.g, d.k, true); refresh(true); } return;
       case 'toggle': if (it) { it.v = it.v === false; select(d.g, d.k, true); refresh(true); } return;
@@ -1207,6 +1231,7 @@
       '</div>';
     const q = s => wrap.querySelector(s);
     q('.be-bg').appendChild(colorCtl(() => st.bg, v => { if (v) st.bg = v; else delete st.bg; }, '#ffffff'));
+    const li = layout.find(l => l.k === blk.id); if (li) wrap.insertBefore(themeCtl(li), wrap.firstChild);
     const fs = fontSelect(st.font, v => { if (v) st.font = v; else delete st.font; refresh(true); }); fs.style.cssText = 'width:100%;font-family:inherit;font-size:.76rem;padding:4px 6px;border:1px solid #d0d4e8;border-radius:6px;';
     q('.be-font').appendChild(fs);
     q('.be-h').value = blk.heading || ''; q('.be-b').value = blk.body || '';
@@ -1324,7 +1349,7 @@
       || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
       || !!($('inLblFont').value || $('inFontSel').value || _inLblSize || _inSize)
       || inputsCfg.fields.some(f => f.w || f.v === false || f.label || (f.style && Object.keys(f.style).length))
-      || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false || l.place || l.label || l.useCompact || (l.pills && l.pills.length)))
+      || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false || l.place || l.label || l.useCompact || l.theme || (l.pills && l.pills.length)))
       || blocks.length > 0;
   }
   // Shared by ☁ Cloud Save and by Copy Custom Link (when a logo image is embedded):
