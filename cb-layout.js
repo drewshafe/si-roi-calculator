@@ -37,6 +37,7 @@
     { k: 'cashback',  label: 'Cashback' },
     { k: 'guarantee', label: 'Guarantee' },
     { k: 'breakdown', label: 'Calculation Breakdown' },
+    { k: 'copylink',  label: 'Copy Link button' },
   ];
   const SPAN = { full: 6, twothirds: 4, half: 3, third: 2 };
   const PCT = { full: '100%', twothirds: 'calc(66.666% - 2.67px)', half: 'calc(50% - 4px)', third: 'calc(33.333% - 5.34px)' };
@@ -56,6 +57,7 @@
       contents: ['#resultsSection > .hero-row', '#resultCardsRow'],
       upAuto: 2,                                                     // Upfront beside Premiums You Keep: 4 + 2 columns
       heroRow: '#resultsSection > .hero-row',
+      copyIn: '#p-save-link-btn', copyOut: '#p-save-link-btn',      // one button, moved into the results when placed there
       blocks: {
         metrics: q('#resultsSection > .key-metrics'),
         hero: q('#resultsSection > .hero-row > .result-hero:not(.upfront-hero)'),
@@ -92,6 +94,7 @@
       contents: ['#widgetMiddleWrapper', '.calc-right .middle-section', '.calc-right .revenue-impact-row', '#cardsRow'],
       upAuto: 3, centerAuto: true,                                   // impact boxes keep their natural width, centred
       heroRow: '.calc-right .revenue-impact-row',
+      copyIn: '#generateProposalLink', copyOut: '#generateProposalLinkStacked', copyHide: '#linkDisplay',
       blocks: {
         metrics: q('.calc-right > .outputs-strip'),
         hero: q('.calc-right .revenue-impact-row > .revenue-impact-box:not(.upfront-box)'),
@@ -136,7 +139,7 @@
     if (!L.length) L = BLOCKS.filter(b => b.k !== 'cost').map(b => ({ k: b.k, v: true }));
     BLOCKS.forEach(b => {
       if (b.k === 'cost' || b.k === 'upfront' || has(b.k)) return;
-      if (b.k === 'breakdown') { L.push({ k: b.k, v: true }); return; }
+      if (b.k === 'breakdown' || b.k === 'copylink') { L.push({ k: b.k, v: true }); return; }
       const bi = idx('breakdown');
       if (bi >= 0) L.splice(bi, 0, { k: b.k, v: true }); else L.push({ k: b.k, v: true });
     });
@@ -368,6 +371,7 @@
       const isVis = it => it.v !== false;
       let firstVis = null, lastVis = null;
       layout.forEach((it, i) => {
+        if (it.k === 'copylink') { css += copyCss(P, N, grid, it, i, ordOf); return; }
         let el = P.blocks[it.k] ? P.blocks[it.k]() : null;
         if (!el) {
           const blk = blocks.find(b => b.id === it.k);
@@ -417,6 +421,51 @@
     afterLayout();
     if (EDIT) renderBars();
   }
+  // Copy Link button. place 'inputs' (default): stays in the inputs column, optional width.
+  // place 'results': becomes a results block (order / width like any other). Own label + style.
+  // Midnight draws it as a marble image with the text baked in, so label + colours are default-theme only.
+  function copyCss(P, N, grid, it, i, ordOf) {
+    let css = '';
+    const btnIn = document.querySelector(P.copyIn), btnOut = document.querySelector(P.copyOut);
+    if (!btnIn) return '';
+    const out = it.place === 'results';
+    [btnIn, btnOut].forEach(b => { if (b) b.setAttribute('data-cbx-copy', '1'); });
+    // Merchant view: one button, moved into the results grid (a placeholder marks its home).
+    if (out && btnIn === btnOut && btnIn.parentElement !== grid) {
+      let ph = document.getElementById('cbx-copy-home');
+      if (!ph) { ph = document.createElement('span'); ph.id = 'cbx-copy-home'; ph.hidden = true; btnIn.parentElement.insertBefore(ph, btnIn); }
+      grid.appendChild(btnIn);
+    }
+    const el = out ? btnOut : btnIn;
+    if (!el) return '';
+    el.setAttribute('data-cbk', 'copylink');
+    if (it.v === false) [btnIn, btnOut].forEach(b => { if (b) b.setAttribute('data-cbx-hide', '1'); });
+    const S = '[data-cbx-copy]';
+    if (out) {
+      ordOf.copylink = (i + 1) * 10;
+      css += '[data-cbk="copylink"]{order:' + ordOf.copylink + ';}';
+      const w = it.w && SPAN[it.w] ? it.w : 'full';
+      css += N + ' [data-cbk="copylink"]' + BOOST2 + '{grid-column:span ' + SPAN[w] + ';}';
+      css += P.gridOn + ' [data-cbk="copylink"]' + BOOST2 + '{display:block;width:100% !important;margin:0' + (P === PAGES.proposal ? ' 0 10px' : '') + ' !important;align-self:start;}';
+      if (btnIn !== btnOut) {                              // rep calc: show the results-side twin, hide the inputs one
+        css += P.copyIn + BOOST2 + (P.copyHide ? ',' + P.copyHide + BOOST2 : '') + '{display:none !important;}';
+        css += 'body:not(.cbx-edit) ' + P.copyOut + BOOST2 + ':not([data-cbx-hide]),body.cbx-edit ' + P.copyOut + BOOST2 + '{display:block !important;}';
+      }
+    } else if (it.w && SPAN[it.w] && it.w !== 'full') {
+      const W = PCT[it.w];
+      css += P.copyIn + BOOST2 + '{width:' + W + ' !important;max-width:' + W + ' !important;flex:0 0 auto !important;align-self:center;display:block;margin-left:auto !important;margin-right:auto !important;}';
+    }
+    // Label: default theme only (Midnight's button is an image).
+    const lbl = typeof it.label === 'string' ? it.label.trim() : '';
+    [btnIn, btnOut].forEach(b => {
+      if (!b) return;
+      if (!b.hasAttribute('data-cbx-orig')) b.setAttribute('data-cbx-orig', b.innerHTML);
+      if (lbl) { b.textContent = lbl; b.setAttribute('data-cbx-label', lbl); }
+    });
+    css += styleCss(S, it.style, { P });
+    return css;
+  }
+
   // Premiums You Keep + Upfront Rev Share Payment. Upfront only exists while a tier is picked (the
   // page toggles its inline display), so "Auto" widths follow it live: side by side when it shows
   // and they're next to each other in the order, Premiums alone otherwise (full on the merchant
@@ -511,6 +560,13 @@
       ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o'].forEach(a => el.removeAttribute(a));
     });
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
+    // Copy Link: back to its home in the inputs column, original label
+    const home = document.getElementById('cbx-copy-home');
+    if (home && P.copyIn) { const b = document.querySelector(P.copyIn); if (b && b.previousSibling !== home) home.parentElement.insertBefore(b, home.nextSibling); }
+    document.querySelectorAll('[data-cbx-copy]').forEach(b => {
+      if (b.hasAttribute('data-cbx-label') && b.hasAttribute('data-cbx-orig')) b.innerHTML = b.getAttribute('data-cbx-orig');
+      b.removeAttribute('data-cbx-label'); b.removeAttribute('data-cbx-copy');
+    });
     document.querySelectorAll('.cbx-grid,.cbx-contents,.cbx-fgrid,.cbx-fmode').forEach(el => el.classList.remove('cbx-grid', 'cbx-contents', 'cbx-fgrid', 'cbx-fmode'));
     document.querySelectorAll('.cbx-bar').forEach(el => el.remove());
     if (!LAST || !CFG) document.querySelectorAll('.cb-block').forEach(el => { if (!CFG) el.remove(); });
@@ -567,7 +623,13 @@
     const w = curW(g, k);
     const ws = [['full', 'Full width', '1'], ['twothirds', 'Two-thirds width', '⅔'], ['half', 'Half width', '½'], ['third', 'One-third width', '⅓']]
       .map(([v, t, s]) => '<button type="button" data-cbx="w" data-v="' + v + '" title="' + t + '"' + (w === v ? ' class="on"' : '') + '>' + s + '</button>').join('');
-    return '<span class="cbx-grip" title="Drag to move">⣿</span><span class="cbx-name">' + esc(labelOf(g, k)) + '</span>' + ws +
+    let place = '';
+    if (g === 'b' && k === 'copylink') {
+      const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'copylink') : null;
+      const out = !!(it && it.place === 'results');
+      place = '<button type="button" data-cbx="place" title="' + (out ? 'Move back to the inputs column' : 'Move into the results') + '">' + (out ? '⇤ Inputs' : 'Results ⇥') + '</button><span class="cbx-sep"></span>';
+    }
+    return '<span class="cbx-grip" title="Drag to move">⣿</span><span class="cbx-name">' + esc(labelOf(g, k)) + '</span>' + place + ws +
       '<span class="cbx-sep"></span><button type="button" data-cbx="style" title="Style this block">🎨</button>' +
       '<button type="button" data-cbx="eye" title="' + (isHidden(g, k) ? 'Show' : 'Hide') + '">' + (isHidden(g, k) ? '🚫' : '👁') + '</button>';
   }
@@ -623,6 +685,7 @@
       if (kind === 'w') post({ op: 'width', g, k, w: v });
       else if (kind === 'eye') post({ op: 'toggle', g, k });
       else if (kind === 'style') post({ op: 'select', g, k, style: true });
+      else if (kind === 'place') post({ op: 'place', g, k });
       else if (kind === 'pos') post({ op: 'pos', pos: v });
       else if (kind === 'pw') post({ op: 'pwidth', width: v });
       return;

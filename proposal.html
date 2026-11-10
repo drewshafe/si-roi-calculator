@@ -3491,7 +3491,7 @@
             const btn = document.getElementById('p-save-link-btn');
             navigator.clipboard.writeText(url).then(() => {
                 btn.textContent = '✓ Copied!';
-                setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2200);
+                setTimeout(() => { btn.textContent = btn.getAttribute('data-cbx-label') || '📋 Copy Link'; }, 2200);
             }).catch(() => { prompt('Copy this link:', url); });
         }
 

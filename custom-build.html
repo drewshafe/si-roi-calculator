@@ -792,6 +792,7 @@
     wrap.appendChild(g);
     if (kind !== 'field' && owner.k === 'cards') wrap.appendChild(cardRowsEditor(st));
     if (kind !== 'field' && owner.k === 'hero') wrap.appendChild(heroOptsEditor(st));
+    if (kind !== 'field' && owner.k === 'copylink') wrap.insertBefore(copyOptsEditor(owner), g);
     const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cb-btn ghost';
     reset.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
     reset.textContent = 'Reset style';
@@ -823,6 +824,21 @@
       });
     };
     draw();
+    return box;
+  }
+  // Copy Link button: where it sits + its text
+  function copyOptsEditor(item) {
+    const box = document.createElement('div'); box.className = 'mini-grid'; box.style.marginBottom = '4px';
+    box.appendChild(cell('Sits in', segCtl([['inputs', 'Inputs column'], ['results', 'Results']], item.place === 'results' ? 'results' : 'inputs', v => {
+      if (v === 'results') item.place = 'results'; else delete item.place; renderLayout(); refresh(true);
+    }), true));
+    const t = document.createElement('input'); t.type = 'text'; t.placeholder = '📋 Copy Link'; t.value = item.label || '';
+    t.style.cssText = 'width:100%;font-family:inherit;font-size:.8rem;padding:5px 8px;border:1px solid #d0d4e8;border-radius:6px;';
+    t.addEventListener('input', () => { const v = t.value; if (v.trim()) item.label = v; else delete item.label; refresh(false); });
+    box.appendChild(cell('Button text', t, true));
+    const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;';
+    h.textContent = 'In the inputs column, width sizes the button within the column. In the results it orders and sizes like any block. Project Midnight keeps its own marble button.';
+    box.appendChild(h);
     return box;
   }
   function heroOptsEditor(st) {
@@ -900,7 +916,8 @@
       row.className = 'lay-item' + (item.v === false ? ' hidden' : '') + (blk ? ' is-block' : '') + (_sel && _sel.g === 'b' && _sel.k === item.k ? ' sel' : '');
       row.dataset.k = item.k;
       const styled = blk ? false : !!(item.style && Object.keys(item.style).some(k => !['rows', 'subHidden', 'perPremium'].includes(k)));
-      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
+      const where = item.k === 'copylink' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.place === 'results' ? 'results' : 'inputs') + '</span>' : '';
+      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + where + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
       row.appendChild(wSeg(item.w, v => { if (v) item.w = v; else delete item.w; renderLayout(); refresh(true); }));
       const ed = document.createElement('button'); ed.className = 'lay-mini'; ed.title = blk ? 'Edit block' : 'Style'; ed.textContent = '✎';
       ed.addEventListener('click', e => {
@@ -966,7 +983,18 @@
     const arr = d.g === 'f' ? inputsCfg.fields : layout;
     const it = d.k ? arr.find(x => x.k === d.k) : null;
     switch (d.op) {
-      case 'move': if (moveKey(arr, d.k, d.target, !!d.after)) { if (d.g === 'f') inputsCfg.ordered = true; select(d.g, d.k, true); refresh(true); } return;
+      case 'move': {
+        // Copy Link: dragging it among the results places it there; nothing drops onto it while it's in the inputs column.
+        const cl = layout.find(x => x.k === 'copylink');
+        if (d.g === 'b' && d.target === 'copylink' && !(cl && cl.place === 'results')) return;
+        if (moveKey(arr, d.k, d.target, !!d.after)) {
+          if (d.g === 'f') inputsCfg.ordered = true;
+          if (d.g === 'b' && d.k === 'copylink' && cl) cl.place = 'results';
+          select(d.g, d.k, true); refresh(true);
+        }
+        return;
+      }
+      case 'place': if (it) { if (it.place === 'results') delete it.place; else it.place = 'results'; select(d.g, d.k, true); refresh(true); } return;
       case 'width': if (it) { if (it.w === d.w) delete it.w; else it.w = d.w; select(d.g, d.k, true); refresh(true); } return;
       case 'toggle': if (it) { it.v = it.v === false; select(d.g, d.k, true); refresh(true); } return;
       case 'pos': inputsCfg.pos = d.pos; select('p', 'inputs', true); refresh(true); return;
@@ -1119,7 +1147,7 @@
       || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize)
       || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
       || inputsCfg.fields.some(f => f.w || f.v === false || (f.style && Object.keys(f.style).length))
-      || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false))
+      || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false || l.place || l.label))
       || blocks.length > 0;
   }
   // Shared by ☁ Cloud Save and by Copy Custom Link (when a logo image is embedded):
