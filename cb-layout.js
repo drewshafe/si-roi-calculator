@@ -35,10 +35,38 @@
     { k: 'cost',      label: 'Current Cost card' },
     { k: 'returns',   label: 'Returns Savings' },
     { k: 'cashback',  label: 'Cashback' },
-    { k: 'guarantee', label: 'Guarantee' },
     { k: 'breakdown', label: 'Calculation Breakdown' },
+    { k: 'billing',   label: 'Billing Explained' },
     { k: 'copylink',  label: 'Copy Link button' },
   ];
+  // Output strip pills (comfort) — the compact strip's boxes with the same meaning follow them.
+  const PILLS = [
+    { k: 'volume',     label: 'Volume (Monthly / Annual)' },
+    { k: 'avgPremium', label: 'Avg / SI Premium' },
+    { k: 'orders',     label: 'Protected / Opt-in Orders' },
+    { k: 'premiums',   label: 'Premiums' },
+    { k: 'protected',  label: 'Protected / Covered' },
+    { k: 'claims',     label: 'Protected Claims' },
+    { k: 'siFunded',   label: 'SI Funded' },
+    { k: 'postClaim',  label: 'Post-Claim Balance' },
+    { k: 'returns',    label: 'Total Returns' },
+    { k: 'cashback',   label: 'Cashback / Order' },
+  ];
+  // Parts inside a block (selectors cover the merchant view, the rep calc and the compact twin).
+  const PARTS = {
+    hero:    { label: '.impact-label,.hero-label,.co2-lbl', value: '.impact-value,.hero-value,.co2-val', chips: '.impact-pct-line,.co2-pills > *', sub: '#revenueImpactSub,.impact-returns-note,.hero-sub' },
+    upfront: { label: '.impact-label,.hero-label,.co2-up-lbl', value: '.impact-value,.hero-value,.co2-up-val', sub: '.upfront-mo,.hero-sub,.co2-up-mo' },
+    cost:    { label: '.card-header h3,.rc-label,.co2-rb-lbl', value: '.card-total,.rc-total,.co2-rb-val', chips: '.metric-item,.rc-metric', sub: '.metric-item h4,.sub-section-label,.co2-rb-rows' },
+    pill:    { label: '.om-label,.kmp-label,.co2-lbl', value: '.om-value,.om-pair-v,.kmp-value,.kmp-pv,.co2-val', sub: '.om-pair-k,.om-badge,.kmp-pk,.kmp-sub,.kmp-badge,.co2-sub' },
+  };
+  const LABEL_TEXT = {                                   // the element whose words a "Label text" replaces
+    hero: '#impactLabel,#heroLabel,#coKeepLbl',
+    upfront: '#upfrontBubble .impact-label,#p-upfrontHero .hero-label,#coUpfront2 .co2-up-lbl',
+    cost: '#lostRevenueLabel,#costCard .rc-label,#coRbLbl',
+  };
+  const ZOOM = { s: 0.88, l: 1.15, xl: 1.32 };
+  // Compact density's versions of comfort blocks (same markup on both pages)
+  const TWINS = { hero: '#compactOpt .co2-box.co2-keep', upfront: '#coUpfront2', cost: '#coRedBox' };
   const SPAN = { full: 6, twothirds: 4, half: 3, third: 2 };
   const PCT = { full: '100%', twothirds: 'calc(66.666% - 2.67px)', half: 'calc(50% - 4px)', third: 'calc(33.333% - 5.34px)' };
   const SIZE = { s: '90%', m: '', l: '112%', xl: '125%' };
@@ -66,9 +94,14 @@
         cost: byId('costCard'),
         returns: byId('returnsResultBlock'),
         cashback: byId('cashbackResultBlock'),
-        guarantee: byId('guaranteeResultBlock'),
         breakdown: byId('p-calcBreakdown'),
       },
+      pills: {
+        volume: ['#p-volumePill'], avgPremium: ['#avgPremiumPill'], orders: ['#p-ordersPill'],
+        premiums: [() => up('p-premiumsLabel')], protected: ['#r-protectedClaimsPill'], siFunded: ['#p-siFundedPill'],
+        postClaim: [() => up('r-balanceLabel')],
+      },
+      billing: { toggle: '#p-calcBreakdown .flow-toggle', body: '#p-billingBody', after: '#p-calcBreakdown' },
       paint: {},                                                     // where a block's background goes (default: the block)
       compactBox: '#compactOpt',                                     // compact density's stand-in for metrics/hero/cards/cost
       costHiddenRow: '#resultCardsRow.cost-hidden',
@@ -103,10 +136,16 @@
         cost: byId('currentCostCard'),
         breakdown: q('.calc-right > .calc-breakdown'),
       },
+      pills: {
+        volume: ['#volumeMetric'], avgPremium: ['#avgPremiumMetric'], orders: ['#protectedOrdersSingleMetric', '#roOptinOrdersMetric'],
+        premiums: ['#premiumsMetric'], protected: ['#protectedOrdersMetric', '#roCoveredMetric'], claims: ['#protectedClaimsSingleMetric'],
+        siFunded: ['#siFundedStripMetric'], postClaim: ['#postClaimMetric'], returns: ['#totalReturnsMetric'], cashback: ['#cashbackMetric'],
+      },
+      billing: { toggle: '.calc-right > .calc-breakdown > .flow-toggle', body: '#billingBody', after: '.calc-right > .calc-breakdown' },
       paint: {},
       compactBox: '#compactOutputs, #compactOpt',
       costHiddenRow: '#cardsRow.cost-hidden',
-      bleed: { metrics: 1, breakdown: 1 },   // full-bleed strips: reach the column edges when full width
+      bleed: { metrics: 1, breakdown: 1, billing: 1 },   // full-bleed strips: reach the column edges when full width
       fieldBox: '.inputs-strip', fieldRows: ['#coreInputsRow', '#secondaryInputsRow'],
       fields: {
         orders: byId('ordersGroup'), aov: byId('aovGroup'), claims: byId('claimsRateGroup'),
@@ -123,6 +162,9 @@
       hdrMain: '.top-strip .view-selector label',
     },
   };
+  // Compact strip boxes that mirror comfort pills
+  const PILL_TWINS = { avgPremium: () => up('coAvgPremLbl'), premiums: () => up('coPremLbl'), postClaim: () => up('coPostLbl') };
+  function up(id) { const e = document.getElementById(id); return e ? e.parentElement : null; }
   function fg(inputId) { const i = document.getElementById(inputId); return i ? i.closest('.field-group') : null; }
   function page() {
     if (document.querySelector('.proposal-layout')) return PAGES.proposal;
@@ -133,16 +175,20 @@
   // ── Config normalisation (old builds → today's shape, nothing lost) ──────────────────────
   function normLayout(layout, blocks) {
     let L = (Array.isArray(layout) ? layout : []).map(it => (typeof it === 'string') ? { k: it, v: true } : Object.assign({}, it));
-    L = L.filter(it => it && it.k);
+    L = L.filter(it => it && it.k && it.k !== 'guarantee');
     const has = k => L.some(it => it.k === k);
     const idx = k => L.findIndex(it => it.k === k);
     if (!L.length) L = BLOCKS.filter(b => b.k !== 'cost').map(b => ({ k: b.k, v: true }));
     BLOCKS.forEach(b => {
-      if (b.k === 'cost' || b.k === 'upfront' || has(b.k)) return;
+      if (b.k === 'cost' || b.k === 'upfront' || b.k === 'billing' || has(b.k)) return;
       if (b.k === 'breakdown' || b.k === 'copylink') { L.push({ k: b.k, v: true }); return; }
       const bi = idx('breakdown');
       if (bi >= 0) L.splice(bi, 0, { k: b.k, v: true }); else L.push({ k: b.k, v: true });
     });
+    if (!has('billing')) {                                // Billing Explained: right after the breakdown (where it lives today)
+      const bi = idx('breakdown');
+      L.splice(bi >= 0 ? bi + 1 : L.length, 0, { k: 'billing', v: true });
+    }
     if (!has('upfront')) {                                // older builds: Upfront lived inside the hero row
       const hi = idx('hero');
       L.splice(hi + 1, 0, { k: 'upfront', v: L[hi].v !== false });
@@ -182,6 +228,57 @@
     document.head.appendChild(l);
   }
   const list = (sels, suffix) => sels.split(',').map(s => s.trim() + (suffix || '')).join(',');
+  const BOOST3 = BOOST2 + ':not(#cbx-n3)';             // parts inside a block beat the block's own text colour
+  const under = (host, sels) => sels.split(',').map(p => host + ' ' + p.trim()).join(',');
+  const zoomOf = v => ZOOM[v] || null;
+
+  // ── Text overrides (labels, button text) ── kept in place when the page re-renders its text.
+  let OV = [];
+  function lastText(el) {
+    let t = null;
+    el.childNodes.forEach(n => { if (n.nodeType === 3 && n.data.trim()) t = n; });
+    return t;
+  }
+  function overrideText(el, text) {
+    if (!el || !text) return;
+    const mixed = () => [...el.children].some(c => !c.classList.contains('cbx-bar'));
+    const read = () => mixed() ? ((lastText(el) || {}).data || '') : el.textContent;
+    const rec = { el, orig: read(), mixed: mixed() };
+    const put = () => {
+      if (rec.mixed) { const t = lastText(el); const want = ' ' + text; if (t && t.data !== want) t.data = want; }
+      else if (el.textContent !== text) el.textContent = text;
+    };
+    put();
+    rec.mo = new MutationObserver(put);
+    rec.mo.observe(el, { childList: true, characterData: true, subtree: true });
+    OV.push(rec);
+  }
+  function clearOverrides() {
+    OV.forEach(r => {
+      r.mo.disconnect();
+      if (r.mixed) { const t = lastText(r.el); if (t) t.data = r.orig; } else r.el.textContent = r.orig;
+    });
+    OV = [];
+  }
+
+  // Parts of a block (label / value / detail / chips). host = a selector for the block element(s).
+  function partCss(host, parts, st) {
+    if (!st || !parts) return '';
+    let css = '';
+    const H = h => h + BOOST3;
+    const L = (sels, decl) => sels ? under(LIGHT + H(host), sels) + '{' + decl + '}' : '';
+    if (okColor(st.labelColor)) css += L(parts.label, 'color:' + st.labelColor + ' !important;text-shadow:none !important;');
+    if (okColor(st.valueColor)) css += L(parts.value, 'color:' + st.valueColor + ' !important;');
+    if (okColor(st.subColor)) css += L(parts.sub, 'color:' + st.subColor + ' !important;') + L(parts.sub ? parts.sub.split(',').map(x => x + ' *').join(',') : '', 'color:' + st.subColor + ' !important;');
+    if (parts.chips) {
+      if (okColor(st.chipBg)) css += L(parts.chips, 'background:' + st.chipBg + ' !important;box-shadow:none !important;');
+      if (okColor(st.chipColor)) css += L(parts.chips, 'color:' + st.chipColor + ' !important;') + L(parts.chips.split(',').map(x => x + ' *').join(','), 'color:' + st.chipColor + ' !important;');
+      if (st.hideChips) css += under(H(host), parts.chips) + '{display:none !important;}';
+    }
+    if (zoomOf(st.labelSize)) css += under(H(host), parts.label) + '{zoom:' + zoomOf(st.labelSize) + ';}';
+    if (zoomOf(st.valueSize)) css += under(H(host), parts.value) + '{zoom:' + zoomOf(st.valueSize) + ';}';
+    return css;
+  }
 
   // ── Static CSS (grid machinery + editor chrome) ───────────────────────────────────────────
   function baseCss(P) {
@@ -209,6 +306,15 @@
       css += N + ' ' + P.gridOn + '>[data-cbx-last][data-cbx-bleed]{margin-bottom:-14px;}';
       css += N + ' ' + P.gridOn + ' .revenue-impact-row{margin:0;}';
     }
+    // Compact versions placed in the comfort results (Upfront bar / Current Cost badge)
+    css += '[data-cbx-off]{display:none !important;}';
+    css += P.gridOn + ' #coRedBox[data-cbk]' + BOOST + '{position:relative;top:auto;right:auto;max-width:none;align-self:start;margin:0' + (P === PAGES.proposal ? ' 0 10px' : '') + ';}';
+    css += P.gridOn + ' #coUpfront2[data-cbk]' + BOOST + '{margin:0' + (P === PAGES.proposal ? ' 0 10px' : '') + ';align-self:start;}';
+    // Billing Explained as its own block
+    css += '#cbx-billing{min-width:0;}';
+    if (P === PAGES.proposal) css += '#cbx-billing{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:10px;overflow:hidden;}.theme-midnight #cbx-billing{background:#0e0e16;}';
+    // Hidden compact strip boxes: the strip closes the gap
+    css += 'body:not(.cbx-edit) .co2-strip:has(> [data-cbx-hide]){display:flex !important;gap:8px;}body:not(.cbx-edit) .co2-strip:has(> [data-cbx-hide]) > *{flex:1 1 0;}';
     // Text blocks
     css += '.cb-block{box-sizing:border-box;}';
     css += '.theme-midnight .cb-block{color:#e8e8ee;}';
@@ -217,7 +323,11 @@
     css += 'body.cbx-edit [data-cbx-hide]{opacity:.38;filter:grayscale(.6);}';
     // ── On-canvas editor chrome ──
     css += 'body.cbx-edit [data-cbk],body.cbx-edit [data-cbf],body.cbx-edit [data-cbp]{outline:1.5px dashed rgba(102,117,255,.55);outline-offset:3px;cursor:pointer;}';
-    css += 'body.cbx-edit [data-cbk]:not(.lgc-host),body.cbx-edit [data-cbf]{position:relative;}';
+    css += 'body.cbx-edit [data-cbx-pill],body.cbx-edit [data-cbx-twin]{outline:1.5px dotted rgba(102,117,255,.6);outline-offset:1px;cursor:pointer;}';
+    css += 'body.cbx-edit [data-cbx-pill]:hover,body.cbx-edit [data-cbx-twin]:hover{outline:2px solid rgba(102,117,255,.8);}';
+    css += 'body.cbx-edit [data-cbk]:not(.lgc-host),body.cbx-edit [data-cbf],body.cbx-edit [data-cbx-pill]:not(.lgc-host),body.cbx-edit [data-cbx-twin]:not(.lgc-host):not(#coRedBox){position:relative;}';
+    css += 'body.cbx-edit [data-cbx-pill]>.cbx-bar,body.cbx-edit [data-cbx-twin]>.cbx-bar{opacity:0;transition:opacity .12s;top:-10px;left:50%;transform:translateX(-50%);padding:2px 3px;font-size:10px;}';
+    css += 'body.cbx-edit [data-cbx-pill]:hover>.cbx-bar,body.cbx-edit [data-cbx-twin]:hover>.cbx-bar,body.cbx-edit .cbx-sel>.cbx-bar{opacity:1;}';
     css += 'body.cbx-edit [data-cbp]{outline-offset:-3px;}';
     css += 'body.cbx-edit [data-cbk]:hover,body.cbx-edit [data-cbf]:hover{outline:2px solid rgba(102,117,255,.75);}';
     css += 'body.cbx-edit .cbx-sel{outline:2.5px solid #6675ff !important;box-shadow:0 0 0 6px rgba(102,117,255,.16);}';
@@ -255,6 +365,7 @@
     if (!st) { st = document.createElement('style'); st.id = 'cbx-css'; }
     document.head.appendChild(st);                       // keep it last so it wins ties with later branding styles
     clear(P);
+    watchDensity(P);
     if (!cfg) { st.textContent = ''; afterLayout(); return; }
     const b = cfg.branding || {};
     const N = P.root + ':not(.density-compact)';
@@ -283,6 +394,13 @@
     } else if (b.inputBorderColor && okColor(b.inputBorderColor)) {
       css += LIGHT + list(P.inField, BOOST) + '{border:' + P.inBorderDef + 'px solid ' + b.inputBorderColor + ' !important;}';
     }
+
+    // Label + input typography (both themes)
+    const inFields = P.inField.split(',').map(x => x.trim()).filter(x => !/select$/.test(x)).join(',');
+    if (b.inputLabelFont) { loadFont(b.inputLabelFont); css += list(P.inLabel, BOOST) + '{font-family:' + fontStack(b.inputLabelFont) + ' !important;}'; }
+    if (zoomOf(b.inputLabelSize)) css += list(P.inLabel, BOOST) + '{zoom:' + zoomOf(b.inputLabelSize) + ';}';
+    if (b.inputFont) { loadFont(b.inputFont); css += list(P.inField, BOOST) + '{font-family:' + fontStack(b.inputFont) + ' !important;}'; }
+    if (zoomOf(b.inputSize)) css += list(inFields, BOOST) + '{zoom:' + zoomOf(b.inputSize) + ';}';
 
     // ── Inputs column: position + width ──
     const inp = normInputs(cfg.inputs);
@@ -317,6 +435,7 @@
       if (!el) return;
       el.setAttribute('data-cbf', f.k);
       if (f.v === false) el.setAttribute('data-cbx-hide', '1');
+      if (typeof f.label === 'string' && f.label.trim()) el.querySelectorAll('label').forEach(l => overrideText(l, f.label.trim()));
       const S = '[data-cbf="' + f.k + '"]';
       if (inp.ordered) css += N + ' ' + S + '{order:' + (10 + i) + ';}';
       if (f.w && SPAN[f.w]) {
@@ -358,8 +477,13 @@
     const grid = document.querySelector(P.grid);
     // Premiums You Keep + Upfront both on Auto and next to each other: keep the page's own row
     // (exactly today's look); unwrap it once either one is moved apart, resized or hidden.
+    const rootEl = document.querySelector(P.root);
+    const compactNow = !!(rootEl && rootEl.classList.contains('density-compact'));
+    // "Use the compact version" (comfort only): the compact twin becomes the block.
+    const swap = {};
+    ['upfront', 'cost'].forEach(k => { const it = layout.find(x => x.k === k); swap[k] = !!(it && it.useCompact && !compactNow && document.querySelector(TWINS[k])); });
     const hi = layout.findIndex(x => x.k === 'hero'), ui = layout.findIndex(x => x.k === 'upfront');
-    const keepRow = hi >= 0 && ui >= 0 && Math.abs(hi - ui) === 1 && layout[hi].v !== false && layout[ui].v !== false &&
+    const keepRow = !swap.upfront && hi >= 0 && ui >= 0 && Math.abs(hi - ui) === 1 && layout[hi].v !== false && layout[ui].v !== false &&
       !(layout[hi].w && SPAN[layout[hi].w]) && !(layout[ui].w && SPAN[layout[ui].w]);
     if (grid) {
       grid.classList.add('cbx-grid');
@@ -373,6 +497,13 @@
       layout.forEach((it, i) => {
         if (it.k === 'copylink') { css += copyCss(P, N, grid, it, i, ordOf); return; }
         let el = P.blocks[it.k] ? P.blocks[it.k]() : null;
+        if (swap[it.k]) {                                  // compact twin stands in for the comfort block
+          const tw = document.querySelector(TWINS[it.k]);
+          if (el) el.setAttribute('data-cbx-off', '1');
+          if (tw.parentElement !== grid) { const ph = document.createElement('span'); ph.hidden = true; ph.id = 'cbx-home-' + it.k; tw.parentElement.insertBefore(ph, tw); grid.appendChild(tw); }
+          el = tw;
+        }
+        if (it.k === 'billing') { el = billingEl(P, grid, layout, it); if (!el) return; }
         if (!el) {
           const blk = blocks.find(b => b.id === it.k);
           if (blk) el = textBlock(grid, blk);
@@ -385,13 +516,14 @@
         else { if (firstVis == null) firstVis = el; lastVis = el; }
         const w = it.w && SPAN[it.w] ? it.w : ((it.k === 'cards' || it.k === 'cost') ? 'half' : 'full');
         if ((it.k === 'hero' || it.k === 'upfront') && keepRow) { /* inside the page's own row */ }
-        else if (it.k === 'hero' || it.k === 'upfront') css += pairCss(P, N, layout, it, w);
+        else if (it.k === 'hero' || it.k === 'upfront') css += pairCss(P, N, layout, it, w, swap.upfront);
         else css += N + ' [data-cbk="' + it.k + '"]' + BOOST2 + '{grid-column:span ' + SPAN[w] + ';}';
         if (it.k === 'cards') css += N + ' ' + P.costHiddenRow + '>[data-cbk="cards"]' + BOOST2 + '{grid-column:1/-1;justify-self:center;width:' + (w === 'full' ? '100%' : PCT[w === 'half' ? 'half' : w]) + ';}';
         if (P.bleed && P.bleed[it.k] && w === 'full') el.setAttribute('data-cbx-bleed', '1');
         const textBlk = blocks.find(b => b.id === it.k);
         if (!textBlk) css += styleCss('[data-cbk="' + it.k + '"]', it.style, { paint: P.paint[it.k], P });
       });
+      css += detailCss(P, layout, swap);
       if (firstVis) firstVis.setAttribute('data-cbx-first', '1');
       if (lastVis) lastVis.setAttribute('data-cbx-last', '1');
       // Unmanaged grid children keep their DOM position relative to the managed blocks.
@@ -421,6 +553,69 @@
     afterLayout();
     if (EDIT) renderBars();
   }
+  // Billing Explained. On Auto, unstyled and right after a visible breakdown it stays where the page
+  // puts it (inside / under the breakdown); otherwise it moves into its own block.
+  function billingEl(P, grid, layout, it) {
+    if (!P.billing) return null;
+    const tog = document.querySelector(P.billing.toggle), body = document.querySelector(P.billing.body);
+    if (!tog || !body) return null;
+    const bi = layout.indexOf(it), di = layout.findIndex(x => x.k === 'breakdown');
+    const styled = !!(it.style && Object.keys(it.style).some(k => it.style[k] !== '' && it.style[k] != null));
+    const keep = !(it.w && SPAN[it.w]) && !styled && di >= 0 && bi === di + 1 && layout[di].v !== false;
+    if (typeof it.label === 'string' && it.label.trim()) overrideText(tog, it.label.trim());
+    if (keep) {
+      tog.setAttribute('data-cbx-twin', 'billing');
+      if (it.v === false) { tog.setAttribute('data-cbx-hide', '1'); body.setAttribute('data-cbx-hide', '1'); }
+      return null;
+    }
+    let wrap = document.getElementById('cbx-billing');
+    if (!wrap) { wrap = document.createElement('div'); wrap.id = 'cbx-billing'; wrap.className = P === PAGES.calc ? 'calc-breakdown' : ''; }
+    const ph = document.createElement('span'); ph.hidden = true; ph.id = 'cbx-billing-home';
+    tog.parentElement.insertBefore(ph, tog);
+    wrap.appendChild(tog); wrap.appendChild(body);
+    grid.appendChild(wrap);
+    return wrap;
+  }
+
+  // Deeper styling: Premiums You Keep / Upfront / Current Cost parts + their compact twins, the
+  // output strip's pills (+ the compact strip boxes that mirror them), and label text overrides.
+  function detailCss(P, layout, swap) {
+    let css = '';
+    ['hero', 'upfront', 'cost'].forEach(k => {
+      const it = layout.find(x => x.k === k); if (!it) return;
+      const tw = document.querySelector(TWINS[k]);
+      if (tw && !swap[k]) {
+        tw.setAttribute('data-cbx-twin', k);
+        if (it.v === false) tw.setAttribute('data-cbx-hide', '1');
+        css += styleCss('[data-cbx-twin="' + k + '"]', it.style, { P });
+      }
+      css += partCss('[data-cbk="' + k + '"]', PARTS[k], it.style) + partCss('[data-cbx-twin="' + k + '"]', PARTS[k], it.style);
+      if (typeof it.label === 'string' && it.label.trim()) document.querySelectorAll(LABEL_TEXT[k]).forEach(e => overrideText(e, it.label.trim()));
+    });
+    // Billing Explained's toggle paints its own background; let the block's colour show through.
+    const bl = layout.find(x => x.k === 'billing');
+    if (bl && bl.style && okColor(bl.style.bg)) css += LIGHT + '#cbx-billing' + BOOST2 + ' > .calc-toggle{background:transparent !important;}';
+    const m = layout.find(x => x.k === 'metrics');
+    const cfgPills = m && Array.isArray(m.pills) ? m.pills : [];
+    PILLS.map(x => cfgPills.find(c => c && c.k === x.k) || { k: x.k, v: true }).forEach(pl => {
+      const els = pillEls(P, pl.k); if (!els.length) return;
+      els.forEach(e => {
+        e.setAttribute('data-cbx-pill', pl.k);
+        if (pl.v === false) e.setAttribute('data-cbx-hide', '1');
+        if (typeof pl.label === 'string' && pl.label.trim()) { const lb = e.querySelector(PARTS.pill.label); if (lb) overrideText(lb, pl.label.trim()); }
+      });
+      const S = '[data-cbx-pill="' + pl.k + '"]';
+      css += styleCss(S, pl.style, { P }) + partCss(S, PARTS.pill, pl.style);
+    });
+    return css;
+  }
+  function pillEls(P, k) {
+    const out = [];
+    ((P.pills || {})[k] || []).forEach(x => { const e = typeof x === 'function' ? x() : document.querySelector(x); if (e) out.push(e); });
+    const tw = PILL_TWINS[k] && PILL_TWINS[k](); if (tw) out.push(tw);
+    return out;
+  }
+
   // Copy Link button. place 'inputs' (default): stays in the inputs column, optional width.
   // place 'results': becomes a results block (order / width like any other). Own label + style.
   // Midnight draws it as a marble image with the text baked in, so label + colours are default-theme only.
@@ -470,11 +665,11 @@
   // page toggles its inline display), so "Auto" widths follow it live: side by side when it shows
   // and they're next to each other in the order, Premiums alone otherwise (full on the merchant
   // view, natural width centred on the rep calc — the look before blocks existed).
-  function pairCss(P, N, layout, it, w) {
+  function pairCss(P, N, layout, it, w, noPair) {
     const S = '[data-cbk="' + it.k + '"]' + BOOST2;
     const other = it.k === 'hero' ? 'upfront' : 'hero';
     const i = layout.findIndex(x => x.k === it.k), j = layout.findIndex(x => x.k === other);
-    const paired = j >= 0 && Math.abs(i - j) === 1 && layout[j].v !== false && it.v !== false;
+    const paired = !noPair && j >= 0 && Math.abs(i - j) === 1 && layout[j].v !== false && it.v !== false;
     const first = paired && i < j;
     const otherIt = j >= 0 ? layout[j] : null;
     const explicit = !!(it.w && SPAN[it.w]);
@@ -483,7 +678,8 @@
     const upOn = P.gridOn + ':has([data-cbk="upfront"]:not([style*="none"]):not([data-cbx-hide]))';
     let css = '';
     if (explicit) return N + ' ' + S + '{grid-column:span ' + SPAN[w] + ';}';
-    css += N + ' ' + S + '{grid-column:span 6;' + (P.centerAuto ? 'justify-self:center;' : '') + '}';
+    // (the compact upfront bar standing in for the bubble is a full-width strip, not a centred box)
+    css += N + ' ' + S + '{grid-column:span 6;' + (P.centerAuto && !(noPair && it.k === 'upfront') ? 'justify-self:center;' : '') + '}';
     if (!paired) return css;
     // Paired auto width: share the row with the other one
     let span;
@@ -510,6 +706,10 @@
       if (okColor(st.color)) css += LIGHT + S + BOOST2 + ' input,' + LIGHT + S + BOOST2 + ' select{color:' + st.color + ' !important;}';
       if (st.bw != null && st.bw !== '') css += LIGHT + S + BOOST2 + ' input,' + LIGHT + S + BOOST2 + ' select{border:' + (parseInt(st.bw, 10) || 0) + 'px solid ' + (okColor(st.bc) ? st.bc : '#d0d4e8') + ' !important;}';
       else if (okColor(st.bc)) css += LIGHT + S + BOOST2 + ' input,' + LIGHT + S + BOOST2 + ' select{border:' + P.inBorderDef + 'px solid ' + st.bc + ' !important;}';
+      if (st.labelFont) { loadFont(st.labelFont); css += S + BOOST2 + ' label{font-family:' + fontStack(st.labelFont) + ' !important;}'; }
+      if (zoomOf(st.labelSize)) css += S + BOOST2 + ' label{zoom:' + zoomOf(st.labelSize) + ';}';
+      if (st.inputFont) { loadFont(st.inputFont); css += S + BOOST2 + ' input,' + S + BOOST2 + ' select,' + S + BOOST2 + ' .itype-btn{font-family:' + fontStack(st.inputFont) + ' !important;}'; }
+      if (zoomOf(st.inputSize)) css += S + BOOST2 + ' input:not(.input-with-type input),' + S + BOOST2 + ' .input-with-type,' + S + BOOST2 + ' select{zoom:' + zoomOf(st.inputSize) + ';}';
     } else {
       if (okColor(st.bg)) css += LIGHT + tgt + BOOST2 + '{background:' + st.bg + ' !important;}';
       if (okColor(st.color)) css += LIGHT + S + BOOST2 + ',' + LIGHT + S + BOOST2 + ' *:not(svg):not(path):not(.cbx-bar):not(.cbx-bar *){color:' + st.color + ' !important;}';
@@ -556,9 +756,14 @@
   }
 
   function clear(P) {
-    document.querySelectorAll('[data-cbk],[data-cbf],[data-cbp],[data-cbx-hide],[data-cbx-bleed],[data-cbx-first],[data-cbx-last],[data-cbx-o]').forEach(el => {
-      ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o'].forEach(a => el.removeAttribute(a));
-    });
+    clearOverrides();
+    // Compact twins back into the compact box; Billing Explained back under the breakdown
+    ['upfront', 'cost'].forEach(k => { const ph = document.getElementById('cbx-home-' + k), tw = document.querySelector(TWINS[k]); if (ph && tw) ph.parentElement.insertBefore(tw, ph); if (ph) ph.remove(); });
+    const bh = document.getElementById('cbx-billing-home'), bw = document.getElementById('cbx-billing');
+    if (bh && bw) { [...bw.childNodes].forEach(n => bh.parentElement.insertBefore(n, bh)); }
+    if (bh) bh.remove(); if (bw) bw.remove();
+    const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off'];
+    document.querySelectorAll(A.map(a => '[' + a + ']').join(',')).forEach(el => A.forEach(a => el.removeAttribute(a)));
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
     // Copy Link: back to its home in the inputs column, original label
     const home = document.getElementById('cbx-copy-home');
@@ -572,6 +777,19 @@
     if (!LAST || !CFG) document.querySelectorAll('.cb-block').forEach(el => { if (!CFG) el.remove(); });
     // Legacy markers from the pre-SICB applyCustomBuild
     document.querySelectorAll('[data-cb-hidden]').forEach(el => el.removeAttribute('data-cb-hidden'));
+  }
+
+  // Density can change live (rep calc Display menu): re-apply so compact twins / swaps follow.
+  let _densMo = null, _dens = null;
+  function watchDensity(P) {
+    if (_densMo) return;
+    const r = document.querySelector(P.root); if (!r) return;
+    _dens = r.classList.contains('density-compact');
+    _densMo = new MutationObserver(() => {
+      const d = r.classList.contains('density-compact');
+      if (d !== _dens) { _dens = d; if (CFG) apply(CFG); }
+    });
+    _densMo.observe(r, { attributes: true, attributeFilter: ['class'] });
   }
 
   let _fitT = null;
@@ -604,6 +822,7 @@
   const post = msg => { try { if (window.parent && window.parent !== window) window.parent.postMessage(Object.assign({ siCBx: 'op' }, msg), '*'); } catch (e) {} };
   const labelOf = (g, k) => {
     if (g === 'f') { const f = FIELDS.find(x => x.k === k); return f ? f.label : k; }
+    if (g === 'm') { const pl = PILLS.find(x => x.k === k); return pl ? pl.label : k; }
     const b = BLOCKS.find(x => x.k === k); if (b) return b.label;
     const blk = ((CFG && CFG.blocks) || []).find(x => x.id === k);
     return blk ? ('Text · ' + (blk.heading || blk.body || 'block').slice(0, 20)) : k;
@@ -616,6 +835,7 @@
   }
   function isHidden(g, k) {
     if (!CFG) return false;
+    if (g === 'm') { const m = normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'metrics'); const pl = m && (m.pills || []).find(x => x.k === k); return !!(pl && pl.v === false); }
     if (g === 'f') { const f = normInputs(CFG.inputs).fields.find(x => x.k === k); return !!(f && f.v === false); }
     const it = normLayout(CFG.layout, CFG.blocks).find(x => x.k === k); return !!(it && it.v === false);
   }
@@ -650,6 +870,17 @@
       el.appendChild(bar);
       if (SEL && SEL.g === g && SEL.k === k) el.classList.add('cbx-sel');
     });
+    // Output-strip pills + compact twins: style / hide only (they move with their block)
+    document.querySelectorAll('[data-cbx-pill],[data-cbx-twin]').forEach(el => {
+      const pill = el.hasAttribute('data-cbx-pill');
+      const g = pill ? 'm' : 'b', k = el.getAttribute(pill ? 'data-cbx-pill' : 'data-cbx-twin');
+      const bar = document.createElement('div');
+      bar.className = 'cbx-bar'; bar.setAttribute('data-g', g); bar.setAttribute('data-k', k);
+      const hid = isHidden(g, k);
+      bar.innerHTML = '<button type="button" data-cbx="style" title="Style ' + esc(labelOf(g, k)) + '">🎨</button><button type="button" data-cbx="eye" title="' + (hid ? 'Show' : 'Hide') + '">' + (hid ? '🚫' : '👁') + '</button>';
+      el.appendChild(bar);
+      if (SEL && SEL.g === g && SEL.k === k) el.classList.add('cbx-sel');
+    });
   }
   function setEdit(on, sel) {
     EDIT = !!on; SEL = sel || null;
@@ -659,7 +890,7 @@
       // Results re-render (calculate) can replace block contents; put the toolbars back.
       _mo = new MutationObserver(() => {
         if (!EDIT) return;
-        const missing = [...document.querySelectorAll('[data-cbk],[data-cbf]')].some(el => !el.querySelector(':scope > .cbx-bar'));
+        const missing = [...document.querySelectorAll('[data-cbk],[data-cbf],[data-cbx-pill],[data-cbx-twin]')].some(el => !el.querySelector(':scope > .cbx-bar'));
         if (missing) { clearTimeout(_mo._t); _mo._t = setTimeout(renderBars, 60); }
       });
       _mo.observe(document.body, { childList: true, subtree: true });
@@ -670,8 +901,11 @@
     }
   }
   function findEl(g, k) {
-    const a = g === 'f' ? 'data-cbf' : g === 'p' ? 'data-cbp' : 'data-cbk';
-    return document.querySelector('[' + a + '="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
+    const v = '"' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"';
+    if (g === 'm') return document.querySelector('[data-cbx-pill=' + v + ']');
+    if (g === 'b') { const el = document.querySelector('[data-cbk=' + v + ']'); if (el && el.getClientRects().length) return el; return document.querySelector('[data-cbx-twin=' + v + ']') || el; }
+    const a = g === 'f' ? 'data-cbf' : 'data-cbp';
+    return document.querySelector('[' + a + '=' + v + ']');
   }
 
   // Toolbar clicks + click-to-select
@@ -691,10 +925,10 @@
       return;
     }
     if (e.target.closest && e.target.closest('.cbx-bar')) { e.preventDefault(); e.stopPropagation(); return; }
-    const host = e.target.closest && (e.target.closest('[data-cbf]') || e.target.closest('[data-cbk]') || e.target.closest('[data-cbp]'));
+    const host = e.target.closest && (e.target.closest('[data-cbf]') || e.target.closest('[data-cbx-pill]') || e.target.closest('[data-cbx-twin]') || e.target.closest('[data-cbk]') || e.target.closest('[data-cbp]'));
     if (!host) return;
-    const g = host.hasAttribute('data-cbf') ? 'f' : host.hasAttribute('data-cbk') ? 'b' : 'p';
-    const k = host.getAttribute(g === 'f' ? 'data-cbf' : g === 'b' ? 'data-cbk' : 'data-cbp');
+    const g = host.hasAttribute('data-cbf') ? 'f' : host.hasAttribute('data-cbx-pill') ? 'm' : (host.hasAttribute('data-cbx-twin') || host.hasAttribute('data-cbk')) ? 'b' : 'p';
+    const k = g === 'f' ? host.getAttribute('data-cbf') : g === 'm' ? host.getAttribute('data-cbx-pill') : g === 'p' ? host.getAttribute('data-cbp') : (host.getAttribute('data-cbx-twin') || host.getAttribute('data-cbk'));
     // Buttons inside a block (breakdown toggles, %/# switches) keep working; selection rides along.
     SEL = { g, k };
     document.querySelectorAll('.cbx-sel').forEach(el => el.classList.remove('cbx-sel'));
@@ -754,5 +988,5 @@
   document.addEventListener('pointercancel', () => endDrag(false), true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') endDrag(false); }, true);
 
-  window.SICB = { apply, setEdit, FIELDS, BLOCKS, normLayout, normInputs, get cfg() { return CFG; } };
+  window.SICB = { apply, setEdit, FIELDS, BLOCKS, PILLS, normLayout, normInputs, get cfg() { return CFG; } };
 })();

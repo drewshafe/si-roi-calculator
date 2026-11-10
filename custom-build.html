@@ -258,6 +258,12 @@
               <button type="button" data-v="2">2px</button>
             </div>
           </div>
+          <div class="mini-grid" style="margin-top:10px;">
+            <div class="c"><label>Label font</label><select id="inLblFont"></select></div>
+            <div class="c"><label>Label size</label><div class="blk-seg" id="inLblSize"><button type="button" data-v="s">S</button><button type="button" data-v="" class="on">M</button><button type="button" data-v="l">L</button><button type="button" data-v="xl">XL</button></div></div>
+            <div class="c"><label>Input font</label><select id="inFontSel"></select></div>
+            <div class="c"><label>Input size</label><div class="blk-seg" id="inSizeSeg"><button type="button" data-v="s">S</button><button type="button" data-v="" class="on">M</button><button type="button" data-v="l">L</button><button type="button" data-v="xl">XL</button></div></div>
+          </div>
         </div>
         <div class="cb-sub-h" style="margin-top:14px;">Inputs column</div>
         <div class="seg-row"><span>Position</span>
@@ -268,7 +274,7 @@
         </div>
         <div class="cb-sub-h" style="margin-top:14px;">Fields — drag ⣿ to reorder · width · ✎ style · 👁</div>
         <div class="lay-list" id="fldList"></div>
-        <div class="hint">Width <b>A</b> = the page's own grid; 1 / ⅔ / ½ / ⅓ = share of the inputs column. Hidden fields keep their link values. A field's own style overrides the section defaults. Compact density keeps its grouped layout (styles + hide still apply). Colours apply in the default theme; Project Midnight keeps its own look.</div>
+        <div class="hint">Width <b>A</b> = the page's own grid; 1 / ⅔ / ½ / ⅓ = share of the inputs column. Hidden fields keep their link values. ✎ on a field changes its label text (type your own or pick an alternative) and its own colours, fonts and sizes, which override the section defaults. Compact density keeps its grouped layout (styles + hide still apply). Colours apply in the default theme; Project Midnight keeps its own look.</div>
           </div>
         </details>
         <details class="cb-section" id="secLayout">
@@ -277,7 +283,7 @@
             <div class="cb-sub-h">Blocks — drag ⣿ to reorder · width · ✎ style · 👁</div>
         <div class="lay-list" id="layList"></div>
         <button class="cb-btn ghost" id="addBlock" style="margin-top:9px;width:100%;background:#eef1ff;color:var(--accent);border:1px dashed var(--accent);">➕ Add text block</button>
-        <div class="hint">Widths are a share of the results column (<b>A</b> = default: the two cards side by side, everything else full). Upfront Rev Share Payment only appears when an upfront tier is picked (on Auto it sits beside Premiums You Keep). Returns / Cashback / Guarantee only appear when that feature is on, and are separate blocks on the merchant view only (on the rep calc those results sit inside the cards). Compact density keeps its 4-box layout: order and hide apply there, widths don't.</div>
+        <div class="hint">Widths are a share of the results column (<b>A</b> = default: the two cards side by side, everything else full). Upfront Rev Share Payment only appears when an upfront tier is picked (on Auto it sits beside Premiums You Keep). Styles on Premiums You Keep, Upfront and Current Cost also apply to their compact versions; Upfront and Current Cost can use the compact version in Comfort too. ✎ on Output Strip styles each pill. Returns / Cashback only appear when that feature is on, and are separate blocks on the merchant view only (on the rep calc those results sit inside the cards). Compact density keeps its 4-box layout: order and hide apply there, widths don't.</div>
           </div>
         </details>
       </div>
@@ -399,6 +405,8 @@
   let _sel = null;          // { g:'b'|'f'|'p', k } — block selected on the canvas / in a list
   let _edit = false;        // on-canvas editing
   let _hdrColor = '', _hdrSize = '';
+  let _inLblSize = '', _inSize = '';       // merchant input label / input size (S M L XL)
+  let _openPill = null;                    // output-strip pill whose style editor is open
 
   const $ = id => document.getElementById(id);
   const proposalBase = () => new URL('proposal.html', location.href).href;
@@ -438,6 +446,10 @@
         inputInputColor: _inpInputSet ? $('inpInputColor').value : IN_DEF.text,
         inputBorderW: _inpBorderW !== '' ? _inpBorderW : undefined,
         inputBorderColor: _inpBorderSet ? $('inpBorderColor').value : IN_DEF.border,
+        inputLabelFont: $('inLblFont').value || undefined,
+        inputLabelSize: _inLblSize || undefined,
+        inputFont: $('inFontSel').value || undefined,
+        inputSize: _inSize || undefined,
         hdrColor: _hdrColor || undefined,
         hdrFont: $('hdrFont').value || undefined,
         hdrWeight: $('hdrWeight').value || undefined,
@@ -539,6 +551,12 @@
   $('hdrFont').innerHTML = FONTS.map(f => '<option value="' + f + '">' + (f || 'Brand font') + '</option>').join('');
   $('hdrColorSlot').appendChild(colorCtl(() => _hdrColor, v => { _hdrColor = v || ''; }, '#ffffff'));
   $('hdrFont').addEventListener('change', () => refresh(true));
+  ['inLblFont', 'inFontSel'].forEach(id => { $(id).innerHTML = FONTS.map(f => '<option value="' + f + '">' + (f || 'Default') + '</option>').join(''); $(id).addEventListener('change', () => refresh(true)); });
+  const _segWire = (id, set) => document.querySelectorAll('#' + id + ' button').forEach(btn => btn.addEventListener('click', () => {
+    set(btn.dataset.v); document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b === btn)); refresh(true);
+  }));
+  _segWire('inLblSize', v => _inLblSize = v);
+  _segWire('inSizeSeg', v => _inSize = v);
   $('hdrWeight').addEventListener('change', () => refresh(true));
   document.querySelectorAll('#hdrSize button').forEach(btn => btn.addEventListener('click', () => {
     _hdrSize = btn.dataset.v; document.querySelectorAll('#hdrSize button').forEach(b => b.classList.toggle('on', b === btn)); refresh(true);
@@ -773,15 +791,26 @@
     const set = (k, v) => { if (v === undefined || v === '') delete st[k]; else st[k] = v; };
     const wrap = document.createElement('div'); wrap.className = 'blk-edit';
     const g = document.createElement('div'); g.className = 'mini-grid';
+    const SZ = [['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']];
+    if (kind === 'field') {
+      // Older builds styled the whole field with one font / size: split it into label + input.
+      if (st.font && !st.labelFont && !st.inputFont) { st.labelFont = st.inputFont = st.font; delete st.font; }
+      if (st.size && !st.labelSize && !st.inputSize) { st.labelSize = st.inputSize = st.size; delete st.size; }
+      g.appendChild(cell('Label text', textCtl(owner.label, fieldLabel(owner.k), v => { if (v) owner.label = v; else delete owner.label; }, FIELD_ALTS[owner.k]), true));
+    }
     g.appendChild(cell('Background', colorCtl(() => st.bg, v => set('bg', v), '#ffffff')));
     if (kind === 'field') {
       g.appendChild(cell('Label colour', colorCtl(() => st.label, v => set('label', v), IN_DEF.label)));
       g.appendChild(cell('Input text', colorCtl(() => st.color, v => set('color', v), IN_DEF.text)));
+      g.appendChild(cell('Label font', fontSelect(st.labelFont, v => { set('labelFont', v); refresh(true); })));
+      g.appendChild(cell('Label size', segCtl(SZ, st.labelSize || '', v => { set('labelSize', v); refresh(true); })));
+      g.appendChild(cell('Input font', fontSelect(st.inputFont, v => { set('inputFont', v); refresh(true); })));
+      g.appendChild(cell('Input size', segCtl(SZ, st.inputSize || '', v => { set('inputSize', v); refresh(true); })));
     } else {
       g.appendChild(cell('Text colour', colorCtl(() => st.color, v => set('color', v), '#1f2430')));
+      g.appendChild(cell('Font', fontSelect(st.font, v => { set('font', v); refresh(true); })));
+      g.appendChild(cell('Size', segCtl(SZ, st.size || '', v => { set('size', v); refresh(true); })));
     }
-    g.appendChild(cell('Font', fontSelect(st.font, v => { set('font', v); refresh(true); })));
-    g.appendChild(cell('Size', segCtl([['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']], st.size || '', v => { set('size', v); refresh(true); })));
     g.appendChild(cell('Border px', segCtl([['', 'Def'], ['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']], st.bw == null ? '' : String(st.bw), v => { set('bw', v); refresh(true); })));
     g.appendChild(cell('Border colour', colorCtl(() => st.bc, v => set('bc', v), kind === 'field' ? IN_DEF.border : '#e3e6f0')));
     if (kind !== 'field') {
@@ -793,6 +822,9 @@
     if (kind !== 'field' && owner.k === 'cards') wrap.appendChild(cardRowsEditor(st));
     if (kind !== 'field' && owner.k === 'hero') wrap.appendChild(heroOptsEditor(st));
     if (kind !== 'field' && owner.k === 'copylink') wrap.insertBefore(copyOptsEditor(owner), g);
+    if (kind !== 'field' && DETAIL_KEYS[owner.k]) wrap.insertBefore(detailsEditor(owner), wrap.querySelector('.cb-btn') || null);
+    if (kind !== 'field' && owner.k === 'billing') wrap.insertBefore(labelOnlyEditor(owner, '▶ 💳 Billing Explained', 'Button text'), g);
+    if (kind !== 'field' && owner.k === 'metrics') wrap.appendChild(pillsEditor(owner));
     const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cb-btn ghost';
     reset.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
     reset.textContent = 'Reset style';
@@ -802,6 +834,141 @@
       owner.style = keep; if (!Object.keys(keep).length) delete owner.style;
       renderLists(); refresh(true);
     });
+    wrap.appendChild(reset);
+    return wrap;
+  }
+  // Text input (optionally with suggested alternatives); empty = the page's own words.
+  let _dlSeq = 0;
+  function textCtl(val, placeholder, set, alts) {
+    const w = document.createElement('div');
+    const t = document.createElement('input'); t.type = 'text'; t.placeholder = placeholder || ''; t.value = val || '';
+    t.style.cssText = 'width:100%;font-family:inherit;font-size:.8rem;padding:5px 8px;border:1px solid #d0d4e8;border-radius:6px;';
+    t.addEventListener('input', () => { set(t.value.trim() ? t.value : ''); refresh(false); });
+    w.appendChild(t);
+    if (alts && alts.length) {
+      const dl = document.createElement('datalist'); dl.id = 'cbdl' + (++_dlSeq);
+      dl.innerHTML = alts.map(a => '<option value="' + a.replace(/"/g, '&quot;') + '">').join('');
+      t.setAttribute('list', dl.id); w.appendChild(dl);
+      const chips = document.createElement('div'); chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;';
+      alts.forEach(a => {
+        const c = document.createElement('button'); c.type = 'button'; c.textContent = a;
+        c.style.cssText = 'font-family:inherit;font-size:.64rem;font-weight:700;padding:3px 7px;border:1px solid #d5d9f0;background:#f7f8fc;color:#4a5068;border-radius:999px;cursor:pointer;';
+        c.addEventListener('click', () => { t.value = a; set(a); refresh(true); });
+        chips.appendChild(c);
+      });
+      w.appendChild(chips);
+    }
+    return w;
+  }
+  const FIELD_ALTS = {
+    orders:  ['Monthly Orders', 'Orders / Month', 'Order Volume', 'Monthly Shipments'],
+    aov:     ['AOV', 'Avg Order Value', 'Average Order Value', 'Avg Cart'],
+    claims:  ['Claims Rate %', 'Claim Rate %', 'Issue Rate %', 'Lost / Damaged %'],
+    premium: ['SI Premium %', 'Premium %', 'Protection Price %', 'Shipping Protection %'],
+    attach:  ['Attach Rate %', 'Opt-in Rate %', 'Take Rate %', 'Adoption %'],
+    share:   ['Rev Share % (net claims)', 'Net Rev Share %', 'Revenue Share %', 'Your Share %'],
+  };
+  // Deeper options for Premiums You Keep / Upfront / Current Cost (comfort + compact versions)
+  const DETAIL_KEYS = {
+    hero:    { label: 'Premiums You Keep', chips: 'Breakdown pills' },
+    upfront: { label: 'Upfront Rev Share Payment', compact: true },
+    cost:    { label: 'Current Cost Without ShipInsure', chips: 'Metric tiles', compact: true },
+  };
+  function partsGrid(st, opts) {
+    const set = (k, v) => { if (v === undefined || v === '' || v === false) delete st[k]; else st[k] = v; };
+    const SZ = [['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']];
+    const g = document.createElement('div'); g.className = 'mini-grid';
+    g.appendChild(cell('Label colour', colorCtl(() => st.labelColor, v => set('labelColor', v), '#ffffff')));
+    g.appendChild(cell('Label size', segCtl(SZ, st.labelSize || '', v => { set('labelSize', v); refresh(true); })));
+    g.appendChild(cell('Value colour', colorCtl(() => st.valueColor, v => set('valueColor', v), '#ffffff')));
+    g.appendChild(cell('Value size', segCtl(SZ, st.valueSize || '', v => { set('valueSize', v); refresh(true); })));
+    g.appendChild(cell('Detail text colour', colorCtl(() => st.subColor, v => set('subColor', v), '#ffffff')));
+    if (opts && opts.chips) {
+      g.appendChild(cell(opts.chips, segCtl([['0', 'Show'], ['1', 'Hide']], st.hideChips ? '1' : '0', v => { set('hideChips', v === '1'); refresh(true); })));
+      g.appendChild(cell(opts.chips + ' bg', colorCtl(() => st.chipBg, v => set('chipBg', v), '#ffffff')));
+      g.appendChild(cell(opts.chips + ' text', colorCtl(() => st.chipColor, v => set('chipColor', v), '#1f2430')));
+    }
+    return g;
+  }
+  function detailsEditor(item) {
+    const meta = DETAIL_KEYS[item.k];
+    const st = item.style || (item.style = {});
+    const box = document.createElement('div');
+    box.innerHTML = '<div class="blk-sub" style="margin:8px 0 6px;">Details — comfort + compact versions</div>';
+    const top = document.createElement('div'); top.className = 'mini-grid'; top.style.marginBottom = '7px';
+    top.appendChild(cell('Label text', textCtl(item.label, meta.label, v => { if (v) item.label = v; else delete item.label; }), true));
+    if (meta.compact) {
+      const lab = document.createElement('label'); lab.style.cssText = 'display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0;cursor:pointer;';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!item.useCompact;
+      cb.addEventListener('change', () => { if (cb.checked) item.useCompact = true; else delete item.useCompact; renderLayout(); refresh(true); });
+      lab.append(cb, document.createTextNode('Use the compact version in Comfort'));
+      const c = document.createElement('div'); c.className = 'c full'; c.appendChild(lab); top.appendChild(c);
+    }
+    box.appendChild(top);
+    box.appendChild(partsGrid(st, meta));
+    return box;
+  }
+  function labelOnlyEditor(item, placeholder, title) {
+    const box = document.createElement('div'); box.className = 'mini-grid'; box.style.marginBottom = '4px';
+    box.appendChild(cell(title, textCtl(item.label, placeholder, v => { if (v) item.label = v; else delete item.label; }), true));
+    if (item.k === 'billing') {
+      const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;';
+      h.textContent = 'On Auto, right after the breakdown, it stays where it is today (on the merchant view: inside the breakdown, once that is opened). Move it, give it a width or a style and it becomes its own dropdown.';
+      box.appendChild(h);
+    }
+    return box;
+  }
+  // Output strip pills: each pill styles on its own (compact strip boxes with the same meaning follow)
+  function pillOf(metrics, k) {
+    if (!Array.isArray(metrics.pills)) metrics.pills = [];
+    let pl = metrics.pills.find(x => x.k === k);
+    if (!pl) { pl = { k, v: true }; metrics.pills.push(pl); }
+    return pl;
+  }
+  function pillsEditor(item) {
+    const box = document.createElement('div');
+    box.innerHTML = '<div class="blk-sub" style="margin:10px 0 4px;">Pills — ✎ style · 👁 hide</div>';
+    const rows = document.createElement('div'); rows.className = 'se-rows';
+    SICB.PILLS.forEach(meta => {
+      const pl = (item.pills || []).find(x => x.k === meta.k) || { k: meta.k, v: true };
+      const styled = !!(pl.label || (pl.style && Object.keys(pl.style).length));
+      const r = document.createElement('div'); r.className = 'se-row pill-row' + (_sel && _sel.g === 'm' && _sel.k === meta.k ? ' sel' : ''); r.dataset.k = meta.k;
+      if (_sel && _sel.g === 'm' && _sel.k === meta.k) r.style.cssText = 'border-color:var(--accent);background:#f4f5ff;';
+      r.innerHTML = '<span class="se-row-name" style="cursor:pointer;' + (pl.v === false ? 'color:#b0b6c6;text-decoration:line-through;' : '') + '">' + meta.label + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>' +
+        '<button type="button" class="lay-mini pe-ed" title="Style">✎</button><button type="button" class="lay-mini pe-eye">' + (pl.v === false ? '🚫' : '👁') + '</button>';
+      r.querySelector('.se-row-name').addEventListener('click', () => select('m', meta.k, false));
+      r.querySelector('.pe-ed').addEventListener('click', () => { _openPill = (_openPill === meta.k) ? null : meta.k; select('m', meta.k, false); });
+      r.querySelector('.pe-eye').addEventListener('click', () => { const p = pillOf(item, meta.k); p.v = p.v === false; renderLayout(); refresh(true); });
+      rows.appendChild(r);
+      if (_openPill === meta.k) rows.appendChild(buildPillEditor(item, meta.k));
+    });
+    box.appendChild(rows);
+    const h = document.createElement('div'); h.className = 'hint'; h.style.marginTop = '4px';
+    h.textContent = 'Pills only show when the calc needs them (some depend on Returns / plan type). Avg Premium, Premiums and Post-Claim Balance styles also apply to the compact strip; the compact Premiums You Keep pill takes the Premiums You Keep block\'s style.';
+    box.appendChild(h);
+    return box;
+  }
+  function buildPillEditor(metrics, k) {
+    const pl = pillOf(metrics, k);
+    const st = pl.style || (pl.style = {});
+    const set = (key, v) => { if (v === undefined || v === '') delete st[key]; else st[key] = v; };
+    const wrap = document.createElement('div'); wrap.className = 'blk-edit'; wrap.style.margin = '0 0 4px';
+    const meta = SICB.PILLS.find(x => x.k === k);
+    const top = document.createElement('div'); top.className = 'mini-grid';
+    top.appendChild(cell('Label text', textCtl(pl.label, meta ? meta.label : k, v => { if (v) pl.label = v; else delete pl.label; }), true));
+    top.appendChild(cell('Background', colorCtl(() => st.bg, v => set('bg', v), '#ffffff')));
+    top.appendChild(cell('Font', fontSelect(st.font, v => { set('font', v); refresh(true); })));
+    top.appendChild(cell('Border px', segCtl([['', 'Def'], ['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']], st.bw == null ? '' : String(st.bw), v => { set('bw', v); refresh(true); })));
+    top.appendChild(cell('Border colour', colorCtl(() => st.bc, v => set('bc', v), '#e3e6f0')));
+    const rad = document.createElement('input'); rad.type = 'number'; rad.min = '0'; rad.max = '40'; rad.placeholder = 'Def'; rad.value = st.radius != null ? st.radius : '';
+    rad.addEventListener('input', () => { const n = parseInt(rad.value, 10); set('radius', isNaN(n) ? undefined : n); refresh(false); });
+    top.appendChild(cell('Corner radius px', rad));
+    wrap.appendChild(top);
+    wrap.appendChild(partsGrid(st, null));
+    const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cb-btn ghost';
+    reset.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);';
+    reset.textContent = 'Reset pill';
+    reset.addEventListener('click', () => { delete pl.style; delete pl.label; renderLayout(); refresh(true); });
     wrap.appendChild(reset);
     return wrap;
   }
@@ -951,13 +1118,16 @@
   // Select a block (from a list or from the canvas): highlight it in both places, open its editor.
   function select(g, k, fromCanvas, openStyle) {
     _sel = { g, k };
+    if (g === 'm') { _openSec = 'metrics'; if (openStyle) _openPill = k; }
     if (openStyle) { if (g === 'f') _openFld = k; else if (g === 'b') { if (blockById(k)) _openBlk = k; else _openSec = k; } }
     const sec = g === 'f' || g === 'p' ? $('secInputs') : $('secLayout');
     if (sec && !sec.open) sec.open = true;
     renderLists();
-    const pv = $('pvSel'); if (pv) pv.textContent = '● ' + (g === 'f' ? fieldLabel(k) : g === 'p' ? 'Inputs column' : blockLabel(k));
+    const pillName = g === 'm' ? ((SICB.PILLS.find(x => x.k === k) || {}).label || k) : '';
+    const pv = $('pvSel'); if (pv) pv.textContent = '● ' + (g === 'f' ? fieldLabel(k) : g === 'p' ? 'Inputs column' : g === 'm' ? 'Pill · ' + pillName : blockLabel(k));
     if (fromCanvas) {
-      const row = document.querySelector((g === 'f' ? '#fldList' : '#layList') + ' .lay-item' + (g === 'p' ? '.pinned' : '[data-k="' + k + '"]'));
+      const row = g === 'm' ? document.querySelector('#layList .pill-row[data-k="' + k + '"]')
+        : document.querySelector((g === 'f' ? '#fldList' : '#layList') + ' .lay-item' + (g === 'p' ? '.pinned' : '[data-k="' + k + '"]'));
       if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else syncEdit();
   }
@@ -980,6 +1150,12 @@
     const d = e.data; if (!d || d.siCBx !== 'op') return;
     let src = null; try { src = $('preview').contentWindow; } catch (er) {}
     if (e.source !== src) return;
+    if (d.g === 'm') {                                   // output-strip pill
+      const m = layout.find(x => x.k === 'metrics'); if (!m) return;
+      if (d.op === 'toggle') { const pl = pillOf(m, d.k); pl.v = pl.v === false; select('m', d.k, true); refresh(true); }
+      else if (d.op === 'select') select('m', d.k, true, !!d.style);
+      return;
+    }
     const arr = d.g === 'f' ? inputsCfg.fields : layout;
     const it = d.k ? arr.find(x => x.k === d.k) : null;
     switch (d.op) {
@@ -1146,8 +1322,9 @@
       || ($('accentHex').value || '').toLowerCase() !== '#6675ff'
       || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize)
       || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
-      || inputsCfg.fields.some(f => f.w || f.v === false || (f.style && Object.keys(f.style).length))
-      || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false || l.place || l.label))
+      || !!($('inLblFont').value || $('inFontSel').value || _inLblSize || _inSize)
+      || inputsCfg.fields.some(f => f.w || f.v === false || f.label || (f.style && Object.keys(f.style).length))
+      || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false || l.place || l.label || l.useCompact || (l.pills && l.pills.length)))
       || blocks.length > 0;
   }
   // Shared by ☁ Cloud Save and by Copy Custom Link (when a logo image is embedded):
@@ -1224,7 +1401,8 @@
         inpInputColor: txtDerived ? IN_DEF.text : b.inputInputColor, inpInputSet: !txtDerived,
         inpBorderColor: bdDerived ? IN_DEF.border : b.inputBorderColor, inpBorderSet: !bdDerived,
         inpBorderW: b.inputBorderW || '', logoImg: '',
-        hdrColor: b.hdrColor || '', hdrFont: b.hdrFont || '', hdrWeight: b.hdrWeight || '', hdrSize: b.hdrSize || ''
+        hdrColor: b.hdrColor || '', hdrFont: b.hdrFont || '', hdrWeight: b.hdrWeight || '', hdrSize: b.hdrSize || '',
+        inLblFont: b.inputLabelFont || '', inLblSize: b.inputLabelSize || '', inFont: b.inputFont || '', inSize: b.inputSize || ''
       },
       layout: bld.layout || [], blocks: bld.blocks || [], inputs: bld.inputs || null
     };
@@ -1279,6 +1457,7 @@
         inpBorderColor: $('inpBorderColor').value, inpBorderSet: _inpBorderSet, inpBorderW: _inpBorderW,
         hideName: _hideName, logoImg: _logoImg,
         hdrColor: _hdrColor, hdrFont: $('hdrFont').value, hdrWeight: $('hdrWeight').value, hdrSize: _hdrSize,
+        inLblFont: $('inLblFont').value, inLblSize: _inLblSize, inFont: $('inFontSel').value, inSize: _inSize,
       },
       layout: JSON.parse(JSON.stringify(layout)),
       blocks: JSON.parse(JSON.stringify(blocks)),
@@ -1294,7 +1473,7 @@
     // Builds saved before blocks/inputs existed open with today's defaults (nothing lost).
     if (snap.layout) layout = SICB.normLayout(JSON.parse(JSON.stringify(snap.layout)), blocks);
     inputsCfg = SICB.normInputs(snap.inputs ? JSON.parse(JSON.stringify(snap.inputs)) : null);
-    _openSec = null; _openBlk = null; _openFld = null; _sel = null;
+    _openSec = null; _openBlk = null; _openFld = null; _openPill = null; _sel = null;
     if (includeBranding && snap.branding) {
       const b = snap.branding;
       const setv = (id, v) => { const e = $(id); if (e && v != null) e.value = v; };
@@ -1320,6 +1499,9 @@
       if (!b.inpBorderSet) $('inpBorderColor').value = IN_DEF.border;
       _hdrColor = b.hdrColor || ''; setv('hdrFont', b.hdrFont || ''); setv('hdrWeight', b.hdrWeight || ''); _hdrSize = b.hdrSize || '';
       document.querySelectorAll('#hdrSize button').forEach(x => x.classList.toggle('on', x.dataset.v === _hdrSize));
+      setv('inLblFont', b.inLblFont || ''); setv('inFontSel', b.inFont || ''); _inLblSize = b.inLblSize || ''; _inSize = b.inSize || '';
+      document.querySelectorAll('#inLblSize button').forEach(x => x.classList.toggle('on', x.dataset.v === _inLblSize));
+      document.querySelectorAll('#inSizeSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === _inSize));
       const hc = $('hdrColorSlot'); hc.innerHTML = ''; hc.appendChild(colorCtl(() => _hdrColor, v => { _hdrColor = v || ''; }, '#ffffff'));
     }
     renderSwatches(); renderLists(); refresh(true);
