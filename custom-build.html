@@ -321,6 +321,8 @@
         </div>
         <div class="cb-sub-h" style="margin-top:14px;">Fields — drag ⣿ to reorder · width · ✎ style · 👁</div>
         <div class="lay-list" id="fldList"></div>
+        <div class="cb-sub-h" style="margin-top:14px;">Additional Inputs — ✎ section bar · drag ⣿ · ✎ style · 👁</div>
+        <div class="lay-list" id="exList"></div>
         <div class="hint">Width <b>A</b> = the page's own grid; 1 / ⅔ / ½ / ⅓ = share of the inputs column. Hidden fields keep their link values. ✎ on a field changes its label text (type your own or pick an alternative; Monthly / mo / month switch to Annual / yr / year with the View) and its own colours, fonts and sizes, which override the section defaults. Compact density keeps its grouped layout (styles + hide still apply). Colours apply in the default theme; Project Midnight keeps its own look.</div>
           </div>
         </details>
@@ -440,6 +442,7 @@
   // view (proposal.html) and the rep calc (index.html).
   const SECTIONS = SICB.BLOCKS;
   const FIELD_DEFS = SICB.FIELDS;
+  const EXTRA_DEFS = SICB.EXTRAS || [];
   const SWATCHES = ['#6675ff','#1f9d63','#e0007a','#c0641a','#0f8f56','#2a2f45','#d4af37','#7c3aed'];
   const FONTS = ['', 'Inter', 'Poppins', 'Montserrat', 'DM Sans', 'Oswald', 'Lora', 'Playfair Display', 'Roboto Slab', 'Georgia'];
   // New merchant-input defaults (white section, navy text, soft border)
@@ -457,6 +460,7 @@
   let _hdrColor = '', _hdrSize = '';
   let _inLblSize = '', _inSize = '';       // merchant input label / input size (S M L XL)
   let _openPill = null;                    // output-strip pill whose style editor is open
+  let _openEx = null;                      // Additional Inputs: 'section' or a field key whose editor is open
 
   const $ = id => document.getElementById(id);
   const proposalBase = () => new URL('proposal.html', location.href).href;
@@ -1171,6 +1175,9 @@
     premium: ['SI Premium %', 'Premium %', 'Protection Price %', 'Shipping Protection %'],
     attach:  ['Attach Rate %', 'Opt-in Rate %', 'Take Rate %', 'Adoption %'],
     share:   ['Rev Share % (net claims)', 'Net Rev Share %', 'Revenue Share %', 'Your Share %'],
+    cogs:    ['Product Cost', 'COGS', 'Cost of Goods', 'Product Cost %'],
+    aship:   ['Avg Shipping Cost ($)', 'Avg Shipping', 'Shipping Cost / Order', 'Avg Label Cost'],
+    cs:      ['CS Cost Per Claim ($)', 'Avg Ticket Cost', 'Support Cost / Claim', 'CS Cost / Ticket'],
   };
   // Deeper options for Premiums You Keep / Upfront / Current Cost (comfort + compact versions)
   const DETAIL_KEYS = {
@@ -1350,7 +1357,7 @@
   }
 
   // ── Merchant input fields list ──
-  const fieldLabel = k => (FIELD_DEFS.find(f => f.k === k) || {}).label || k;
+  const fieldLabel = k => (FIELD_DEFS.find(f => f.k === k) || EXTRA_DEFS.find(f => f.k === k) || {}).label || k;
   function renderFields() {
     const list = $('fldList'); if (!list) return; list.innerHTML = '';
     inputsCfg.fields.forEach(f => {
@@ -1369,11 +1376,69 @@
       list.appendChild(row);
       if (_openFld === f.k) list.appendChild(buildStyleEditor(f, 'field'));
     });
+    renderExtras();
     document.querySelectorAll('#inPos button, #pvPos button').forEach(b => b.classList.toggle('on', b.dataset.v === inputsCfg.pos));
     document.querySelectorAll('#inWidth button, #pvWidth button').forEach(b => b.classList.toggle('on', b.dataset.v === inputsCfg.width));
   }
   document.querySelectorAll('#inPos button, #pvPos button').forEach(b => b.addEventListener('click', () => { inputsCfg.pos = b.dataset.v; renderLists(); refresh(true); }));
   document.querySelectorAll('#inWidth button, #pvWidth button').forEach(b => b.addEventListener('click', () => { inputsCfg.width = b.dataset.v; renderLists(); refresh(true); }));
+
+  // ── Additional Inputs: the section bar + its fields ──
+  function exSectionEditor(ex) {
+    const st = ex.style || (ex.style = {});
+    const set = (k, v) => { if (v === undefined || v === '') delete st[k]; else st[k] = v; };
+    const wrap = document.createElement('div'); wrap.className = 'blk-edit';
+    const g = document.createElement('div'); g.className = 'mini-grid';
+    g.appendChild(cell('Bar text', textCtl(ex.label, 'Additional Inputs', v => { if (v) ex.label = v; else delete ex.label; }, ['Additional Inputs', 'More Inputs', 'Cost Inputs', 'Optional Inputs', 'Advanced']), true));
+    g.appendChild(cell('Starts', segCtl([['', 'Page default'], ['open', 'Open'], ['closed', 'Closed']], ex.open || '', v => { if (v) ex.open = v; else delete ex.open; refresh(true); }), true));
+    g.appendChild(cell('Bar background', colorCtl(() => st.bg, v => set('bg', v), '#eef0fb')));
+    g.appendChild(cell('Bar text colour', colorCtl(() => st.color, v => set('color', v), '#4a5fc1')));
+    g.appendChild(cell('Bar border', colorCtl(() => st.bc, v => set('bc', v), '#d5d9f0')));
+    g.appendChild(cell('Bar font', fontSelect(st.font, v => { set('font', v); refresh(true); })));
+    g.appendChild(cell('Bar size', segCtl([['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']], st.size || '', v => { set('size', v); refresh(true); })));
+    const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;';
+    h.textContent = 'The merchant view shows these under a collapsible bar; the rep calc shows them in line (the bar appears in Compact). Hiding the section hides its fields too; their link values are kept. Field colours and fonts come from the section defaults above unless a field has its own.';
+    g.appendChild(h);
+    wrap.appendChild(g);
+    const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cb-btn ghost';
+    reset.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
+    reset.textContent = 'Reset section bar';
+    reset.addEventListener('click', () => { delete ex.style; delete ex.label; delete ex.open; renderFields(); refresh(true); });
+    wrap.appendChild(reset);
+    return wrap;
+  }
+  function renderExtras() {
+    const list = $('exList'); if (!list) return; list.innerHTML = '';
+    const ex = inputsCfg.extras || (inputsCfg.extras = SICB.normInputs(null).extras);
+    if (!ex || !Array.isArray(ex.fields)) return;     // an older cached engine: nothing to show yet
+    const sec = document.createElement('div');
+    sec.className = 'lay-item pinned' + (ex.v === false ? ' hidden' : '') + (_sel && _sel.g === 'x' && _sel.k === 'section' ? ' sel' : '');
+    const secStyled = !!(ex.label || ex.open || (ex.style && Object.keys(ex.style).length));
+    sec.innerHTML = '<span class="lay-grip" style="visibility:hidden;">⣿</span><span class="lay-name" title="Select on the preview">▸ ' + (ex.label ? String(ex.label).replace(/</g, '&lt;') : 'Additional Inputs') + ' <span style="font-weight:600;color:var(--muted);">· section</span>' + (secStyled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
+    const sed = document.createElement('button'); sed.className = 'lay-mini'; sed.title = 'Style the section bar'; sed.textContent = '✎';
+    sed.addEventListener('click', e => { e.stopPropagation(); _openEx = _openEx === 'section' ? null : 'section'; select('x', 'section', false); });
+    const seye = document.createElement('button'); seye.className = 'lay-eye'; seye.title = 'Show / hide the whole section'; seye.textContent = ex.v === false ? '🚫' : '👁';
+    seye.addEventListener('click', e => { e.stopPropagation(); if (ex.v === false) delete ex.v; else ex.v = false; renderFields(); refresh(true); });
+    sec.append(sed, seye);
+    sec.querySelector('.lay-name').addEventListener('click', () => select('x', 'section', false));
+    list.appendChild(sec);
+    if (_openEx === 'section') list.appendChild(exSectionEditor(ex));
+    ex.fields.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'lay-item' + (f.v === false || ex.v === false ? ' hidden' : '') + (_sel && _sel.g === 'x' && _sel.k === f.k ? ' sel' : '');
+      row.dataset.k = f.k;
+      row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + fieldLabel(f.k) + (f.label || (f.style && Object.keys(f.style).length) ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
+      const ed = document.createElement('button'); ed.className = 'lay-mini'; ed.title = 'Label text & style'; ed.textContent = '✎';
+      ed.addEventListener('click', e => { e.stopPropagation(); _openEx = _openEx === f.k ? null : f.k; select('x', f.k, false); });
+      const eye = document.createElement('button'); eye.className = 'lay-eye'; eye.title = 'Show / hide'; eye.textContent = f.v === false ? '🚫' : '👁';
+      eye.addEventListener('click', e => { e.stopPropagation(); f.v = f.v === false; renderFields(); refresh(true); });
+      row.append(ed, eye);
+      row.querySelector('.lay-name').addEventListener('click', () => select('x', f.k, false));
+      wireDrag(row, ex.fields, f.k, () => { ex.ordered = true; renderFields(); refresh(true); });
+      list.appendChild(row);
+      if (_openEx === f.k) list.appendChild(buildStyleEditor(f, 'field'));
+    });
+  }
 
   // ── Results blocks list ──
   function blockLabel(k) {
@@ -1434,14 +1499,15 @@
   function select(g, k, fromCanvas, openStyle) {
     _sel = { g, k };
     if (g === 'm') { _openSec = 'metrics'; if (openStyle) _openPill = k; }
-    if (openStyle) { if (g === 'f') _openFld = k; else if (g === 'b') { if (blockById(k)) _openBlk = k; else _openSec = k; } }
-    const sec = g === 'f' || g === 'p' ? $('secInputs') : $('secLayout');
+    if (openStyle) { if (g === 'f') _openFld = k; else if (g === 'x') _openEx = k; else if (g === 'b') { if (blockById(k)) _openBlk = k; else _openSec = k; } }
+    const sec = g === 'f' || g === 'p' || g === 'x' ? $('secInputs') : $('secLayout');
     if (sec && !sec.open) sec.open = true;
     renderLists();
     const pillName = g === 'm' ? ((SICB.PILLS.find(x => x.k === k) || {}).label || k) : '';
-    const pv = $('pvSel'); if (pv) pv.textContent = '● ' + (g === 'f' ? fieldLabel(k) : g === 'p' ? 'Inputs column' : g === 'm' ? 'Pill · ' + pillName : blockLabel(k));
+    const pv = $('pvSel'); if (pv) pv.textContent = '● ' + (g === 'x' ? (k === 'section' ? 'Additional Inputs' : fieldLabel(k)) : g === 'f' ? fieldLabel(k) : g === 'p' ? 'Inputs column' : g === 'm' ? 'Pill · ' + pillName : blockLabel(k));
     if (fromCanvas) {
-      const row = g === 'm' ? document.querySelector('#layList .pill-row[data-k="' + k + '"]')
+      const row = g === 'x' ? (k === 'section' ? document.querySelector('#exList .lay-item.pinned') : document.querySelector('#exList .lay-item[data-k="' + k + '"]'))
+        : g === 'm' ? document.querySelector('#layList .pill-row[data-k="' + k + '"]')
         : document.querySelector((g === 'f' ? '#fldList' : '#layList') + ' .lay-item' + (g === 'p' ? '.pinned' : '[data-k="' + k + '"]'));
       if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else syncEdit();
@@ -1465,6 +1531,15 @@
     const d = e.data; if (!d || d.siCBx !== 'op') return;
     let src = null; try { src = $('preview').contentWindow; } catch (er) {}
     if (e.source !== src) return;
+    if (d.g === 'x') {                                   // Additional Inputs (section bar or a field)
+      const ex = inputsCfg.extras; if (!ex) return;
+      if (d.op === 'toggle') {
+        if (d.k === 'section') { if (ex.v === false) delete ex.v; else ex.v = false; }
+        else { const f = ex.fields.find(x => x.k === d.k); if (f) f.v = f.v === false; }
+        select('x', d.k, true); refresh(true);
+      } else if (d.op === 'select') select('x', d.k, true, !!d.style);
+      return;
+    }
     if (d.g === 'm') {                                   // output-strip pill
       const m = layout.find(x => x.k === 'metrics'); if (!m) return;
       if (d.op === 'toggle') { const pl = pillOf(m, d.k); pl.v = pl.v === false; select('m', d.k, true); refresh(true); }
@@ -1646,6 +1721,8 @@
       || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
       || !!($('inLblFont').value || $('inFontSel').value || _inLblSize || _inSize)
       || inputsCfg.fields.some(f => f.w || f.v === false || f.label || (f.style && Object.keys(f.style).length))
+      || !!(inputsCfg.extras && (inputsCfg.extras.v === false || inputsCfg.extras.label || inputsCfg.extras.open || inputsCfg.extras.ordered || (inputsCfg.extras.style && Object.keys(inputsCfg.extras.style).length)
+        || inputsCfg.extras.fields.some(f => f.v === false || f.label || (f.style && Object.keys(f.style).length))))
       || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false || l.place || l.label || l.useCompact || l.theme || (l.pills && l.pills.length)))
       || blocks.length > 0;
   }
@@ -1797,7 +1874,7 @@
     // Builds saved before blocks/inputs existed open with today's defaults (nothing lost).
     if (snap.layout) layout = SICB.normLayout(JSON.parse(JSON.stringify(snap.layout)), blocks);
     inputsCfg = SICB.normInputs(snap.inputs ? JSON.parse(JSON.stringify(snap.inputs)) : null);
-    _openSec = null; _openBlk = null; _openFld = null; _openPill = null; _sel = null;
+    _openSec = null; _openBlk = null; _openFld = null; _openPill = null; _openEx = null; _sel = null;
     if (includeBranding && snap.branding) {
       const b = snap.branding;
       const setv = (id, v) => { const e = $(id); if (e && v != null) e.value = v; };

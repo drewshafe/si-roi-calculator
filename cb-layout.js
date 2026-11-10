@@ -27,6 +27,12 @@
     { k: 'attach',  label: 'Attach Rate' },
     { k: 'share',   label: 'Rev Share' },
   ];
+  // Additional Inputs (the collapsible under the merchant inputs)
+  const EXTRAS = [
+    { k: 'cogs',  label: 'Product Cost' },
+    { k: 'aship', label: 'Avg Shipping Cost' },
+    { k: 'cs',    label: 'CS Cost Per Claim' },
+  ];
   const BLOCKS = [
     { k: 'banner',    label: 'Banner image' },
     { k: 'metrics',   label: 'Output Strip' },
@@ -124,6 +130,8 @@
         orders: () => fg('p-orders'), aov: () => fg('p-aov'), claims: byId('p-claims-group'),
         premium: byId('p-premium-wrap'), attach: byId('p-attach-group'), share: byId('p-share-group'),
       },
+      extras: { cogs: byId('p-cogs-group'), aship: () => fg('p-aship'), cs: () => fg('p-cs') },
+      exSection: '#additionalInputsDetails', exBar: '#additionalInputsDetails > summary',
       inSurface: ['#inputsSection', '.left-panel'],
       inBox: null,
       inLabel: '#inputsSection .field-group label',
@@ -165,6 +173,8 @@
         orders: byId('ordersGroup'), aov: byId('aovGroup'), claims: byId('claimsRateGroup'),
         premium: byId('protectionPremiumGroup'), attach: byId('attachRateGroup'), share: byId('revShareGroup'),
       },
+      extras: { cogs: byId('cogsGroup'), aship: byId('avgShippingGroup'), cs: byId('csCostGroup') },
+      exSection: null, exBar: '#miAdditionalToggle', exOpen: 'show-additional',
       inSurface: [],
       inBox: '.inputs-strip .input-group:not(.returns):not(.cashback)',
       inBoxCompact: '.container.density-compact .inputs-strip .input-group.si-input:not(.cashback)',
@@ -225,6 +235,11 @@
     const F = Array.isArray(o.fields) ? o.fields.filter(f => f && FIELDS.some(x => x.k === f.k)).map(f => Object.assign({}, f)) : [];
     FIELDS.forEach(f => { if (!F.some(x => x.k === f.k)) F.push({ k: f.k, v: true }); });
     o.fields = F;
+    const ex = Object.assign({}, o.extras || {});
+    const EF = Array.isArray(ex.fields) ? ex.fields.filter(f => f && EXTRAS.some(x => x.k === f.k)).map(f => Object.assign({}, f)) : [];
+    EXTRAS.forEach(f => { if (!EF.some(x => x.k === f.k)) EF.push({ k: f.k, v: true }); });
+    ex.fields = EF;
+    o.extras = ex;
     return o;
   }
 
@@ -286,6 +301,10 @@
     const rec = { el, orig: read(), mixed: mixed() };
     const put = () => {
       const tx = viewText(text);
+      const t0 = [...el.childNodes].find(n => n.nodeType === 3 && n.data.trim());
+      if (t0 && /^[▸▾]/.test(t0.data)) {                  // toggle text with its own arrow (rep calc)
+        const want = t0.data.match(/^[▸▾]\s*/)[0] + tx; if (t0.data !== want) t0.data = want; return;
+      }
       if (rec.mixed) { const t = lastText(el); const want = ' ' + tx; if (t && t.data !== want) t.data = want; }
       else if (el.textContent !== tx) el.textContent = tx;
     };
@@ -298,6 +317,8 @@
   function clearOverrides() {
     OV.forEach(r => {
       r.mo.disconnect();
+      const t0 = [...r.el.childNodes].find(n => n.nodeType === 3 && n.data.trim());
+      if (t0 && /^[▸▾]/.test(t0.data)) { t0.data = t0.data.match(/^[▸▾]\s*/)[0] + String(r.orig).replace(/^[▸▾]\s*/, ''); return; }   // keep the toggle's current arrow
       if (r.mixed) { const t = lastText(r.el); if (t) t.data = r.orig; } else r.el.textContent = r.orig;
     });
     OV = [];
@@ -430,6 +451,10 @@
     css += 'body.cbx-edit [data-cbx-hide]{opacity:.38;filter:grayscale(.6);}';
     // ── On-canvas editor chrome ──
     css += 'body.cbx-edit [data-cbk],body.cbx-edit [data-cbf],body.cbx-edit [data-cbp]{outline:1.5px dashed rgba(102,117,255,.55);outline-offset:3px;cursor:pointer;}';
+    css += 'body.cbx-edit [data-cbx-ex]{outline:1.5px dotted rgba(102,117,255,.6);outline-offset:1px;cursor:pointer;position:relative;}';
+    css += 'body.cbx-edit [data-cbx-ex]>.cbx-bar{opacity:0;transition:opacity .12s;top:-10px;left:50%;transform:translateX(-50%);padding:2px 3px;font-size:10px;}';
+    css += 'body.cbx-edit [data-cbx-ex]:hover>.cbx-bar,body.cbx-edit [data-cbx-ex].cbx-sel>.cbx-bar{opacity:1;}';
+    css += 'body.cbx-edit [data-cbx-ex="section"]>.cbx-bar{left:auto;right:8px;transform:none;top:-11px;}';
     css += 'body.cbx-edit [data-cbx-pill],body.cbx-edit [data-cbx-twin]{outline:1.5px dotted rgba(102,117,255,.6);outline-offset:1px;cursor:pointer;}';
     css += 'body.cbx-edit [data-cbx-pill]:hover,body.cbx-edit [data-cbx-twin]:hover{outline:2px solid rgba(102,117,255,.8);}';
     css += 'body.cbx-edit [data-cbk]:not(.lgc-host),body.cbx-edit [data-cbf],body.cbx-edit [data-cbx-pill]:not(.lgc-host),body.cbx-edit [data-cbx-twin]:not(.lgc-host):not(#coRedBox){position:relative;}';
@@ -580,6 +605,8 @@
         });
       }
     }
+
+    css += extrasCss(P, inp.extras);
 
     // ── Results blocks: order / width / style / hide + text blocks ──
     const layout = normLayout(cfg.layout, cfg.blocks);
@@ -985,6 +1012,57 @@
     return css;
   }
 
+  // ── Additional Inputs ── fields: label text / style / hide / order (they keep their own spot:
+  // reordered among themselves); the section: label text, bar colours, shown / hidden, starts open.
+  let _exOpen = null;
+  function extrasCss(P, ex) {
+    if (!P.extras || !ex) return '';
+    let css = '';
+    const els = ex.fields.map(f => ({ f, el: P.extras[f.k] && P.extras[f.k]() })).filter(x => x.el);
+    if (!_exHome && els.length) _exHome = domOrder(els.map(x => x.el));          // the page's own order
+    if (ex.ordered && els.length > 1) placeGroup(els.map(x => x.el));
+    els.forEach(({ f, el }) => {
+      el.setAttribute('data-cbx-ex', f.k);
+      if (f.v === false) el.setAttribute('data-cbx-hide', '1');
+      if (typeof f.label === 'string' && f.label.trim()) el.querySelectorAll('label').forEach(l => overrideText(l, f.label.trim()));
+      css += styleCss('[data-cbx-ex="' + f.k + '"]', f.style, { field: true, P });
+    });
+    const bar = document.querySelector(P.exBar), sec = P.exSection ? document.querySelector(P.exSection) : bar;
+    if (sec) sec.setAttribute('data-cbx-ex', 'section');
+    if (ex.v === false) {
+      if (sec) sec.setAttribute('data-cbx-hide', '1');
+      if (!P.exSection) els.forEach(({ el }) => el.setAttribute('data-cbx-hide', '1'));
+    }
+    if (bar && typeof ex.label === 'string' && ex.label.trim()) overrideText(bar, ex.label.trim());
+    const st = ex.style || {}, B = P.exBar + BOOST2;
+    if (okColor(st.bg)) css += LIGHT + B + '{background:' + st.bg + ' !important;}';
+    if (okColor(st.color)) css += LIGHT + B + '{color:' + st.color + ' !important;}';
+    if (okColor(st.bc)) css += LIGHT + B + '{border:1px solid ' + st.bc + ' !important;}' + (P.exSection ? LIGHT + P.exSection + BOOST2 + '{border-color:' + st.bc + ' !important;}' : '');
+    if (st.font) { loadFont(st.font); css += B + '{font-family:' + fontStack(st.font) + ' !important;}'; }
+    if (zoomOf(st.size)) css += B + '{zoom:' + zoomOf(st.size) + ';}';
+    // Starts open / closed: set when the build's choice changes (the merchant can still toggle it)
+    const want = ex.open === 'open' || ex.open === 'closed' ? ex.open : '';
+    if (want && want !== _exOpen) {
+      const open = want === 'open';
+      if (P.exSection) { const d = document.querySelector(P.exSection); if (d) d.open = open; }
+      else if (P.exOpen) {
+        const c = document.querySelector(P.root);
+        if (c && c.classList.contains(P.exOpen) !== open && typeof window.toggleAdditionalInputs === 'function') { try { window.toggleAdditionalInputs(); } catch (e) {} }
+      }
+    }
+    _exOpen = want;
+    return css;
+  }
+  let _exHome = null;
+  const domOrder = list => list.slice().sort((a, b) => (a.compareDocumentPosition(b) & 4) ? -1 : 1);
+  // Re-seat sibling elements in the given order, in the slot where the first of them sits.
+  function placeGroup(list) {
+    const par = list[0] && list[0].parentElement;
+    if (!par || !list.every(e => e.parentElement === par)) return;
+    let after = domOrder(list)[0].previousSibling;
+    list.forEach(e => { const ref = after ? after.nextSibling : par.firstChild; if (ref !== e) par.insertBefore(e, ref); after = e; });
+  }
+
   function textBlock(grid, blk) {
     let d = document.getElementById('cb-blk-' + blk.id);
     if (!d) { d = document.createElement('div'); d.className = 'cb-block'; d.id = 'cb-blk-' + blk.id; grid.appendChild(d); }
@@ -1025,7 +1103,8 @@
     const bh = document.getElementById('cbx-billing-home'), bw = document.getElementById('cbx-billing');
     if (bh && bw) { [...bw.childNodes].forEach(n => bh.parentElement.insertBefore(n, bh)); }
     if (bh) bh.remove(); if (bw) bw.remove();
-    const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off', 'data-cbx-theme', 'data-cbx-inv', 'data-cbx-hdr'];
+    const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off', 'data-cbx-theme', 'data-cbx-inv', 'data-cbx-hdr', 'data-cbx-ex'];
+    if (_exHome && (!CFG || !normInputs(CFG.inputs).extras.ordered)) placeGroup(_exHome);   // Additional Inputs back in the page's order
     document.querySelectorAll(A.map(a => '[' + a + ']').join(',')).forEach(el => A.forEach(a => el.removeAttribute(a)));
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
     // Copy Link: back to its home in the inputs column, original label
@@ -1097,6 +1176,7 @@
   const labelOf = (g, k) => {
     if (g === 'f') { const f = FIELDS.find(x => x.k === k); return f ? f.label : k; }
     if (g === 'm') { const pl = PILLS.find(x => x.k === k); return pl ? pl.label : k; }
+    if (g === 'x') { const ex = EXTRAS.find(x => x.k === k); return ex ? ex.label : 'Additional Inputs'; }
     const b = BLOCKS.find(x => x.k === k); if (b) return b.label;
     const blk = ((CFG && CFG.blocks) || []).find(x => x.id === k);
     return blk ? ('Text · ' + (blk.heading || blk.body || 'block').slice(0, 20)) : k;
@@ -1111,6 +1191,7 @@
     if (!CFG) return false;
     if (g === 'm') { const m = normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'metrics'); const pl = m && (m.pills || []).find(x => x.k === k); return !!(pl && pl.v === false); }
     if (g === 'f') { const f = normInputs(CFG.inputs).fields.find(x => x.k === k); return !!(f && f.v === false); }
+    if (g === 'x') { const ex = normInputs(CFG.inputs).extras; if (k === 'section') return ex.v === false; const f = ex.fields.find(x => x.k === k); return !!(f && f.v === false); }
     const it = normLayout(CFG.layout, CFG.blocks).find(x => x.k === k); return !!(it && it.v === false);
   }
   function themeName(g, k) {
@@ -1157,10 +1238,10 @@
       el.appendChild(bar);
       if (SEL && SEL.g === g && SEL.k === k) el.classList.add('cbx-sel');
     });
-    // Output-strip pills + compact twins: style / hide only (they move with their block)
-    document.querySelectorAll('[data-cbx-pill],[data-cbx-twin]').forEach(el => {
-      const pill = el.hasAttribute('data-cbx-pill');
-      const g = pill ? 'm' : 'b', k = el.getAttribute(pill ? 'data-cbx-pill' : 'data-cbx-twin');
+    // Output-strip pills, compact twins, Additional Inputs: style / hide only
+    document.querySelectorAll('[data-cbx-pill],[data-cbx-twin],[data-cbx-ex]').forEach(el => {
+      const pill = el.hasAttribute('data-cbx-pill'), ex = el.hasAttribute('data-cbx-ex');
+      const g = pill ? 'm' : ex ? 'x' : 'b', k = el.getAttribute(pill ? 'data-cbx-pill' : ex ? 'data-cbx-ex' : 'data-cbx-twin');
       const bar = document.createElement('div');
       bar.className = 'cbx-bar'; bar.setAttribute('data-g', g); bar.setAttribute('data-k', k);
       const hid = isHidden(g, k);
@@ -1177,7 +1258,7 @@
       // Results re-render (calculate) can replace block contents; put the toolbars back.
       _mo = new MutationObserver(() => {
         if (!EDIT) return;
-        const missing = [...document.querySelectorAll('[data-cbk],[data-cbf],[data-cbx-pill],[data-cbx-twin]')].some(el => !el.querySelector(':scope > .cbx-bar'));
+        const missing = [...document.querySelectorAll('[data-cbk],[data-cbf],[data-cbx-pill],[data-cbx-twin],[data-cbx-ex]')].some(el => !el.querySelector(':scope > .cbx-bar'));
         if (missing) { clearTimeout(_mo._t); _mo._t = setTimeout(renderBars, 60); }
       });
       _mo.observe(document.body, { childList: true, subtree: true });
@@ -1190,6 +1271,7 @@
   function findEl(g, k) {
     const v = '"' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"';
     if (g === 'm') return document.querySelector('[data-cbx-pill=' + v + ']');
+    if (g === 'x') return document.querySelector('[data-cbx-ex=' + v + ']');
     if (g === 'b') { const el = document.querySelector('[data-cbk=' + v + ']'); if (el && el.getClientRects().length) return el; return document.querySelector('[data-cbx-twin=' + v + ']') || el; }
     const a = g === 'f' ? 'data-cbf' : 'data-cbp';
     return document.querySelector('[' + a + '=' + v + ']');
@@ -1213,10 +1295,10 @@
       return;
     }
     if (e.target.closest && e.target.closest('.cbx-bar')) { e.preventDefault(); e.stopPropagation(); return; }
-    const host = e.target.closest && (e.target.closest('[data-cbf]') || e.target.closest('[data-cbx-pill]') || e.target.closest('[data-cbx-twin]') || e.target.closest('[data-cbk]') || e.target.closest('[data-cbp]'));
+    const host = e.target.closest && (e.target.closest('[data-cbx-ex]:not([data-cbx-ex="section"])') || e.target.closest('[data-cbf]') || e.target.closest('[data-cbx-ex]') || e.target.closest('[data-cbx-pill]') || e.target.closest('[data-cbx-twin]') || e.target.closest('[data-cbk]') || e.target.closest('[data-cbp]'));
     if (!host) return;
-    const g = host.hasAttribute('data-cbf') ? 'f' : host.hasAttribute('data-cbx-pill') ? 'm' : (host.hasAttribute('data-cbx-twin') || host.hasAttribute('data-cbk')) ? 'b' : 'p';
-    const k = g === 'f' ? host.getAttribute('data-cbf') : g === 'm' ? host.getAttribute('data-cbx-pill') : g === 'p' ? host.getAttribute('data-cbp') : (host.getAttribute('data-cbx-twin') || host.getAttribute('data-cbk'));
+    const g = host.hasAttribute('data-cbx-ex') ? 'x' : host.hasAttribute('data-cbf') ? 'f' : host.hasAttribute('data-cbx-pill') ? 'm' : (host.hasAttribute('data-cbx-twin') || host.hasAttribute('data-cbk')) ? 'b' : 'p';
+    const k = g === 'x' ? host.getAttribute('data-cbx-ex') : g === 'f' ? host.getAttribute('data-cbf') : g === 'm' ? host.getAttribute('data-cbx-pill') : g === 'p' ? host.getAttribute('data-cbp') : (host.getAttribute('data-cbx-twin') || host.getAttribute('data-cbk'));
     // Buttons inside a block (breakdown toggles, %/# switches) keep working; selection rides along.
     SEL = { g, k };
     document.querySelectorAll('.cbx-sel').forEach(el => el.classList.remove('cbx-sel'));
@@ -1276,5 +1358,5 @@
   document.addEventListener('pointercancel', () => endDrag(false), true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') endDrag(false); }, true);
 
-  window.SICB = { apply, setEdit, FIELDS, BLOCKS, PILLS, normLayout, normInputs, get cfg() { return CFG; } };
+  window.SICB = { apply, setEdit, FIELDS, EXTRAS, BLOCKS, PILLS, normLayout, normInputs, get cfg() { return CFG; } };
 })();
