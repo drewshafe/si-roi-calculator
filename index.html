@@ -1547,7 +1547,7 @@
                     <div class="display-ctrl-panel" id="displayCtrlPanel">
                         <div class="dc-row"><span class="dc-lbl">Size</span><div class="dc-btns"><button data-disp="zoom" data-val="dec">−</button><span id="dcZoomVal" class="dc-val">100%</span><button data-disp="zoom" data-val="inc">+</button></div></div>
                         <div class="dc-row"><span class="dc-lbl">Text</span><div class="dc-btns"><button data-disp="text" data-val="0.9">S</button><button data-disp="text" data-val="1">M</button><button data-disp="text" data-val="1.15">L</button></div></div>
-                        <div class="dc-row"><span class="dc-lbl">Density</span><div class="dc-btns"><button data-disp="density" data-val="comfortable">Comfort</button><button data-disp="density" data-val="compact">Compact</button></div></div>
+                        <div class="dc-row"><span class="dc-lbl">Density</span><div class="dc-btns"><button data-disp="density" data-val="comfortable">Comfort</button><button data-disp="density" data-val="compact">Compact</button><button data-disp="density" data-val="mobile" title="Phone layout — links you copy open in it too">Mobile</button></div></div>
                         <div class="dc-row"><span class="dc-lbl">Layout</span><div class="dc-btns"><button data-disp="layout" data-val="auto">Auto</button><button data-disp="layout" data-val="split">Split</button><button data-disp="layout" data-val="stacked">Stacked</button></div></div>
                     </div>
                 </div>
@@ -4462,7 +4462,7 @@
             }
 
             // Carry the optimized Compact layout through the link when the rep is in Compact.
-            { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); }
+            { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); else if (document.body.classList.contains('disp-mobile')) params.set('disp', 'mobile'); }
 
             return `${baseUrl}?${params.toString()}`;
         }
@@ -4548,7 +4548,7 @@
             }
 
             // Carry the optimized Compact layout through the link when the rep is in Compact.
-            { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); }
+            { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); else if (document.body.classList.contains('disp-mobile')) params.set('disp', 'mobile'); }
 
             return `${baseUrl}?${params.toString()}`;
         }
@@ -5273,6 +5273,8 @@
             if (d.zoom != null)      { c.style.zoom = d.zoom; window.dispatchEvent(new Event('lgc-refit')); }
             if (d.textScale != null) c.style.fontSize = (16 * d.textScale) + 'px';
             if (typeof d.density === 'string') c.classList.toggle('density-compact', d.density === 'compact');
+            // Mobile = the third density (mobile.js): phone layout here, and carried in copied links.
+            if (typeof d.density === 'string') { document.body.classList.toggle('disp-mobile', d.density === 'mobile'); if (window.mvApply) window.mvApply(); }
             if (typeof d.layout === 'string') {
                 c.classList.toggle('force-split',   d.layout === 'split');
                 c.classList.toggle('force-stacked', d.layout === 'stacked');
@@ -5385,8 +5387,8 @@
                 if (!dcWrap.contains(e.target)) { panel.classList.remove('show'); btn.classList.remove('open'); }
             });
 
-            // A link that carries ?disp=compact opens the calc in the optimized Compact view.
-            try { const _d = (new URLSearchParams(location.search).get('disp') || '').toLowerCase(); if (_d === 'compact' || _d === 'c') calcDisplay.density = 'compact'; } catch (e) {}
+            // A link that carries ?disp=compact / ?disp=mobile opens the calc in that view.
+            try { const _d = (new URLSearchParams(location.search).get('disp') || '').toLowerCase(); if (_d === 'compact' || _d === 'c') calcDisplay.density = 'compact'; else if (_d === 'mobile' || _d === 'm') calcDisplay.density = 'mobile'; } catch (e) {}
             syncUI();
             applyDisplaySettings(calcDisplay);
         })();

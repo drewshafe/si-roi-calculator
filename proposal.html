@@ -971,7 +971,7 @@
         .theme-midnight #mnAnimBtn.on .mn-dot { background:#e9c46a; box-shadow:0 0 8px #e9c46a; }
         /* ───────── Optimized Compact layout (merchant view) — mirrors the rep calc's
            Compact view: 4-box strip + single green card, red cost badge when shown.
-           Activated by ?disp=compact (set by custom-build / the rep calc link). ───────── */
+           Activated by ?disp=compact (set by custom-build / the rep calc link). ?disp=mobile → mobile.js. ───────── */
         #compactOpt { display:none; }
         .proposal-layout.density-compact #compactOpt { display:block; padding:4px 2px; }
         .proposal-layout.density-compact #resultsSection .key-metrics,
@@ -1062,6 +1062,7 @@
     <script src="sb.js"></script>
     <script src="portal-templates.js"></script>
     <script src="cb-layout.js"></script>
+    <script src="mobile.js" defer></script>
 </head>
 <body>
     <div class="proposal-layout">
@@ -3304,7 +3305,9 @@
             // Optimized Compact layout — carried in the link (?disp=compact) by the rep calc /
             // custom-build. Toggles the 4-box strip + green card in place of the default view.
             { const _disp = (urlPs.get('disp') || urlPs.get('den') || '').toLowerCase();
-              if (_disp === 'compact' || _disp === 'c') { const pl = document.querySelector('.proposal-layout'); if (pl) pl.classList.add('density-compact'); } }
+              if (_disp === 'compact' || _disp === 'c') { const pl = document.querySelector('.proposal-layout'); if (pl) pl.classList.add('density-compact'); }
+              // ?disp=mobile → the phone layout (mobile.js), on any screen.
+              if (_disp === 'mobile' || _disp === 'm') document.body.classList.add('disp-mobile'); }
             applyCustomBuild(urlPs);
             renderOptionTabs();
             // A cloud-stored logo (Supabase Storage) overrides any param/hash logo.

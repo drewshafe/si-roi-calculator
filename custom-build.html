@@ -141,7 +141,10 @@
       <div class="sub">Brand &amp; arrange the merchant proposal</div>
     </div>
     <div class="cb-link-row">
-      <label class="cb-hidename" style="color:#cdd2e8;white-space:nowrap;" title="Render the merchant proposal in the optimized Compact layout (4-box strip + single green card)"><input type="checkbox" id="dispCompact"> Compact layout</label>
+      <label class="cb-hidename" style="color:#cdd2e8;white-space:nowrap;" title="How the merchant link opens: Comfort (default), Compact (4-box strip + single green card) or Mobile (phone layout on any screen)">Layout
+        <select id="dispMode" style="font:700 .72rem/1 inherit;text-transform:none;letter-spacing:0;padding:4px 6px;border-radius:6px;border:1px solid #4a5068;background:#1f2430;color:#fff;">
+          <option value="">Comfort</option><option value="compact">Compact</option><option value="mobile">Mobile</option>
+        </select></label>
       <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
       <button class="cb-btn ghost" id="loadBase">Load</button>
       <button class="cb-btn" id="copyLink">📋 Copy Custom Link</button>
@@ -585,7 +588,7 @@
       if (typeof d.link !== 'string' || !d.link) return;
       const ps = new URLSearchParams(new URL(d.link).search);
       ps.delete('bld');
-      if (d.display && d.display.density) { if (d.display.density === 'compact') ps.set('disp', 'compact'); else ps.delete('disp'); }
+      if (d.display && d.display.density) { if (d.display.density === 'compact' || d.display.density === 'mobile') ps.set('disp', d.display.density); else ps.delete('disp'); }
       baseParams = ps.toString() || DEFAULT_BASE;
       if ($('baseLink')) $('baseLink').value = proposalBase() + '?' + baseParams;
       if (typeof syncDispCheckbox === 'function') syncDispCheckbox();
@@ -1664,13 +1667,14 @@
   $('loadBase').addEventListener('click', loadBase);
   $('baseLink').addEventListener('keydown', e => { if (e.key === 'Enter') loadBase(); });
 
-  // Compact layout toggle — keeps disp=compact inside baseParams so the preview, the
-  // copied link, and any cloud-save all carry it (merchant view renders the optimized layout).
-  function _dispFromBase() { try { return new URLSearchParams(baseParams).get('disp') === 'compact'; } catch (e) { return false; } }
-  function syncDispCheckbox() { const c = $('dispCompact'); if (c) c.checked = _dispFromBase(); }
-  $('dispCompact').addEventListener('change', e => {
+  // Layout (display option) — Comfort / Compact / Mobile. Kept as disp= inside baseParams so the
+  // preview, the copied link, and any cloud-save all carry it (merchant view renders that layout;
+  // Mobile = the phone layout from mobile.js, shown on any screen, and the preview shows it too).
+  function _dispFromBase() { try { const v = (new URLSearchParams(baseParams).get('disp') || '').toLowerCase(); return v === 'c' ? 'compact' : v === 'm' ? 'mobile' : (v === 'compact' || v === 'mobile') ? v : ''; } catch (e) { return ''; } }
+  function syncDispCheckbox() { const c = $('dispMode'); if (c) c.value = _dispFromBase(); }
+  $('dispMode').addEventListener('change', e => {
     const bp = new URLSearchParams(baseParams);
-    if (e.target.checked) bp.set('disp', 'compact'); else bp.delete('disp');
+    if (e.target.value) bp.set('disp', e.target.value); else bp.delete('disp');
     baseParams = bp.toString() || DEFAULT_BASE;
     refresh(true);
   });
