@@ -13,7 +13,7 @@
  *
  * When it shows:
  *   • ?disp=mobile  (or ?mobile=1)         → always, on any screen, also inside a preview iframe
- *   • rep picked Display → Density → Mobile → always (rep calc, not when embedded in the Rep Hub)
+ *   • rep picked Density → Mobile (calc Display menu or the Rep Hub sidebar) → always
  *   • a phone-width screen (≤600px)        → automatically, unless ?mobile=0
  * On a wide screen it renders as a centred phone column. "Full view" opens the regular layout
  * with a floating "Mobile view" pill to come back.
@@ -31,8 +31,11 @@
     const wanted = () => {
         if (Q.get('mobile') === '0') return false;
         if (forced()) return true;
-        if (embedded) return false;                       // Rep Hub / Custom Build preview: only when asked
-        return document.body.classList.contains('disp-mobile') || mq.matches;
+        // Density → Mobile: picked in the calc's own Display menu, or in the Rep Hub's sidebar
+        // (the hub posts its display settings into the embedded calc → body.disp-mobile).
+        if (document.body.classList.contains('disp-mobile')) return true;
+        if (embedded) return false;                       // embeds don't auto-switch on width
+        return mq.matches;
     };
 
     // ── Styles (values from the design: Main.dc.html) ───────────────────────────────────────
