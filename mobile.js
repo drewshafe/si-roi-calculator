@@ -23,10 +23,16 @@
     const $ = id => document.getElementById(id);
     const HOST = $('p-orders') ? 'merchant' : ($('annualOrders') ? 'rep' : null);
     if (!HOST) return;
-    const Q = new URLSearchParams(location.search);
+    // Read the URL live: cloud links (?id=) expand into their real params / bld after load and
+    // rewrite the address, so anything read once at start-up would miss the build.
+    const Q = { get: k => new URLSearchParams(location.search).get(k) };
     const embedded = window.top !== window;
     const mq = window.matchMedia('(max-width: 600px)');
-    const forced = () => Q.get('mobile') === '1' || (Q.get('disp') || '').toLowerCase() === 'mobile' || (Q.get('disp') || '').toLowerCase() === 'm';
+    const askedNow = () => Q.get('mobile') === '1' || (Q.get('disp') || '').toLowerCase() === 'mobile' || (Q.get('disp') || '').toLowerCase() === 'm';
+    // A link opened with disp=mobile stays mobile even after a cloud ?id= row expands into its
+    // own saved params (which may say disp=compact) — and the address keeps disp=mobile.
+    const askedAtOpen = askedNow();
+    const forced = () => askedAtOpen || askedNow();
     let full = false;   // the viewer opened the regular layout from "Full view"
     const wanted = () => {
         if (Q.get('mobile') === '0') return false;
@@ -56,7 +62,7 @@
     #mv button { font:inherit; cursor:pointer; }
     #mv input:focus { outline:2px solid #6675ff; outline-offset:1px; }
     #mv button:focus-visible { outline:2px solid #6675ff; outline-offset:2px; }
-    #mv .mv-top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:calc(16px + env(safe-area-inset-top)) 16px 12px; }
+    #mv .mv-top { border-radius:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:calc(16px + env(safe-area-inset-top)) 16px 12px; }
     #mv .mv-brand { display:flex; align-items:center; gap:10px; min-width:0; }
     #mv .mv-lock { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:var(--primary); color:var(--primaryText); flex-shrink:0; overflow:hidden; }
     #mv .mv-lock.has-logo { background:var(--card); border:1px solid var(--border); width:auto; min-width:36px; max-width:96px; padding:3px 6px; }
@@ -231,23 +237,40 @@
         if (inp.id === 'p-premium' && typeof p_premiumType !== 'undefined') { pre = p_premiumType === 'pct' ? '' : cur; suf = p_premiumType === 'pct' ? '%' : ''; }
         return { pre, suf, alt: btns.length > 1 ? btns : null };
     }
-    // Group the page's visible merchant fields into the mobile cards, in on-page order.
+    // Group the merchant fields into the mobile cards. Fields are picked by id and the plan's
+    // feature flags (not by container — Compact moves them around), skipping anything Custom
+    // Build hid or the page itself hides (e.g. premium in coverage modes), in on-page order.
+    const M_GROUPS = [
+        { k: 'metrics', title: 'Your metrics', ids: ['p-orders', 'p-aov', 'p-claims'], add: ['p-cogs', 'p-aship', 'p-cs'] },
+        { k: 'si', logo: true, ids: M_SI },
+        { k: 'returns', sec: 'returnsFeatureSection', def: 'Returns', flag: () => typeof p_returnsEnabled !== 'undefined' && p_returnsEnabled, ids: ['p-rr', 'p-arc', 'p-rpc'] },
+        { k: 'cashback', sec: 'cashbackFeatureSection', def: 'Customer Cashback', flag: () => typeof p_cashbackEnabled !== 'undefined' && p_cashbackEnabled, ids: ['p-cb', 'p-mincb', 'p-cbrr'] },
+        { k: 'guarantee', sec: 'guaranteeFeatureSection', def: 'Guarantee', flag: () => typeof p_guaranteeEnabled !== 'undefined' && p_guaranteeEnabled, ids: ['p-gcr'] },
+    ];
+    function mOrder(list) {
+        if (list.every(fg => fg.getClientRects().length)) return list.sort(byPosition);
+        return list.sort((a, b) => (a.compareDocumentPosition(b) & 4) ? -1 : 1);
+    }
+    function mPick(ids) {
+        return mOrder(ids.map(id => $(id)).filter(Boolean).map(inp => inp.closest('.field-group')).filter(fg => {
+            if (!fg || fg.closest('[data-cbx-hide],[data-cbx-off]')) return false;
+            for (let n = fg; n && n.id !== 'inputsSection'; n = n.parentElement) {   // page-hidden (inline / class), not a collapsed section
+                if (n.style && n.style.display === 'none') return false;
+                if (n === fg && getComputedStyle(n).display === 'none') return false;
+            }
+            return true;
+        }));
+    }
     function mSections() {
-        const sec = $('inputsSection'); if (!sec) return [];
-        const visibleFields = scope => [...scope.querySelectorAll('.field-group')].filter(fg => {
-            const inp = fg.querySelector('input[type="text"]');
-            return inp && inp.id && M_STEP[inp.id] != null && (shown(fg) || (fg.closest('details') && !fg.closest('details').open && !fg.closest('[data-cbx-hide],[data-cbx-off]')));
-        }).sort(byPosition);
+        if (!$('inputsSection')) return [];
         const out = [];
-        const primary = visibleFields($('primaryInputsGrid') || sec);
-        const add = $('additionalInputsInner') ? visibleFields($('additionalInputsInner')) : [];
-        const metrics = primary.filter(fg => !M_SI.includes(fg.querySelector('input').id));
-        const si = primary.filter(fg => M_SI.includes(fg.querySelector('input').id));
-        if (metrics.length || add.length) out.push({ k: 'metrics', title: 'Your metrics', fields: metrics, add });
-        if (si.length) out.push({ k: 'si', logo: true, fields: si, add: [] });
-        [['returnsFeatureSection', 'Returns'], ['cashbackFeatureSection', 'Customer Cashback'], ['guaranteeFeatureSection', 'Guarantee']].forEach(([id, def]) => {
-            const s = $(id); if (!s || !shown(s)) return;
-            const f = visibleFields(s); if (f.length) out.push({ k: id, title: txt(s.querySelector('.feature-section-title')) || def, fields: f, add: [] });
+        M_GROUPS.forEach(g => {
+            if (g.flag && !g.flag()) return;
+            const fields = mPick(g.ids);
+            const addSec = $('additionalInputsDetails');
+            const add = g.add && !(addSec && addSec.closest('[data-cbx-hide],[data-cbx-off]')) ? mPick(g.add) : [];
+            if (!fields.length && !add.length) return;
+            out.push({ k: g.k, logo: !!g.logo, fields, add, title: g.title || txt(($(g.sec) || document).querySelector('.feature-section-title')) || g.def });
         });
         return out;
     }
@@ -402,18 +425,66 @@
     }
 
     // ── Theme + branding ───────────────────────────────────────────────────────────────────
-    let bld = null;
-    try { const raw = Q.get('bld'); if (raw) bld = JSON.parse(raw); } catch (e) {}
+    let bld = null, bldRaw;
+    function readBld() {
+        const raw = Q.get('bld');
+        if (raw !== bldRaw) { bldRaw = raw; bld = null; try { if (raw) bld = JSON.parse(raw); } catch (e) {} }
+        return bld;
+    }
+    // The page's current Custom Build: set live by applyCustomBuild / applyCalcBranding (covers
+    // the Rep Hub's stacked Custom Build editor, which posts branding without touching the URL).
+    const buildCfg = () => window._siBuildCfg || readBld();
     function theme() {
         const mv = $('mv'), dark = document.body.classList.contains('theme-midnight');
         mv.classList.toggle('dark', dark);
         document.querySelectorAll('#mv .mv-si-logo').forEach(i => { i.src = dark ? 'mobile-si-logo-light.png' : 'mobile-si-logo-dark.png'; });
-        const b = (bld && bld.branding) || {};
+        const cfg = buildCfg();
+        const b = (cfg && cfg.branding) || {};
         // Custom Build accent → the design's primary colour (default theme only, like cb-layout.js).
         const a = !dark && /^#[0-9a-f]{3,8}$/i.test(b.accent || '') ? b.accent : '';
         ['--primary', '--heroBg', '--heroBorder', '--accent'].forEach(v => { if (a) mv.style.setProperty(v, a); else mv.style.removeProperty(v); });
         document.body.style.setProperty('--mvPrimary', a || '#4a5fc1');
+        const a2 = !dark && /^#[0-9a-f]{3,8}$/i.test(b.accent2 || '') ? b.accent2 : '';
+        const top = mv.querySelector('.mv-top');
+        top.style.background = a2; top.style.color = a2 ? '#fff' : '';
+        mv.querySelector('.mv-subt').style.color = a2 ? 'rgba(255,255,255,.82)' : '';
         if (b.font || document.body.style.fontFamily) mv.style.setProperty('--mvFont', document.body.style.fontFamily || ("'" + b.font + "', system-ui, sans-serif"));
+    }
+
+    // Rep calc + Custom Build (e.g. the Rep Hub's Master Build): renamed labels, hidden fields,
+    // the Additional Inputs label / hide, and the merchant logo — read from the page, where
+    // cb-layout.js has already applied them. key → [Custom Build key, the field's group id].
+    const REP_CB = { orders: ['orders', 'ordersGroup'], aov: ['aov', 'aovGroup'], claims: ['claims', 'claimsRateGroup'],
+        prem: ['premium', 'protectionPremiumGroup'], attach: ['attach', 'attachRateGroup'], rs: ['share', 'revShareGroup'],
+        cogs: ['cogs', 'cogsGroup', 1], ship: ['aship', 'avgShippingGroup', 1], cs: ['cs', 'csCostGroup', 1] };
+    function repBuild() {
+        const cfg = buildCfg() || {}, inp = cfg.inputs || {};
+        const conf = (k, ex) => ((ex ? (inp.extras || {}).fields : inp.fields) || []).find(f => f && f.k === k) || {};
+        Object.entries(REP_CB).forEach(([key, [k, gid, ex]]) => {
+            const row = document.querySelector('#mv .mv-row[data-k="' + key + '"]'), g = $(gid); if (!row) return;
+            const f = conf(k, ex);
+            row.hidden = !!(g && g.closest('[data-cbx-hide],[data-cbx-off]')) || f.v === false;
+            if (typeof f.label === 'string' && f.label.trim() && g) {
+                const l = [...g.querySelectorAll('label')].find(x => txt(x)) ;
+                const t = (l ? txt(l) : f.label.trim()).replace(/\s*\((\$|%)\)/g, '').replace(/\s(%|\$)(?=\s|$)/g, '').trim();
+                row.querySelector('label').textContent = t;
+                row.querySelector('[data-dec]').setAttribute('aria-label', 'Decrease ' + t);
+                row.querySelector('[data-inc]').setAttribute('aria-label', 'Increase ' + t);
+            }
+        });
+        // First visible row in each card loses its top rule.
+        document.querySelectorAll('#mv .mv-card').forEach(c => { let first = true; c.querySelectorAll(':scope > .mv-row').forEach(r => { r.classList.toggle('first', first && !r.hidden); if (!r.hidden) first = false; }); });
+        const ex = inp.extras || {};
+        const add = $('mvAdd');
+        if (add) {
+            const allHidden = [...add.querySelectorAll('.mv-row')].every(r => r.hidden);
+            add.hidden = ex.v === false || allHidden;
+            const t = add.querySelector('.grow'); if (t) t.textContent = (typeof ex.label === 'string' && ex.label.trim()) ? ex.label.trim() : 'Additional Inputs';
+        }
+        // Merchant logo in the top bar (the calc shows it next to the ROI logo).
+        const lg = $('cbMerchantLogo'), lock = $('mvLock');
+        if (lg && lg.style.display !== 'none' && lg.src) { if (!lock.querySelector('img') || lock.querySelector('img').src !== lg.src) lock.innerHTML = '<img alt="" src="' + esc(lg.src) + '">'; lock.classList.add('has-logo'); }
+        else if (lock.classList.contains('has-logo')) { lock.innerHTML = icon.lock; lock.classList.remove('has-logo'); }
     }
 
     // ════════════════════════════════════════════════════════════════════════════════════════
@@ -448,6 +519,7 @@
         setRow('minPrem', 'Min premium', cur);
         setRow('rs', d.grossRevShare ? 'Rev share (gross)' : 'Rev share', '', '%');
         $('mvAddSum').textContent = num($('cogsPercent').value) + (active('cogsFlatBtn') ? '' : '%') + ' · ' + cur + num($('avgShipping').value) + ' · ' + cur + num($('csCostPerClaim').value);
+        repBuild();
         const tpl = $('pricingTemplate'); $('mvTpl').textContent = tpl && tpl.selectedOptions[0] ? tpl.selectedOptions[0].textContent.replace(/\s+/g, ' ').trim() : '';
         document.querySelectorAll('#mv [data-basis]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.basis === 'gross') === !!d.grossRevShare)));
         const resV = ($('claimResolution') || {}).value || '2ndsale';
@@ -487,7 +559,7 @@
         const custom = lg && lg.style.display !== 'none' && lg.src && !/proposalview_logo|roi-logo\.png/.test(lg.src);
         if (custom) { if (!lock.querySelector('img') || lock.querySelector('img').src !== lg.src) lock.innerHTML = '<img alt="" src="' + esc(lg.src) + '">'; lock.classList.add('has-logo'); }
         else if (lock.classList.contains('has-logo') || !lock.querySelector('svg')) { lock.innerHTML = icon.lock; lock.classList.remove('has-logo'); }
-        const hideName = !!(bld && bld.branding && bld.branding.hideName);
+        const hideName = !!((buildCfg() || {}).branding || {}).hideName;
         const mname = (Q.get('mname') || '').trim();
         $('mvTitle').textContent = (!hideName && mname) ? mname : 'ROI Impact';
         $('mvSub').textContent = 'with ShipInsure · ' + (annual ? 'Annual' : 'Monthly');
@@ -567,15 +639,20 @@
                 lines.push('<div class="mv-line"><span>' + esc(kt || txt(k)) + '</span><span class="num"' + (v && v.style.color ? ' style="color:' + esc(v.style.color) + '"' : '') + '>' + esc(txt(v)) + '</span></div>');
             });
         }
+        const keepHero = $('heroValue') && $('heroValue').closest('.result-hero');
+        const keepSplit = [...document.querySelectorAll('#p-heroBreakdown > *')].filter(shown).map(txt).filter(Boolean);
+        const keep = keepHero && shown(keepHero) && cov === 'standard'
+            ? '<div class="mv-line big first"><span>' + esc(heroL || 'Premiums You Keep') + '</span><span class="num">' + esc(heroV) + '</span></div>' + (keepSplit.length ? '<div class="mv-line note" style="padding-top:0">' + esc(keepSplit.join(' · ')) + '</div>' : '') : '';
         const upf = $('p-upfrontHero');
         const upfront = upf && shown(upf) ? '<div class="mv-line big first"><span>' + esc(txt(upf.querySelector('.hero-label'))) + '</span><span class="num">' + esc(txt($('p-upfrontValue'))) + '</span></div>' + (txt($('p-upfrontSub')) ? '<div class="mv-line note" style="padding-top:0">' + esc(txt($('p-upfrontSub'))) + '</div>' : '') : '';
         const costCard = $('costCard');
         const cost = costCard && shown(costCard) ? '<div class="mv-cost"><div class="mv-mrow-top"><div>' + esc(txt(costCard.querySelector('.rc-label')) || 'Current Cost of Claims') + '</div><div class="num" style="color:var(--cost)">' + esc(txt($('r-lostRevenue'))) + '</div></div></div>' : '';
         if (lines.length) lines[0] = lines[0].replace('class="mv-line', 'class="mv-line first');
         $('mvResults').innerHTML = (pills ? '<div class="mv-sec-h"><div class="mv-sec-t"><span>Your results</span></div><div class="mv-hint">' + (annual ? 'annual' : 'monthly') + '</div></div><div class="mv-tiles">' + pills + '</div>' : '') +
+            (keep ? '<div class="mv-sec-h"><div class="mv-sec-t"><span>Premiums you keep</span></div></div>' + keep : '') +
             (upfront ? '<div class="mv-sec-h"><div class="mv-sec-t"><span>Upfront payment</span></div></div>' + upfront : '') +
             (lines.length ? '<div class="mv-sec-h"><div class="mv-sec-t"><span>' + esc(txt($('p-erLabel')) || 'With ShipInsure') + '</span></div></div>' + lines.join('') : '') + cost;
-        $('mvResults').hidden = !(pills || lines.length || cost || upfront);
+        $('mvResults').hidden = !(pills || lines.length || cost || upfront || keep);
 
         // Show the math — the merchant view's own Calculation Breakdown (hidden there → hidden here).
         const bd = $('p-calcBreakdown');
@@ -605,18 +682,32 @@
     }
 
     let raf = 0;
-    const schedule = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; refresh(); }); };
+    const schedule = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; apply(); }); };
 
+    let parkedCompact = null;   // the page's Compact density, parked while Mobile shows
     function apply() {
         if (!$('mv')) return;
         const want = wanted();
         const on = want && !full;
+        const was = document.body.classList.contains('mv-on');
+        // Keep disp=mobile in the address after a cloud ?id= expansion rewrote it.
+        if (askedAtOpen && !askedNow() && Q.get('mobile') !== '0') {
+            try { const u = new URL(location.href); u.searchParams.set('disp', 'mobile'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch (e) {}
+        }
+        // Mobile mirrors the regular (Comfort) page: Compact hides the output pills / hero /
+        // result cards. Park it while Mobile is on; "Full view" brings the Compact layout back.
+        const root = document.querySelector(HOST === 'rep' ? '.container' : '.proposal-layout');
+        if (root && HOST === 'merchant') {
+            if (on && root.classList.contains('density-compact')) { parkedCompact = root; root.classList.remove('density-compact'); }
+            else if (!on && parkedCompact) { parkedCompact.classList.add('density-compact'); parkedCompact = null; }
+        }
         document.body.classList.toggle('mv-on', on);
         document.body.classList.toggle('mv-full', want && full);
-        if (on) { mSig = ''; refresh(); }
+        if (on && !was) mSig = '';
+        if (on) refresh();
     }
 
-    window.mvRefresh = schedule;
+    window.mvRefresh = () => schedule();
     window.mvApply = apply;
 
     const start = () => {
@@ -630,6 +721,7 @@
         watch(document.body, { attributes: true, attributeFilter: ['class'] });
         apply();
         setTimeout(apply, 400);   // after the page's own async load (cloud ?id= links, fonts)
+        setTimeout(apply, 1500);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

@@ -5040,6 +5040,7 @@
         function applyCalcBranding(cfgObj) {
             let cfg = cfgObj || null;
             if (!cfg) { try { const raw = new URLSearchParams(location.search).get('bld'); if (raw) cfg = JSON.parse(raw); } catch (e) {} }
+            window._siBuildCfg = cfg;   // mobile.js mirrors the live build (labels / hidden / branding)
             const b = (cfg && cfg.branding) || {};
             // Merchant logo — from branding.logoUrl, or (initial load only) the #cbimg hash.
             let logo = b.logoUrl || '';

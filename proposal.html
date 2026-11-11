@@ -3171,6 +3171,7 @@
             // would throw on literal % in values (e.g. gradient "0%, 60%, 100%") and abort.
             try { const raw = urlPs.get('bld'); if (raw) cfg = JSON.parse(raw); } catch (e) { return; }
             if (!cfg) return;
+            window._siBuildCfg = cfg;   // mobile.js mirrors the live build
             const b = cfg.branding || {};
             if (b.font) {
                 if (CB_GOOGLE_FONTS[b.font]) {
