@@ -144,11 +144,13 @@
   .hist-btn:disabled{ opacity:.35; cursor:default; }
   /* Panel mode (?panel=1): the editor alone, inside the Rep Hub sidebar; the hub shows the canvas. */
   .panel-bar{ display:none; }
-  body.panel{ height:auto; min-height:100%; overflow:hidden; background:#fff; }
+  body.panel{ height:100vh; overflow:hidden; background:#fff; }
   body.panel header.cbh, body.panel .preview, body.panel .cb-linkout{ display:none !important; }
-  body.panel main{ grid-template-columns:1fr; height:100vh; }
+  body.panel main{ grid-template-columns:1fr; grid-template-rows:minmax(0,1fr); flex:1 1 auto; min-height:0; }
+  body.panel .editor{ min-height:0; overscroll-behavior:contain; }
   body.panel .editor{ border-right:none; padding:0 10px 14px; }
   body.panel .panel-bar{ display:flex; flex-direction:column; gap:7px; position:sticky; top:0; z-index:20; margin:0 -10px 12px; padding:10px 10px 9px; background:#f4f5fb; border-bottom:1px solid var(--line); box-shadow:0 4px 10px rgba(30,40,90,.06); }
+  @media (max-height:600px){ body.panel .panel-bar{ position:static; box-shadow:none; } }   /* short sidebar: the toolbar scrolls away */
   .panel-bar .pb-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .panel-bar .pb-l{ font-size:.55rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); min-width:44px; }
   .panel-bar .blk-seg button{ padding:4px 8px; font-size:.7rem; }
