@@ -41,6 +41,9 @@
         // (the hub posts its display settings into the embedded calc → body.disp-mobile).
         if (document.body.classList.contains('disp-mobile')) return true;
         if (embedded) return false;                       // embeds don't auto-switch on width
+        // Custom Build → "On phones: keep this layout" turns the automatic phone switch off.
+        const c = (typeof buildCfg === 'function' && buildCfg()) || null;
+        if (c && c.display && c.display.phone === 'keep') return false;
         return mq.matches;
     };
 
@@ -445,9 +448,26 @@
         ['--primary', '--heroBg', '--heroBorder', '--accent'].forEach(v => { if (a) mv.style.setProperty(v, a); else mv.style.removeProperty(v); });
         document.body.style.setProperty('--mvPrimary', a || '#4a5fc1');
         const a2 = !dark && /^#[0-9a-f]{3,8}$/i.test(b.accent2 || '') ? b.accent2 : '';
+        const hc = !dark && /^#[0-9a-f]{3,8}$/i.test(b.hdrColor || '') ? b.hdrColor : '';
         const top = mv.querySelector('.mv-top');
-        top.style.background = a2; top.style.color = a2 ? '#fff' : '';
-        mv.querySelector('.mv-subt').style.color = a2 ? 'rgba(255,255,255,.82)' : '';
+        // Banner: as the header's background (Banner → Sits in: Header) or a strip under the header.
+        const L = (cfg && Array.isArray(cfg.layout)) ? cfg.layout : [];
+        const bi = L.find(x => x && x.k === 'banner') || {};
+        const url = /^(https?:\/\/|data:image\/)/i.test(String(b.bannerUrl || '').trim()) && bi.v !== false ? String(b.bannerUrl).trim() : '';
+        const inHdr = url && (bi.place === 'header' || bi.place === 'inputs');
+        const bst = bi.style || {}, dim = Math.max(0, Math.min(80, parseInt(bst.dim, 10) || 0)) / 100;
+        const pos = { top: 'center top', bottom: 'center bottom' }[bst.focus] || 'center center';
+        top.style.background = inHdr ? (dim ? 'linear-gradient(rgba(0,0,0,' + dim + '),rgba(0,0,0,' + dim + ')),' : '') + 'url("' + url.replace(/"/g, '%22') + '") ' + pos + '/cover no-repeat' + (a2 ? ',' + a2 : '') : a2;
+        top.style.color = hc || (a2 || inHdr ? '#fff' : '');
+        mv.querySelector('.mv-subt').style.color = hc ? hc : (a2 || inHdr ? 'rgba(255,255,255,.82)' : '');
+        let strip = $('mvBanner');
+        if (url && !inHdr) {
+            if (!strip) { strip = document.createElement('div'); strip.id = 'mvBanner'; strip.innerHTML = '<img alt="">'; top.insertAdjacentElement('afterend', strip); }
+            const im = strip.querySelector('img'); if (im.getAttribute('src') !== url) im.src = url;
+            const h = parseInt(bst.h, 10);
+            strip.style.cssText = 'margin:0 16px 10px;border-radius:' + (bst.radius != null && bst.radius !== '' ? (parseInt(bst.radius, 10) || 0) : 14) + 'px;overflow:hidden;flex-shrink:0;' + (!dark && bst.bg ? 'background:' + bst.bg + ';' : '');
+            im.style.cssText = 'display:block;width:100%;' + (h > 0 ? 'height:' + Math.min(h, 220) + 'px;' : 'max-height:110px;') + 'object-fit:' + (bst.fit === 'contain' ? 'contain' : 'cover') + ';object-position:' + pos + ';';
+        } else if (strip) strip.remove();
         if (b.font || document.body.style.fontFamily) mv.style.setProperty('--mvFont', document.body.style.fontFamily || ("'" + b.font + "', system-ui, sans-serif"));
     }
 

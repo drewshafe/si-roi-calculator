@@ -130,6 +130,38 @@
   .bn-picker button.bn-it img{ width:100%; height:58px; object-fit:cover; border-radius:4px; background:repeating-linear-gradient(45deg,#f1f2f8 0 6px,#e7e9f3 6px 12px); }
   .bn-picker button.bn-it span{ font-size:.62rem; font-weight:700; color:#4a5068; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lb-swatch.active{ border-color:#6675ff; box-shadow:0 0 0 2px #6675ff; }
+  /* Presets */
+  .pr-row{ gap:6px; }
+  .pr-sel, .pr-name{ flex:1; min-width:0; font-family:inherit; font-size:.8rem; padding:6px 8px; border:1px solid #d0d4e8; border-radius:6px; background:#fff; color:var(--ink); }
+  .pr-meta{ font-size:.66rem; color:var(--muted); margin:5px 0 0; min-height:1em; }
+  .pr-acts{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+  .pr-acts button, .pr-acts .pr-imp{ font-family:inherit; font-size:.68rem; font-weight:700; padding:4px 8px; border:1px solid #d5d9f0; background:#f7f8fc; color:#4a5068; border-radius:6px; cursor:pointer; }
+  .pr-acts button:hover, .pr-acts .pr-imp:hover{ border-color:var(--accent); color:var(--accent); }
+  .pr-acts button:disabled{ opacity:.4; cursor:default; }
+  .pr-acts button.on{ background:#fff7e0; border-color:#e0b44a; color:#8a5a00; }
+  /* Undo / redo (both modes) */
+  .hist-btn{ font-family:inherit; font-size:.8rem; font-weight:800; width:30px; height:28px; border-radius:7px; border:1px solid #c8ccff; background:#fff; color:var(--accent); cursor:pointer; padding:0; }
+  .hist-btn:disabled{ opacity:.35; cursor:default; }
+  /* Panel mode (?panel=1): the editor alone, inside the Rep Hub sidebar; the hub shows the canvas. */
+  .panel-bar{ display:none; }
+  body.panel{ height:auto; min-height:100%; overflow:hidden; background:#fff; }
+  body.panel header.cbh, body.panel .preview, body.panel .cb-linkout{ display:none !important; }
+  body.panel main{ grid-template-columns:1fr; height:100vh; }
+  body.panel .editor{ border-right:none; padding:0 10px 14px; }
+  body.panel .panel-bar{ display:flex; flex-direction:column; gap:7px; position:sticky; top:0; z-index:20; margin:0 -10px 12px; padding:10px 10px 9px; background:#f4f5fb; border-bottom:1px solid var(--line); box-shadow:0 4px 10px rgba(30,40,90,.06); }
+  .panel-bar .pb-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .panel-bar .pb-l{ font-size:.55rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); min-width:44px; }
+  .panel-bar .blk-seg button{ padding:4px 8px; font-size:.7rem; }
+  .panel-bar .pv-edit{ flex:1; white-space:nowrap; font-family:inherit; font-size:.74rem; font-weight:800; padding:6px 10px; border-radius:7px; border:1px solid #c8ccff; background:#fff; color:var(--accent); cursor:pointer; }
+  .panel-bar .pv-edit.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .panel-bar .cb-btn{ flex:1; padding:6px 8px; font-size:.7rem; white-space:nowrap; }
+  .panel-bar #pbDisp{ display:flex; gap:5px; flex-wrap:wrap; flex:1; min-width:0; }
+  .panel-bar #phoneMode{ font:700 .72rem/1 inherit !important; padding:4px 6px !important; border:1px solid #d0d4e8 !important; background:#fff !important; color:var(--ink) !important; min-width:0; }
+  .panel-bar #dispMode{ font:700 .72rem/1 inherit !important; padding:4px 6px !important; border:1px solid #d0d4e8 !important; background:#fff !important; color:var(--ink) !important; }
+  .panel-bar .pv-sel{ font-size:.66rem; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1; }
+  .pv-chk{ display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:700; color:#4a5068; cursor:pointer; white-space:nowrap; }
+  .pv-feat{ display:inline-flex; align-items:center; gap:8px; }
+  .panel-bar .pb-note{ font-size:.64rem; color:#6c7390; line-height:1.35; }
 </style>
 <script src="sb.js"></script>
 <script src="cb-layout.js"></script>
@@ -144,6 +176,9 @@
       <label class="cb-hidename" style="color:#cdd2e8;white-space:nowrap;" title="How the merchant link opens: Comfort (default), Compact (4-box strip + single green card) or Mobile (phone layout on any screen)">Layout
         <select id="dispMode" style="font:700 .72rem/1 inherit;text-transform:none;letter-spacing:0;padding:4px 6px;border-radius:6px;border:1px solid #4a5068;background:#1f2430;color:#fff;">
           <option value="">Comfort</option><option value="compact">Compact</option><option value="mobile">Mobile</option>
+        </select>
+        <select id="phoneMode" title="When the merchant opens the link on a phone" style="font:700 .72rem/1 inherit;text-transform:none;letter-spacing:0;padding:4px 6px;border-radius:6px;border:1px solid #4a5068;background:#1f2430;color:#fff;">
+          <option value="">📱 Phones: Mobile layout</option><option value="keep">📱 Phones: keep this layout</option>
         </select></label>
       <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
       <button class="cb-btn ghost" id="loadBase">Load</button>
@@ -154,6 +189,18 @@
   </header>
   <main>
     <div class="editor">
+      <div class="panel-bar" id="panelBar">
+        <div class="pb-row"><span class="pb-l">Canvas</span>
+          <span class="blk-seg" id="canvasSeg"><button type="button" data-v="calc" class="on" title="Edit the build right on the rep calc">📊 Rep calc</button><button type="button" data-v="merchant" title="See and edit the link the merchant opens">🔗 Merchant link</button></span>
+        </div>
+        <div class="pb-row"><span class="pb-l">Layout</span><span id="pbDisp"></span></div>
+        <div class="pb-row pv-feat"><span class="pb-l">Preview</span><label class="pv-chk"><input type="checkbox" data-pvf="re"> Returns</label><label class="pv-chk"><input type="checkbox" data-pvf="cbe"> Cashback</label></div>
+        <div class="pb-note" id="pbFeatNote" style="display:none;">Returns / Cashback parts show on the rep calc when they're on in Coverage (or switch the canvas to Merchant link to preview them).</div>
+        <div class="pb-row" id="pbEditRow"><button type="button" class="hist-btn" data-hist="undo" title="Undo (⌘Z)">↶</button><button type="button" class="hist-btn" data-hist="redo" title="Redo (⇧⌘Z)">↷</button></div>
+        <div class="pb-row"><span class="pv-sel" id="pbSel"></span></div>
+        <div class="pb-note" id="pbNote"></div>
+        <div class="pb-row" id="pbActions"></div>
+      </div>
       <div class="grp">
         <div class="grp-h cb-grp-head">
           <span>Merchant Branding 1</span>
@@ -326,6 +373,8 @@
         <div class="lay-list" id="fldList"></div>
         <div class="cb-sub-h" style="margin-top:14px;">Additional Inputs — ✎ section bar · drag ⣿ · ✎ style · 👁</div>
         <div class="lay-list" id="exList"></div>
+        <div class="cb-sub-h" style="margin-top:14px;">Returns inputs — show when Returns is on</div>
+        <div class="lay-list" id="rtList"></div>
         <div class="hint">Width <b>A</b> = the page's own grid; 1 / ⅔ / ½ / ⅓ = share of the inputs column. Hidden fields keep their link values. ✎ on a field changes its label text (type your own or pick an alternative; Monthly / mo / month switch to Annual / yr / year with the View) and its own colours, fonts and sizes, which override the section defaults. Compact density keeps its grouped layout (styles + hide still apply). Colours apply in the default theme; Project Midnight keeps its own look.</div>
           </div>
         </details>
@@ -344,13 +393,29 @@
       </div>
       <div class="grp">
         <div class="grp-h">Presets</div>
-        <div class="fld-row" style="gap:6px;">
-          <input type="text" id="presetName" placeholder="Preset name…" style="flex:1;font-family:inherit;font-size:.8rem;padding:6px 8px;border:1px solid #d0d4e8;border-radius:6px;">
-          <button type="button" class="cb-btn" id="savePreset">Save</button>
+        <div class="fld-row pr-row">
+          <select id="presetSel" class="pr-sel" title="Pick a saved preset"></select>
+          <button type="button" class="cb-btn" id="presetApply" title="Apply the picked preset to this build">Apply</button>
+        </div>
+        <div class="pr-meta" id="presetMeta"></div>
+        <div class="pr-acts" id="presetActs">
+          <button type="button" data-pa="update" title="Save this build's current look into the picked preset">⟳ Update</button>
+          <button type="button" data-pa="rename" title="Rename the picked preset">✎ Rename</button>
+          <button type="button" data-pa="dup" title="Copy the picked preset">⧉ Duplicate</button>
+          <button type="button" data-pa="default" title="New builds start from this preset">★ Default</button>
+          <button type="button" data-pa="del" title="Delete the picked preset">🗑</button>
+        </div>
+        <div class="fld-row pr-row" style="margin-top:9px;">
+          <input type="text" id="presetName" placeholder="New preset name…" class="pr-name">
+          <button type="button" class="cb-btn" id="savePreset">Save new</button>
         </div>
         <label class="cb-hidename" style="margin-top:6px;justify-content:flex-start;"><input type="checkbox" id="presetLayoutOnly" style="margin-right:6px;"> Layout only (exclude branding)</label>
-        <div class="cb-preset-list" id="presetList"></div>
-        <div class="hint">Presets save your layout, section styles, card rows &amp; hero options (and branding unless "Layout only"). Stored in this browser.</div>
+        <div class="pr-acts" style="margin-top:9px;">
+          <button type="button" id="presetReset" title="Start this build over from ShipInsure's default look">↺ Reset to default look</button>
+          <button type="button" id="presetExport" title="Download all your presets as a file (to share or back up)">⇩ Export</button>
+          <label class="pr-imp" title="Add presets from an exported file">⇧ Import<input type="file" id="presetImport" accept=".json,application/json" hidden></label>
+        </div>
+        <div class="hint">A preset saves the layout, block and input styles, themes, card rows and hero options, plus branding unless "Layout only". <b>★ Default</b> = new builds start from it (a build opened from a link or the cloud keeps its own look). Stored in this browser; Export / Import to share with the team.</div>
       </div>
       <div class="cb-linkout">
         <label style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Shareable link</label>
@@ -360,12 +425,14 @@
     <div class="preview">
       <div class="pv-bar">
         <button type="button" class="pv-edit" id="editCanvasBtn" title="Edit blocks directly on the preview">✏️ Edit on canvas</button>
+        <span id="pvHist"><button type="button" class="hist-btn" data-hist="undo" title="Undo (⌘Z)">↶</button> <button type="button" class="hist-btn" data-hist="redo" title="Redo (⇧⌘Z)">↷</button></span>
         <span class="pv-hint" id="pvHint">Turn on to drag, resize, style and hide blocks right on the proposal.</span>
         <span class="pv-col" id="pvCol" style="display:none;">
           <span class="pv-col-l">Inputs column</span>
           <span class="blk-seg" id="pvPos"><button type="button" data-v="left" title="Inputs on the left">◧</button><button type="button" data-v="right" title="Inputs on the right">◨</button><button type="button" data-v="top" title="Inputs on top">⬒</button></span>
           <span class="blk-seg" id="pvWidth"><button type="button" data-v="narrow" title="Narrow column">S</button><button type="button" data-v="normal" title="Normal column">M</button><button type="button" data-v="wide" title="Wide column">L</button></span>
         </span>
+        <span class="pv-feat"><span class="pv-col-l">Preview with</span> <label class="pv-chk"><input type="checkbox" data-pvf="re"> Returns</label> <label class="pv-chk"><input type="checkbox" data-pvf="cbe"> Cashback</label></span>
         <span class="pv-sel" id="pvSel"></span>
       </div>
       <iframe id="preview" title="Proposal preview"></iframe>
@@ -438,6 +505,13 @@
 
 <script>
   // Default base params so the preview shows a realistic proposal immediately.
+  // Panel mode (?panel=1): this editor sits in the Rep Hub's sidebar (ROI Builder → Custom). The hub
+  // shows the canvas beside it (the rep calc, or the merchant link) and relays edits both ways.
+  const PANEL = new URLSearchParams(location.search).get('panel') === '1' && window.parent !== window;
+  if (PANEL) document.body.classList.add('panel');
+  const HIST = [], HMAX = 60; let _hIdx = -1, _hLock = false, _hT = null;   // undo / redo
+  let _canvas = 'calc';     // panel mode: which page the hub shows — 'calc' | 'merchant'
+  const toHub = msg => { try { if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*'); } catch (e) {} };
   const DEFAULT_BASE = 'mname=Acme+Co&orders=10000&aov=80&claims=1.5&share=25&attach=68&premium=3&minp=0.98&avg_premium=2.40&view=monthly&template=percentage';
   let baseParams = DEFAULT_BASE;
 
@@ -446,6 +520,7 @@
   const SECTIONS = SICB.BLOCKS;
   const FIELD_DEFS = SICB.FIELDS;
   const EXTRA_DEFS = SICB.EXTRAS || [];
+  const RETURN_DEFS = SICB.RETURNS || [];
   const SWATCHES = ['#6675ff','#1f9d63','#e0007a','#c0641a','#0f8f56','#2a2f45','#d4af37','#7c3aed'];
   const FONTS = ['', 'Inter', 'Poppins', 'Montserrat', 'DM Sans', 'Oswald', 'Lora', 'Playfair Display', 'Roboto Slab', 'Georgia'];
   // New merchant-input defaults (white section, navy text, soft border)
@@ -516,12 +591,33 @@
       layout: layout,
       blocks: blocks,
       inputs: inputsCfg,
+      display: $('phoneMode').value === 'keep' ? { phone: 'keep' } : undefined,
       v: 2,
     };
   }
-  function buildUrl() {
+  // The preview fills the numbers the rep hasn't entered yet with sample ones (so blocks show);
+  // the link that gets copied / saved keeps exactly what the rep entered.
+  // "Preview with Returns / Cashback": turn those on in the preview only, to style their parts.
+  let _pvFeat = { re: false, cbe: false };
+  const baseHas = k => new URLSearchParams(baseParams).get(k) === '1';
+  function previewParams() {
+    const bp = new URLSearchParams(baseParams), def = new URLSearchParams(DEFAULT_BASE);
+    def.forEach((v, k) => { if (!(bp.get(k) || '').trim()) bp.set(k, v); });
+    Object.keys(_pvFeat).forEach(k => { if (_pvFeat[k]) bp.set(k, '1'); });
+    return bp.toString();
+  }
+  function paintPvFeat() {
+    document.querySelectorAll('[data-pvf]').forEach(c => {
+      const on = baseHas(c.dataset.pvf);
+      c.checked = on || _pvFeat[c.dataset.pvf]; c.disabled = on;
+      c.parentElement.title = on ? 'On in this scenario' : 'Show it in the preview only (the link stays as it is)';
+    });
+    document.querySelectorAll('.pv-feat').forEach(r => { r.style.display = PANEL && _canvas === 'calc' ? 'none' : ''; });
+    const n = $('pbFeatNote'); if (n) n.style.display = PANEL && _canvas === 'calc' ? '' : 'none';
+  }
+  function buildUrl(forPreview) {
     const enc = encodeURIComponent(JSON.stringify(cfg()));
-    let url = proposalBase() + '?' + baseParams + '&bld=' + enc;
+    let url = proposalBase() + '?' + (forPreview ? previewParams() : baseParams) + '&bld=' + enc;
     // Heavy assets (an uploaded/locked logo) ride in the URL hash, not the query
     // string: the hash isn't sent to the server, so GitHub Pages never rejects the
     // length, and browsers carry tens of KB there without truncating.
@@ -539,7 +635,7 @@
     const b = c.branding || {};
     const L = c.layout || [];
     const cards = L.find(l => l.k === 'cards'), hero = L.find(l => l.k === 'hero');
-    return JSON.stringify([baseParams, b.accent, b.font, b.logoUrl, b.hideName, _logoImg,
+    return JSON.stringify([baseParams, _pvFeat, b.accent, b.font, b.logoUrl, b.hideName, _logoImg,
       cards && cards.style && cards.style.rows, hero && hero.style && [hero.style.subHidden, hero.style.perPremium]]);
   }
   let _t = null, _srcSig = null, _loadedSig = null;
@@ -560,14 +656,21 @@
   }
   function refresh(immediate) {
     syncSummaries();
+    paintPvFeat();
     const url = buildUrl();
     $('linkOut').value = url;
     clearTimeout(_t);
     const c = cfg(), sig = _reloadSig(c), w = _pvWin();
+    histPush();
+    if (PANEL) {                                         // the hub owns the canvas
+      toHub({ siCB: 'canvas', view: _canvas, url: buildUrl(true), sig: sig, cfg: c, edit: { on: _edit, sel: _sel } });
+      toHub({ siCB: 'branding', cfg: c });
+      return;
+    }
     if (w && sig === _loadedSig && sig === _srcSig) {
       try { w.SICB.apply(c); syncEdit(); } catch (e) { console.warn('[CB] live apply failed', e); }
     } else {
-      const doIt = () => { _srcSig = _reloadSig(cfg()); $('preview').src = buildUrl(); };
+      const doIt = () => { _srcSig = _reloadSig(cfg()); $('preview').src = buildUrl(true); };
       if (immediate) doIt(); else _t = setTimeout(doIt, 400);
     }
     // Live branding sync: when stacked under the ROI Builder, push the current branding
@@ -582,6 +685,8 @@
   // Live rep-input + display sync: when stacked under the ROI Builder, the hub relays the
   // calc's current merchant link (+ display settings) on every change, so the preview below
   // reflects the rep's edits in real time. Branding stays owned by this editor (bld stripped).
+  // The hub's calc reloaded (Custom pane): send the build again.
+  window.addEventListener('message', e => { if (PANEL && e.source === window.parent && e.data && e.data.siHub === 'cbResend') refresh(true); });
   window.addEventListener('message', function (e) {
     const d = e.data; if (!d || d.siHub !== 'repdata') return;
     try {
@@ -638,6 +743,7 @@
   $('logoUrl').addEventListener('input', () => refresh(false));
   $('bannerUrl').addEventListener('input', () => { renderLayout(); refresh(false); });
   $('periodText').addEventListener('change', () => refresh(true));
+  $('phoneMode').addEventListener('change', () => refresh(true));
   $('hdrBanner').addEventListener('change', e => {
     const bi = layout.find(l => l.k === 'banner'); if (!bi) return;
     if (e.target.checked) { bi.place = 'header'; if (bi.v === false) bi.v = true; } else delete bi.place;
@@ -1181,6 +1287,9 @@
     cogs:    ['Product Cost', 'COGS', 'Cost of Goods', 'Product Cost %'],
     aship:   ['Avg Shipping Cost ($)', 'Avg Shipping', 'Shipping Cost / Order', 'Avg Label Cost'],
     cs:      ['CS Cost Per Claim ($)', 'Avg Ticket Cost', 'Support Cost / Claim', 'CS Cost / Ticket'],
+    rr:      ['Returns Rate %', 'Return Rate %', 'Returns / Orders %', 'Monthly Returns %'],
+    arc:     ['Avg Return Cost ($)', 'Avg Label Cost', 'Return Label Cost', 'Cost per Return'],
+    rpc:     ['Returns Platform Cost ($/mo)', 'Portal Cost / mo', 'Returns App Cost', 'Platform Fee / mo'],
   };
   // Deeper options for Premiums You Keep / Upfront / Current Cost (comfort + compact versions)
   const DETAIL_KEYS = {
@@ -1360,7 +1469,7 @@
   }
 
   // ── Merchant input fields list ──
-  const fieldLabel = k => (FIELD_DEFS.find(f => f.k === k) || EXTRA_DEFS.find(f => f.k === k) || {}).label || k;
+  const fieldLabel = k => (FIELD_DEFS.find(f => f.k === k) || EXTRA_DEFS.find(f => f.k === k) || RETURN_DEFS.find(f => f.k === k) || {}).label || k;
   function renderFields() {
     const list = $('fldList'); if (!list) return; list.innerHTML = '';
     inputsCfg.fields.forEach(f => {
@@ -1387,12 +1496,27 @@
   document.querySelectorAll('#inWidth button, #pvWidth button').forEach(b => b.addEventListener('click', () => { inputsCfg.width = b.dataset.v; renderLists(); refresh(true); }));
 
   // ── Additional Inputs: the section bar + its fields ──
-  function exSectionEditor(ex) {
+  function exSectionEditor(ex, gk) {
+    const G = IN_GROUPS[gk || 'extras'];
     const st = ex.style || (ex.style = {});
     const set = (k, v) => { if (v === undefined || v === '') delete st[k]; else st[k] = v; };
     const wrap = document.createElement('div'); wrap.className = 'blk-edit';
     const g = document.createElement('div'); g.className = 'mini-grid';
-    g.appendChild(cell('Bar text', textCtl(ex.label, 'Additional Inputs', v => { if (v) ex.label = v; else delete ex.label; }, ['Additional Inputs', 'More Inputs', 'Cost Inputs', 'Optional Inputs', 'Advanced']), true));
+    g.appendChild(cell(gk === 'returns' ? 'Heading text' : 'Bar text', textCtl(ex.label, G.name, v => { if (v) ex.label = v; else delete ex.label; }, G.alts), true));
+    if (gk === 'returns') {
+      g.appendChild(cell('Heading colour', colorCtl(() => st.color, v => set('color', v), '#e0007a')));
+      g.appendChild(cell('Heading font', fontSelect(st.font, v => { set('font', v); refresh(true); })));
+      g.appendChild(cell('Heading size', segCtl([['s', 'S'], ['', 'M'], ['l', 'L'], ['xl', 'XL']], st.size || '', v => { set('size', v); refresh(true); })));
+      const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;';
+      h.textContent = 'These inputs show when Returns is on (merchant link with Returns, rep calc with Enable Returns). The heading shows on the merchant view; on the rep calc the fields sit in the inputs row. Hiding the section hides its fields; their link values are kept.';
+      g.appendChild(h);
+      wrap.appendChild(g);
+      const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'cb-btn ghost';
+      rs.style.cssText = 'background:#f4f5fb;color:var(--muted);border:1px solid var(--line);margin-top:2px;';
+      rs.textContent = 'Reset heading'; rs.addEventListener('click', () => { delete ex.style; delete ex.label; renderFields(); refresh(true); });
+      wrap.appendChild(rs);
+      return wrap;
+    }
     g.appendChild(cell('Starts', segCtl([['', 'Page default'], ['open', 'Open'], ['closed', 'Closed']], ex.open || '', v => { if (v) ex.open = v; else delete ex.open; refresh(true); }), true));
     g.appendChild(cell('Bar background', colorCtl(() => st.bg, v => set('bg', v), '#eef0fb')));
     g.appendChild(cell('Bar text colour', colorCtl(() => st.color, v => set('color', v), '#4a5fc1')));
@@ -1410,22 +1534,30 @@
     wrap.appendChild(reset);
     return wrap;
   }
-  function renderExtras() {
-    const list = $('exList'); if (!list) return; list.innerHTML = '';
-    const ex = inputsCfg.extras || (inputsCfg.extras = SICB.normInputs(null).extras);
+  // Input groups: Additional Inputs ('extras') and the Returns inputs ('returns').
+  const IN_GROUPS = {
+    extras:  { list: 'exList', secKey: 'section',  name: 'Additional Inputs', alts: ['Additional Inputs', 'More Inputs', 'Cost Inputs', 'Optional Inputs', 'Advanced'] },
+    returns: { list: 'rtList', secKey: 'rsection', name: 'Returns',           alts: ['Returns', 'Returns Inputs', 'Your Returns', 'Return Costs'] },
+  };
+  const groupOfKey = k => (k === 'rsection' || RETURN_DEFS.some(x => x.k === k)) ? 'returns' : 'extras';
+  function renderExtras() { renderGroup('extras'); renderGroup('returns'); }
+  function renderGroup(gk) {
+    const G = IN_GROUPS[gk];
+    const list = $(G.list); if (!list) return; list.innerHTML = '';
+    const ex = inputsCfg[gk] || (inputsCfg[gk] = (SICB.normInputs(null) || {})[gk]);
     if (!ex || !Array.isArray(ex.fields)) return;     // an older cached engine: nothing to show yet
     const sec = document.createElement('div');
-    sec.className = 'lay-item pinned' + (ex.v === false ? ' hidden' : '') + (_sel && _sel.g === 'x' && _sel.k === 'section' ? ' sel' : '');
+    sec.className = 'lay-item pinned' + (ex.v === false ? ' hidden' : '') + (_sel && _sel.g === 'x' && _sel.k === G.secKey ? ' sel' : '');
     const secStyled = !!(ex.label || ex.open || (ex.style && Object.keys(ex.style).length));
-    sec.innerHTML = '<span class="lay-grip" style="visibility:hidden;">⣿</span><span class="lay-name" title="Select on the preview">▸ ' + (ex.label ? String(ex.label).replace(/</g, '&lt;') : 'Additional Inputs') + ' <span style="font-weight:600;color:var(--muted);">· section</span>' + (secStyled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
+    sec.innerHTML = '<span class="lay-grip" style="visibility:hidden;">⣿</span><span class="lay-name" title="Select on the preview">▸ ' + (ex.label ? String(ex.label).replace(/</g, '&lt;') : G.name) + ' <span style="font-weight:600;color:var(--muted);">· section</span>' + (secStyled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
     const sed = document.createElement('button'); sed.className = 'lay-mini'; sed.title = 'Style the section bar'; sed.textContent = '✎';
-    sed.addEventListener('click', e => { e.stopPropagation(); _openEx = _openEx === 'section' ? null : 'section'; select('x', 'section', false); });
+    sed.addEventListener('click', e => { e.stopPropagation(); _openEx = _openEx === G.secKey ? null : G.secKey; select('x', G.secKey, false); });
     const seye = document.createElement('button'); seye.className = 'lay-eye'; seye.title = 'Show / hide the whole section'; seye.textContent = ex.v === false ? '🚫' : '👁';
     seye.addEventListener('click', e => { e.stopPropagation(); if (ex.v === false) delete ex.v; else ex.v = false; renderFields(); refresh(true); });
     sec.append(sed, seye);
-    sec.querySelector('.lay-name').addEventListener('click', () => select('x', 'section', false));
+    sec.querySelector('.lay-name').addEventListener('click', () => select('x', G.secKey, false));
     list.appendChild(sec);
-    if (_openEx === 'section') list.appendChild(exSectionEditor(ex));
+    if (_openEx === G.secKey) list.appendChild(exSectionEditor(ex, gk));
     ex.fields.forEach(f => {
       const row = document.createElement('div');
       row.className = 'lay-item' + (f.v === false || ex.v === false ? ' hidden' : '') + (_sel && _sel.g === 'x' && _sel.k === f.k ? ' sel' : '');
@@ -1507,15 +1639,17 @@
     if (sec && !sec.open) sec.open = true;
     renderLists();
     const pillName = g === 'm' ? ((SICB.PILLS.find(x => x.k === k) || {}).label || k) : '';
-    const pv = $('pvSel'); if (pv) pv.textContent = '● ' + (g === 'x' ? (k === 'section' ? 'Additional Inputs' : fieldLabel(k)) : g === 'f' ? fieldLabel(k) : g === 'p' ? 'Inputs column' : g === 'm' ? 'Pill · ' + pillName : blockLabel(k));
+    const pv = $('pvSel'); if (pv) pv.textContent = '● ' + (g === 'x' ? (k === 'section' ? 'Additional Inputs' : k === 'rsection' ? 'Returns inputs' : fieldLabel(k)) : g === 'f' ? fieldLabel(k) : g === 'p' ? 'Inputs column' : g === 'm' ? 'Pill · ' + pillName : blockLabel(k));
     if (fromCanvas) {
-      const row = g === 'x' ? (k === 'section' ? document.querySelector('#exList .lay-item.pinned') : document.querySelector('#exList .lay-item[data-k="' + k + '"]'))
+      const lid = '#' + IN_GROUPS[groupOfKey(k)].list;
+      const row = g === 'x' ? (k === 'section' || k === 'rsection' ? document.querySelector(lid + ' .lay-item.pinned') : document.querySelector(lid + ' .lay-item[data-k="' + k + '"]'))
         : g === 'm' ? document.querySelector('#layList .pill-row[data-k="' + k + '"]')
         : document.querySelector((g === 'f' ? '#fldList' : '#layList') + ' .lay-item' + (g === 'p' ? '.pinned' : '[data-k="' + k + '"]'));
       if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else syncEdit();
   }
   function syncEdit() {
+    if (PANEL) { toHub({ siCB: 'edit', view: _canvas, on: _edit, sel: _sel }); paintPanelSel(); return; }
     const w = _pvWin(); if (!w) return;
     try { w.SICB.setEdit(_edit, _sel); } catch (e) {}
   }
@@ -1524,20 +1658,85 @@
     $('editCanvasBtn').classList.toggle('on', _edit);
     $('editCanvasBtn').textContent = _edit ? '✓ Editing on canvas — drag ⣿ · resize · 🎨 · 👁' : '✏️ Edit on canvas';
     $('pvHint').textContent = _edit ? 'Drag ⣿ to move · 1 ⅔ ½ ⅓ resize · 🎨 style · 👁 hide' : 'Turn on to drag, resize, style and hide blocks right on the proposal.';
-    $('pvCol').style.display = _edit ? '' : 'none';
+    $('pvCol').style.display = _edit && !PANEL ? '' : 'none';
     document.querySelector('.pv-bar').classList.toggle('editing', _edit);
+    if (PANEL) $('editCanvasBtn').textContent = _edit ? '✓ Editing on canvas' : '✏️ Edit on canvas';
+    paintPanelNote();
     $('editCanvasBtn').title = _edit ? 'Drag ⣿ to move · 1 ⅔ ½ ⅓ resize · 🎨 style · 👁 hide · click a block to select it' : 'Edit blocks directly on the preview';
     syncEdit();
   });
+  // ── Undo / redo ── every change is a snapshot of the editor state (data / merchant stay put).
+  function histSnap() { try { return JSON.stringify(cbSnapshot()); } catch (e) { return null; } }
+  function histPush() {
+    if (_hLock) return;
+    clearTimeout(_hT);
+    _hT = setTimeout(() => {
+      const s = histSnap(); if (!s || s === HIST[_hIdx]) return;
+      HIST.splice(_hIdx + 1); HIST.push(s); if (HIST.length > HMAX) HIST.shift(); _hIdx = HIST.length - 1; paintHist();
+    }, 350);
+  }
+  function histGo(step) {
+    clearTimeout(_hT);
+    const cur = histSnap(); if (cur && cur !== HIST[_hIdx]) { HIST.splice(_hIdx + 1); HIST.push(cur); _hIdx = HIST.length - 1; }
+    const j = _hIdx + step; if (j < 0 || j >= HIST.length) return;
+    _hIdx = j; _hLock = true;
+    const keepSel = _sel, keepOpen = [_openSec, _openBlk, _openFld, _openPill, _openEx];
+    try { cbRestore(JSON.parse(HIST[j]), true); } finally { _hLock = false; }
+    _sel = keepSel; [_openSec, _openBlk, _openFld, _openPill, _openEx] = keepOpen; renderLists(); syncEdit();
+    paintHist();
+  }
+  function paintHist() {
+    document.querySelectorAll('[data-hist="undo"]').forEach(b => b.disabled = _hIdx <= 0);
+    document.querySelectorAll('[data-hist="redo"]').forEach(b => b.disabled = _hIdx >= HIST.length - 1);
+  }
+  document.querySelectorAll('[data-hist]').forEach(b => b.addEventListener('click', () => histGo(b.dataset.hist === 'undo' ? -1 : 1)));
+  document.addEventListener('keydown', e => {
+    const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+    if (typing) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); histGo(e.shiftKey ? 1 : -1); }
+    else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); histGo(1); }
+    else if (e.key === 'Escape' && _sel) { _sel = null; renderLists(); syncEdit(); }
+  });
+  paintHist();
+  document.querySelectorAll('[data-pvf]').forEach(c => c.addEventListener('change', () => { _pvFeat[c.dataset.pvf] = c.checked; paintPvFeat(); refresh(true); }));
+
+  // ── Panel mode: toolbar + canvas switch ──
+  function paintPanelSel() {}
+  function paintPanelNote() {
+    const n = $('pbNote'); if (!n || !PANEL) return;
+    const disp = _dispFromBase();
+    n.textContent = !_edit ? 'Turn on Edit on canvas to drag, resize, style and hide right on the ' + (_canvas === 'calc' ? 'rep calc' : 'merchant link') + '.'
+      : disp === 'mobile' ? 'Mobile mirrors labels, hidden items, colours, logo and banner. Switch Layout to Comfort or Compact to edit on the canvas.'
+      : 'Drag ⣿ to move · 1 ⅔ ½ ⅓ resize · 🎨 style · 👁 hide · click to select · Esc to deselect · ⌘Z undo';
+  }
+  if (PANEL) {
+    const bar = $('panelBar');
+    $('pbDisp').appendChild($('dispMode')); $('pbDisp').appendChild($('phoneMode'));
+    $('pbSel').replaceWith($('pvSel'));
+    const er = $('pbEditRow'); er.insertBefore($('editCanvasBtn'), er.firstChild);
+    ['copyLink', 'cloudSaveBtn', 'cloudSaveNewBtn'].forEach(id => $('pbActions').appendChild($(id)));
+    $('copyLink').textContent = '📋 Copy Link'; $('cloudSaveBtn').textContent = '☁ Save'; $('cloudSaveNewBtn').textContent = '☁ Save new';
+    document.querySelectorAll('#canvasSeg button').forEach(b => b.addEventListener('click', () => {
+      _canvas = b.dataset.v;
+      document.querySelectorAll('#canvasSeg button').forEach(x => x.classList.toggle('on', x === b));
+      paintPanelNote(); paintPvFeat(); refresh(true);
+    }));
+    // Layout picks the merchant link's layout; on the rep calc canvas it also sets the calc's density.
+    $('dispMode').addEventListener('change', () => { toHub({ siCB: 'density', density: $('dispMode').value || 'comfortable' }); paintPanelNote(); });
+    _edit = true; $('editCanvasBtn').classList.add('on'); $('editCanvasBtn').textContent = '✓ Editing on canvas';
+    paintPanelNote();
+    void bar;
+  }
+
   // Canvas → editor: edits made on the preview come back as ops; this editor owns the config.
   window.addEventListener('message', e => {
     const d = e.data; if (!d || d.siCBx !== 'op') return;
-    let src = null; try { src = $('preview').contentWindow; } catch (er) {}
+    let src = null; try { src = PANEL ? window.parent : $('preview').contentWindow; } catch (er) {}
     if (e.source !== src) return;
-    if (d.g === 'x') {                                   // Additional Inputs (section bar or a field)
-      const ex = inputsCfg.extras; if (!ex) return;
+    if (d.g === 'x') {                                   // Additional Inputs / Returns inputs (a section or a field)
+      const ex = inputsCfg[groupOfKey(d.k)]; if (!ex) return;
       if (d.op === 'toggle') {
-        if (d.k === 'section') { if (ex.v === false) delete ex.v; else ex.v = false; }
+        if (d.k === 'section' || d.k === 'rsection') { if (ex.v === false) delete ex.v; else ex.v = false; }
         else { const f = ex.fields.find(x => x.k === d.k); if (f) f.v = f.v === false; }
         select('x', d.k, true); refresh(true);
       } else if (d.op === 'select') select('x', d.k, true, !!d.style);
@@ -1721,10 +1920,11 @@
     return _accent2Set || !!_logoImg || !!$('logoUrl').value.trim() || !!$('bannerUrl').value.trim()
       || _ibgMode !== 'default' || _inpLabelSet || _inpInputSet || _inpBorderSet || _inpBorderW !== ''
       || ($('accentHex').value || '').toLowerCase() !== '#6675ff'
-      || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize) || !$('periodText').checked
+      || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize) || !$('periodText').checked || $('phoneMode').value === 'keep'
       || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
       || !!($('inLblFont').value || $('inFontSel').value || _inLblSize || _inSize)
       || inputsCfg.fields.some(f => f.w || f.v === false || f.label || (f.style && Object.keys(f.style).length))
+      || ['returns'].some(gk => { const r = inputsCfg[gk]; return !!(r && (r.v === false || r.label || r.ordered || (r.style && Object.keys(r.style).length) || r.fields.some(f => f.v === false || f.label || (f.style && Object.keys(f.style).length)))); })
       || !!(inputsCfg.extras && (inputsCfg.extras.v === false || inputsCfg.extras.label || inputsCfg.extras.open || inputsCfg.extras.ordered || (inputsCfg.extras.style && Object.keys(inputsCfg.extras.style).length)
         || inputsCfg.extras.fields.some(f => f.v === false || f.label || (f.style && Object.keys(f.style).length))))
       || (Array.isArray(layout) && layout.some(l => l.style || l.w || l.v === false || l.place || l.label || l.useCompact || l.theme || (l.pills && l.pills.length)))
@@ -1808,10 +2008,13 @@
         inLblFont: b.inputLabelFont || '', inLblSize: b.inputLabelSize || '', inFont: b.inputFont || '', inSize: b.inputSize || '',
         periodOff: b.periodText === 0
       },
-      layout: bld.layout || [], blocks: bld.blocks || [], inputs: bld.inputs || null
+      layout: bld.layout || [], blocks: bld.blocks || [], inputs: bld.inputs || null,
+      display: { phone: bld.display && bld.display.phone === 'keep' ? 'keep' : '' }
     };
   }
 
+  // ShipInsure's default look (before any link / cloud / preset) — for "Reset to default look".
+  const STOCK = JSON.parse(JSON.stringify(cbSnapshot()));
   (async function initFromQuery(){
     const q = new URLSearchParams(location.search);
     const id = q.get('id');
@@ -1867,6 +2070,7 @@
       layout: JSON.parse(JSON.stringify(layout)),
       blocks: JSON.parse(JSON.stringify(blocks)),
       inputs: JSON.parse(JSON.stringify(inputsCfg)),
+      display: { phone: $('phoneMode').value || '' },
     };
   }
 
@@ -1879,6 +2083,7 @@
     if (snap.layout) layout = SICB.normLayout(JSON.parse(JSON.stringify(snap.layout)), blocks);
     inputsCfg = SICB.normInputs(snap.inputs ? JSON.parse(JSON.stringify(snap.inputs)) : null);
     _openSec = null; _openBlk = null; _openFld = null; _openPill = null; _openEx = null; _sel = null;
+    if (snap.display && typeof snap.display === 'object') $('phoneMode').value = snap.display.phone === 'keep' ? 'keep' : '';
     if (includeBranding && snap.branding) {
       const b = snap.branding;
       const setv = (id, v) => { const e = $(id); if (e && v != null) e.value = v; };
@@ -1913,41 +2118,106 @@
     renderSwatches(); renderLists(); refresh(true);
   }
 
-  function renderPresetList() {
-    const el = $('presetList'); if (!el) return;
-    const items = getPresets();
-    if (!items.length) { el.innerHTML = '<div class="hint" style="opacity:.7;">No saved presets yet.</div>'; return; }
-    el.innerHTML = '';
-    items.forEach((p, i) => {
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid var(--line);';
-      const tag = p.branding ? '' : ' <span style="font-size:.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;">· layout</span>';
-      row.innerHTML = '<span style="flex:1;font-size:.8rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
-        (p.name || 'Untitled').replace(/</g, '&lt;') + tag + '</span>' +
-        '<button type="button" class="cb-btn ghost pr-load" style="padding:4px 10px;font-size:.72rem;">Load</button>' +
-        '<button type="button" class="lay-mini pr-del" title="Delete">🗑</button>';
-      row.querySelector('.pr-load').addEventListener('click', () => { cbRestore(p, !!p.branding); });
-      row.querySelector('.pr-del').addEventListener('click', () => { const arr = getPresets(); arr.splice(i, 1); setPresets(arr); renderPresetList(); });
-      el.appendChild(row);
-    });
+  // Presets: pick one, then Apply / Update / Rename / Duplicate / ★ Default / Delete.
+  const CB_DEFAULT_KEY = 'si_cb_default_preset';
+  const getDefault = () => { try { return localStorage.getItem(CB_DEFAULT_KEY) || ''; } catch (e) { return ''; } };
+  const setDefault = n => { try { n ? localStorage.setItem(CB_DEFAULT_KEY, n) : localStorage.removeItem(CB_DEFAULT_KEY); } catch (e) {} };
+  const same = (a, b) => String(a || '').toLowerCase() === String(b || '').toLowerCase();
+  let _prPick = '';
+  function presetSnap(name, layoutOnly) {
+    const snap = cbSnapshot();
+    snap.name = name; snap.savedAt = new Date().toISOString();
+    if (layoutOnly) snap.branding = null;
+    return snap;
   }
-
+  function flash(btn, txt) { if (!btn) return; const old = btn.textContent; btn.textContent = txt; setTimeout(() => { btn.textContent = old; }, 1400); }
+  function renderPresetList() {
+    const sel = $('presetSel'); if (!sel) return;
+    const items = getPresets(), def = getDefault();
+    if (_prPick && !items.some(p => same(p.name, _prPick))) _prPick = '';
+    sel.innerHTML = '<option value="">' + (items.length ? '— Pick a preset (' + items.length + ') —' : 'No presets yet: save one below') + '</option>' +
+      items.map(p => '<option value="' + String(p.name || '').replace(/"/g, '&quot;') + '">' + (same(p.name, def) ? '★ ' : '') + String(p.name || 'Untitled').replace(/</g, '&lt;') + (p.branding ? '' : ' · layout only') + '</option>').join('');
+    sel.value = _prPick;
+    const p = items.find(x => same(x.name, _prPick));
+    const d = p && p.savedAt ? new Date(p.savedAt) : null;
+    $('presetMeta').textContent = p ? (p.branding ? 'Layout + branding' : 'Layout only') + (d && !isNaN(d) ? ' · saved ' + d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '') + (same(p.name, def) ? ' · ★ default for new builds' : '')
+      : (def ? '★ New builds start from "' + def + '"' : '');
+    $('presetApply').disabled = !p;
+    document.querySelectorAll('#presetActs button').forEach(b => { b.disabled = !p; });
+    const db = document.querySelector('#presetActs [data-pa="default"]');
+    if (db) { const on = !!(p && same(p.name, def)); db.classList.toggle('on', on); db.textContent = on ? '★ Default ✓' : '★ Default'; db.title = on ? 'Click to stop using it as the default' : 'New builds start from this preset'; }
+  }
+  $('presetSel').addEventListener('change', e => { _prPick = e.target.value; renderPresetList(); });
+  $('presetApply').addEventListener('click', () => {
+    const p = getPresets().find(x => same(x.name, _prPick)); if (!p) return;
+    cbRestore(p, !!p.branding); flash($('presetApply'), '✓ Applied');
+  });
+  $('presetActs').addEventListener('click', e => {
+    const b = e.target.closest('[data-pa]'); if (!b || b.disabled) return;
+    const arr = getPresets(), i = arr.findIndex(x => same(x.name, _prPick)); if (i < 0) return;
+    const p = arr[i], act = b.dataset.pa;
+    if (act === 'update') {
+      if (!confirm('Replace "' + p.name + '" with this build\'s current ' + (p.branding ? 'layout and branding' : 'layout') + '?')) return;
+      arr[i] = presetSnap(p.name, !p.branding); setPresets(arr); flash(b, '✓ Updated');
+    } else if (act === 'rename') {
+      const n = (prompt('Rename preset', p.name) || '').trim(); if (!n || n === p.name) return;
+      if (arr.some((x, j) => j !== i && same(x.name, n))) { alert('A preset called "' + n + '" already exists.'); return; }
+      if (same(getDefault(), p.name)) setDefault(n);
+      p.name = n; setPresets(arr); _prPick = n;
+    } else if (act === 'dup') {
+      let n = p.name + ' copy', k = 2; while (arr.some(x => same(x.name, n))) n = p.name + ' copy ' + (k++);
+      const c = JSON.parse(JSON.stringify(p)); c.name = n; c.savedAt = new Date().toISOString(); arr.splice(i + 1, 0, c); setPresets(arr); _prPick = n;
+    } else if (act === 'default') {
+      setDefault(same(getDefault(), p.name) ? '' : p.name);
+    } else if (act === 'del') {
+      if (!confirm('Delete the preset "' + p.name + '"? This can\'t be undone (unless you exported it).')) return;
+      arr.splice(i, 1); setPresets(arr); if (same(getDefault(), p.name)) setDefault(''); _prPick = '';
+    }
+    renderPresetList();
+  });
   $('savePreset').addEventListener('click', () => {
     const name = ($('presetName').value || '').trim();
     if (!name) { $('presetName').focus(); return; }
-    const layoutOnly = $('presetLayoutOnly').checked;
-    const snap = cbSnapshot();
-    snap.name = name;
-    if (layoutOnly) snap.branding = null;
     const arr = getPresets();
-    const existing = arr.findIndex(p => (p.name || '').toLowerCase() === name.toLowerCase());
+    const existing = arr.findIndex(p => same(p.name, name));
+    if (existing >= 0 && !confirm('A preset called "' + arr[existing].name + '" exists. Replace it?')) return;
+    const snap = presetSnap(name, $('presetLayoutOnly').checked);
     if (existing >= 0) arr[existing] = snap; else arr.push(snap);
     setPresets(arr);
-    $('presetName').value = '';
-    renderPresetList();
-    const btn = $('savePreset'); const old = btn.textContent; btn.textContent = '✓ Saved';
-    setTimeout(() => btn.textContent = old, 1400);
+    $('presetName').value = ''; _prPick = name;
+    renderPresetList(); flash($('savePreset'), '✓ Saved');
   });
+  $('presetName').addEventListener('keydown', e => { if (e.key === 'Enter') $('savePreset').click(); });
+  $('presetReset').addEventListener('click', () => {
+    if (!confirm('Reset this build to ShipInsure\'s default look? Layout, styles and branding go back to the defaults (the merchant\'s numbers stay). ⌘Z undoes it.')) return;
+    cbRestore(JSON.parse(JSON.stringify(STOCK)), true);
+  });
+  $('presetExport').addEventListener('click', () => {
+    const arr = getPresets(); if (!arr.length) { alert('No presets to export yet.'); return; }
+    const blob = new Blob([JSON.stringify({ kind: 'si-custom-build-presets', v: 1, presets: arr }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'custom-build-presets.json'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  $('presetImport').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      const inc = (Array.isArray(data) ? data : data.presets || []).filter(p => p && typeof p === 'object' && p.name && (p.layout || p.branding || p.inputs));
+      if (!inc.length) { alert('No presets found in that file.'); return; }
+      const arr = getPresets(); let added = 0, replaced = 0;
+      inc.forEach(p => { const i = arr.findIndex(x => same(x.name, p.name)); if (i >= 0) { arr[i] = p; replaced++; } else { arr.push(p); added++; } });
+      setPresets(arr); renderPresetList();
+      alert('Imported ' + added + ' new preset' + (added === 1 ? '' : 's') + (replaced ? ' and replaced ' + replaced : '') + '.');
+    } catch (x) { alert('Could not read that file: ' + (x && x.message ? x.message : x)); }
+  });
+  // ★ Default: a new build (nothing to open from a link or the cloud) starts from it.
+  (function applyDefaultPreset() {
+    const q = new URLSearchParams(location.search);
+    if (q.get('id') || q.get('base')) return;
+    const n = getDefault(); if (!n) return;
+    const p = getPresets().find(x => same(x.name, n)); if (!p) return;
+    _prPick = p.name; cbRestore(p, !!p.branding);
+  })();
 
   renderSwatches();
   renderLists();

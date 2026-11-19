@@ -33,6 +33,12 @@
     { k: 'aship', label: 'Avg Shipping Cost' },
     { k: 'cs',    label: 'CS Cost Per Claim' },
   ];
+  // Returns inputs (shown when Returns is on)
+  const RETURNS = [
+    { k: 'rr',  label: 'Returns Rate %' },
+    { k: 'arc', label: 'Avg Return Cost' },
+    { k: 'rpc', label: 'Returns Platform Cost' },
+  ];
   const BLOCKS = [
     { k: 'banner',    label: 'Banner image' },
     { k: 'metrics',   label: 'Output Strip' },
@@ -132,6 +138,8 @@
       },
       extras: { cogs: byId('p-cogs-group'), aship: () => fg('p-aship'), cs: () => fg('p-cs') },
       exSection: '#additionalInputsDetails', exBar: '#additionalInputsDetails > summary',
+      rFields: { rr: byId('p-rr-group'), arc: byId('p-arc-group'), rpc: byId('p-rpc-group') },
+      rSection: '#returnsFeatureSection', rBar: '#returnsFeatureSection > .feature-section-title',
       inSurface: ['#inputsSection', '.left-panel'],
       inBox: null,
       inLabel: '#inputsSection .field-group label',
@@ -175,6 +183,8 @@
       },
       extras: { cogs: byId('cogsGroup'), aship: byId('avgShippingGroup'), cs: byId('csCostGroup') },
       exSection: null, exBar: '#miAdditionalToggle', exOpen: 'show-additional',
+      rFields: { rr: byId('returnsRateGroup'), arc: byId('avgReturnCostGroup'), rpc: byId('returnsPlatformGroup') },
+      rSection: '#returnsInputs', rBar: null,
       inSurface: [],
       inBox: '.inputs-strip .input-group:not(.returns):not(.cashback)',
       inBoxCompact: '.container.density-compact .inputs-strip .input-group.si-input:not(.cashback)',
@@ -240,6 +250,11 @@
     EXTRAS.forEach(f => { if (!EF.some(x => x.k === f.k)) EF.push({ k: f.k, v: true }); });
     ex.fields = EF;
     o.extras = ex;
+    const rt = Object.assign({}, o.returns || {});
+    const RF = Array.isArray(rt.fields) ? rt.fields.filter(f => f && RETURNS.some(x => x.k === f.k)).map(f => Object.assign({}, f)) : [];
+    RETURNS.forEach(f => { if (!RF.some(x => x.k === f.k)) RF.push({ k: f.k, v: true }); });
+    rt.fields = RF;
+    o.returns = rt;
     return o;
   }
 
@@ -500,6 +515,7 @@
     watchDensity(P);
     if (!cfg) { st.textContent = ''; afterLayout(); syncPlates(); return; }
     const b = cfg.branding || {};
+    window._siBuildCfg = cfg;                            // mobile.js mirrors the live build
     PERIOD = b.periodText !== 0;
     watchView();
     const N = P.root + ':not(.density-compact)';
@@ -606,7 +622,7 @@
       }
     }
 
-    css += extrasCss(P, inp.extras);
+    css += groupCss(P, inp.extras, 'extras') + groupCss(P, inp.returns, 'returns');
 
     // ── Results blocks: order / width / style / hide + text blocks ──
     const layout = normLayout(cfg.layout, cfg.blocks);
@@ -794,6 +810,12 @@
     ['hero', 'upfront', 'cost', 'cards'].forEach(k => {
       const it = layout.find(x => x.k === k); if (!it) return;
       if (k === 'cards') {                                 // Extra Revenue + the compact green card
+        const tw = document.querySelector(THEME_TWINS.cards);
+        if (tw && compactNowOf(P)) {                       // Compact's green card: select / style / hide on the canvas
+          tw.setAttribute('data-cbx-twin', 'cards');
+          if (it.v === false) tw.setAttribute('data-cbx-hide', '1');
+          css += styleCss('[data-cbx-twin="cards"]', it.style, { P });
+        }
         css += partCss('[data-cbk="cards"]', PARTS.cards, it.style) + partCss(THEME_TWINS.cards, PARTS.cards, it.style);
         if (typeof it.label === 'string' && it.label.trim()) document.querySelectorAll(LABEL_TEXT.cards).forEach(e => overrideText(e, it.label.trim()));
         return;
@@ -827,6 +849,7 @@
     });
     return css;
   }
+  function compactNowOf(P) { const r = document.querySelector(P.root); return !!(r && r.classList.contains('density-compact')); }
   function pillEls(P, k) {
     const out = [];
     ((P.pills || {})[k] || []).forEach(x => { const e = typeof x === 'function' ? x() : document.querySelector(x); if (e) out.push(e); });
@@ -1014,12 +1037,19 @@
 
   // ── Additional Inputs ── fields: label text / style / hide / order (they keep their own spot:
   // reordered among themselves); the section: label text, bar colours, shown / hidden, starts open.
+  // An input group: Additional Inputs ('extras') or the Returns inputs ('returns').
+  const GROUP = {
+    extras:  P => ({ fields: P.extras,  section: P.exSection, bar: P.exBar, open: P.exOpen, secKey: 'section' }),
+    returns: P => ({ fields: P.rFields, section: P.rSection,  bar: P.rBar,  open: null,     secKey: 'rsection' }),
+  };
   let _exOpen = null;
-  function extrasCss(P, ex) {
-    if (!P.extras || !ex) return '';
+  const _home = {};
+  function groupCss(P, ex, gk) {
+    const G = GROUP[gk](P);
+    if (!G.fields || !ex) return '';
     let css = '';
-    const els = ex.fields.map(f => ({ f, el: P.extras[f.k] && P.extras[f.k]() })).filter(x => x.el);
-    if (!_exHome && els.length) _exHome = domOrder(els.map(x => x.el));          // the page's own order
+    const els = ex.fields.map(f => ({ f, el: G.fields[f.k] && G.fields[f.k]() })).filter(x => x.el);
+    if (!_home[gk] && els.length) _home[gk] = domOrder(els.map(x => x.el));       // the page's own order
     if (ex.ordered && els.length > 1) placeGroup(els.map(x => x.el));
     els.forEach(({ f, el }) => {
       el.setAttribute('data-cbx-ex', f.k);
@@ -1027,19 +1057,21 @@
       if (typeof f.label === 'string' && f.label.trim()) el.querySelectorAll('label').forEach(l => overrideText(l, f.label.trim()));
       css += styleCss('[data-cbx-ex="' + f.k + '"]', f.style, { field: true, P });
     });
-    const bar = document.querySelector(P.exBar), sec = P.exSection ? document.querySelector(P.exSection) : bar;
-    if (sec) sec.setAttribute('data-cbx-ex', 'section');
+    const bar = G.bar ? document.querySelector(G.bar) : null, sec = G.section ? document.querySelector(G.section) : bar;
+    if (sec) sec.setAttribute('data-cbx-ex', G.secKey);
     if (ex.v === false) {
       if (sec) sec.setAttribute('data-cbx-hide', '1');
-      if (!P.exSection) els.forEach(({ el }) => el.setAttribute('data-cbx-hide', '1'));
+      if (!G.section) els.forEach(({ el }) => el.setAttribute('data-cbx-hide', '1'));
     }
     if (bar && typeof ex.label === 'string' && ex.label.trim()) overrideText(bar, ex.label.trim());
-    const st = ex.style || {}, B = P.exBar + BOOST2;
+    if (!G.bar) return css;
+    const st = ex.style || {}, B = G.bar + BOOST2;
     if (okColor(st.bg)) css += LIGHT + B + '{background:' + st.bg + ' !important;}';
     if (okColor(st.color)) css += LIGHT + B + '{color:' + st.color + ' !important;}';
-    if (okColor(st.bc)) css += LIGHT + B + '{border:1px solid ' + st.bc + ' !important;}' + (P.exSection ? LIGHT + P.exSection + BOOST2 + '{border-color:' + st.bc + ' !important;}' : '');
+    if (okColor(st.bc)) css += LIGHT + B + '{border:1px solid ' + st.bc + ' !important;}' + (G.section && gk === 'extras' ? LIGHT + G.section + BOOST2 + '{border-color:' + st.bc + ' !important;}' : '');
     if (st.font) { loadFont(st.font); css += B + '{font-family:' + fontStack(st.font) + ' !important;}'; }
     if (zoomOf(st.size)) css += B + '{zoom:' + zoomOf(st.size) + ';}';
+    if (gk !== 'extras') return css;
     // Starts open / closed: set when the build's choice changes (the merchant can still toggle it)
     const want = ex.open === 'open' || ex.open === 'closed' ? ex.open : '';
     if (want && want !== _exOpen) {
@@ -1053,7 +1085,6 @@
     _exOpen = want;
     return css;
   }
-  let _exHome = null;
   const domOrder = list => list.slice().sort((a, b) => (a.compareDocumentPosition(b) & 4) ? -1 : 1);
   // Re-seat sibling elements in the given order, in the slot where the first of them sits.
   function placeGroup(list) {
@@ -1104,7 +1135,7 @@
     if (bh && bw) { [...bw.childNodes].forEach(n => bh.parentElement.insertBefore(n, bh)); }
     if (bh) bh.remove(); if (bw) bw.remove();
     const A = ['data-cbk', 'data-cbf', 'data-cbp', 'data-cbx-hide', 'data-cbx-bleed', 'data-cbx-first', 'data-cbx-last', 'data-cbx-o', 'data-cbx-pill', 'data-cbx-twin', 'data-cbx-off', 'data-cbx-theme', 'data-cbx-inv', 'data-cbx-hdr', 'data-cbx-ex'];
-    if (_exHome && (!CFG || !normInputs(CFG.inputs).extras.ordered)) placeGroup(_exHome);   // Additional Inputs back in the page's order
+    Object.keys(_home).forEach(gk => { if (!CFG || !normInputs(CFG.inputs)[gk].ordered) placeGroup(_home[gk]); });   // input groups back in the page's order
     document.querySelectorAll(A.map(a => '[' + a + ']').join(',')).forEach(el => A.forEach(a => el.removeAttribute(a)));
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
     // Copy Link: back to its home in the inputs column, original label
@@ -1176,7 +1207,7 @@
   const labelOf = (g, k) => {
     if (g === 'f') { const f = FIELDS.find(x => x.k === k); return f ? f.label : k; }
     if (g === 'm') { const pl = PILLS.find(x => x.k === k); return pl ? pl.label : k; }
-    if (g === 'x') { const ex = EXTRAS.find(x => x.k === k); return ex ? ex.label : 'Additional Inputs'; }
+    if (g === 'x') { const ex = EXTRAS.find(x => x.k === k) || RETURNS.find(x => x.k === k); return ex ? ex.label : k === 'rsection' ? 'Returns inputs' : 'Additional Inputs'; }
     const b = BLOCKS.find(x => x.k === k); if (b) return b.label;
     const blk = ((CFG && CFG.blocks) || []).find(x => x.id === k);
     return blk ? ('Text · ' + (blk.heading || blk.body || 'block').slice(0, 20)) : k;
@@ -1191,7 +1222,11 @@
     if (!CFG) return false;
     if (g === 'm') { const m = normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'metrics'); const pl = m && (m.pills || []).find(x => x.k === k); return !!(pl && pl.v === false); }
     if (g === 'f') { const f = normInputs(CFG.inputs).fields.find(x => x.k === k); return !!(f && f.v === false); }
-    if (g === 'x') { const ex = normInputs(CFG.inputs).extras; if (k === 'section') return ex.v === false; const f = ex.fields.find(x => x.k === k); return !!(f && f.v === false); }
+    if (g === 'x') {
+      const ni = normInputs(CFG.inputs), ex = RETURNS.some(x => x.k === k) || k === 'rsection' ? ni.returns : ni.extras;
+      if (k === 'section' || k === 'rsection') return ex.v === false;
+      const f = ex.fields.find(x => x.k === k); return !!(f && f.v === false);
+    }
     const it = normLayout(CFG.layout, CFG.blocks).find(x => x.k === k); return !!(it && it.v === false);
   }
   function themeName(g, k) {
@@ -1358,5 +1393,13 @@
   document.addEventListener('pointercancel', () => endDrag(false), true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') endDrag(false); }, true);
 
-  window.SICB = { apply, setEdit, FIELDS, EXTRAS, BLOCKS, PILLS, normLayout, normInputs, get cfg() { return CFG; } };
+  // Driven from outside (the Rep Hub's Custom pane edits the calc / merchant link shown beside it):
+  // {siCBx:'apply', cfg} re-applies a build live; {siCBx:'edit', on, sel} turns canvas editing on/off.
+  window.addEventListener('message', e => {
+    const d = e.data; if (!d || typeof d !== 'object' || e.source !== window.parent || window.parent === window) return;
+    if (d.siCBx === 'apply') { try { apply(d.cfg || null); } catch (x) { console.warn('[CBX] apply failed', x); } }
+    else if (d.siCBx === 'edit') { try { setEdit(!!d.on, d.sel || null); } catch (x) {} }
+  });
+
+  window.SICB = { apply, setEdit, FIELDS, EXTRAS, RETURNS, BLOCKS, PILLS, normLayout, normInputs, get cfg() { return CFG; } };
 })();
