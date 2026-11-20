@@ -51,6 +51,7 @@
     { k: 'breakdown', label: 'Calculation Breakdown' },
     { k: 'billing',   label: 'Billing Explained' },
     { k: 'copylink',  label: 'Copy Link button' },
+    { k: 'pdf',       label: 'Download PDF button' },
   ];
   // Output strip pills (comfort) — the compact strip's boxes with the same meaning follow them.
   const PILLS = [
@@ -88,7 +89,7 @@
   // Inner tiles that become glass cards inside a themed block
   const TILES = '.output-metric,.key-metric-pill,.co2-box,.impact-pct-line,.co2-pills > *,.metric-item,.rc-metric,.feature-result-item,.bd-col,.bd-shared-section';
   // Blocks drawn white-on-colour: Frosted (a light surface) switches their text to ink
-  const INVERSE = { hero: 1, upfront: 1, copylink: 1 };
+  const INVERSE = { hero: 1, upfront: 1, copylink: 1, pdf: 1 };
   // Compact versions that follow a block's theme
   const THEME_TWINS = { metrics: '#compactOpt .co2-strip', cards: '#compactOpt .co2-green' };
   // Compact density's versions of comfort blocks (same markup on both pages)
@@ -112,6 +113,9 @@
       upAuto: 2,                                                     // Upfront beside Premiums You Keep: 4 + 2 columns
       heroRow: '#resultsSection > .hero-row',
       copyIn: '#p-save-link-btn', copyOut: '#p-save-link-btn',      // one button, moved into the results when placed there
+      // Buttons that are blocks. btnHome = where the page draws them ('top' strip or 'inputs' column).
+      // The merchant view has no top strip and no Download PDF (reps only).
+      btns: { copylink: { in: '#p-save-link-btn', out: '#p-save-link-btn' } }, btnHome: 'inputs',
       blocks: {
         metrics: q('#resultsSection > .key-metrics'),
         hero: q('#resultsSection > .hero-row > .result-hero:not(.upfront-hero)'),
@@ -158,6 +162,11 @@
       upAuto: 3, centerAuto: true,                                   // impact boxes keep their natural width, centred
       heroRow: '.calc-right .revenue-impact-row',
       copyIn: '#generateProposalLink', copyOut: '#generateProposalLinkStacked', copyHide: '#linkDisplay',
+      btns: {
+        copylink: { in: '#generateProposalLink', out: '#generateProposalLinkStacked', hide: '#linkDisplay' },
+        pdf: { in: '#merchantPdfBtn', out: '#merchantPdfBtn' },
+      },
+      btnHome: 'top', btnInputs: '#cbxInputsBtns',                // default: top strip after View; 'inputs' = above the share link
       blocks: {
         metrics: q('.calc-right > .outputs-strip'),
         hero: q('.calc-right .revenue-impact-row > .revenue-impact-box:not(.upfront-box)'),
@@ -215,7 +224,7 @@
     if (!L.length) L = BLOCKS.filter(b => b.k !== 'cost' && b.k !== 'banner').map(b => ({ k: b.k, v: true }));
     BLOCKS.forEach(b => {
       if (b.k === 'cost' || b.k === 'upfront' || b.k === 'billing' || b.k === 'banner' || has(b.k)) return;
-      if (b.k === 'breakdown' || b.k === 'copylink') { L.push({ k: b.k, v: true }); return; }
+      if (b.k === 'breakdown' || b.k === 'copylink' || b.k === 'pdf') { L.push({ k: b.k, v: true }); return; }
       const bi = idx('breakdown');
       if (bi >= 0) L.splice(bi, 0, { k: b.k, v: true }); else L.push({ k: b.k, v: true });
     });
@@ -661,7 +670,7 @@
       const isVis = it => it.v !== false;
       let firstVis = null, lastVis = null;
       layout.forEach((it, i) => {
-        if (it.k === 'copylink') { css += copyCss(P, N, grid, it, i, ordOf); return; }
+        if (it.k === 'copylink' || it.k === 'pdf') { css += btnCss(P, N, grid, it, i, ordOf); return; }
         let el = P.blocks[it.k] ? P.blocks[it.k]() : null;
         if (swap[it.k]) {                                  // compact twin stands in for the comfort block
           const tw = document.querySelector(TWINS[it.k]);
@@ -871,42 +880,52 @@
     return out;
   }
 
-  // Copy Link button. place 'inputs' (default): stays in the inputs column, optional width.
-  // place 'results': becomes a results block (order / width like any other). Own label + style.
-  // Midnight draws it as a marble image with the text baked in, so label + colours are default-theme only.
-  function copyCss(P, N, grid, it, i, ordOf) {
+  // Button blocks (Copy Link, Download PDF). place: 'top' (the top strip, after View — the rep calc's
+  // default), 'inputs' (the inputs column — the merchant view's default) or 'results' (a results block
+  // with order / width like any other). Own label + style. Midnight draws the inputs-column Copy Link as
+  // a marble image with the text baked in, so label + colours are default-theme only there.
+  function btnPlace(P, it) {
+    const pl = it && it.place;
+    if (pl === 'results') return 'results';
+    if (pl === 'inputs' || pl === 'top') return P.btnHome === 'top' ? pl : 'inputs';
+    return P.btnHome || 'inputs';
+  }
+  function btnCss(P, N, grid, it, i, ordOf) {
     let css = '';
-    const btnIn = document.querySelector(P.copyIn), btnOut = document.querySelector(P.copyOut);
+    const D = P.btns && P.btns[it.k];
+    if (!D) return '';
+    const k = it.k;
+    const btnIn = document.querySelector(D.in), btnOut = document.querySelector(D.out || D.in);
     if (!btnIn) return '';
-    const out = it.place === 'results';
-    [btnIn, btnOut].forEach(b => { if (b) b.setAttribute('data-cbx-copy', '1'); });
-    // Merchant view: one button, moved into the results grid (a placeholder marks its home).
-    if (out && btnIn === btnOut && btnIn.parentElement !== grid) {
-      let ph = document.getElementById('cbx-copy-home');
-      if (!ph) { ph = document.createElement('span'); ph.id = 'cbx-copy-home'; ph.hidden = true; btnIn.parentElement.insertBefore(ph, btnIn); }
-      grid.appendChild(btnIn);
-    }
+    const place = btnPlace(P, it), out = place === 'results';
+    [btnIn, btnOut].forEach(b => { if (b) b.setAttribute('data-cbx-btn', k); });
+    // Remember the button's home (a placeholder), then move it where it sits.
+    let ph = document.getElementById('cbx-btnhome-' + k);
+    if (!ph) { ph = document.createElement('span'); ph.id = 'cbx-btnhome-' + k; ph.hidden = true; btnIn.parentElement.insertBefore(ph, btnIn); }
+    const anchor = P.btnInputs ? document.querySelector(P.btnInputs) : null;
+    if (out && btnIn === btnOut) { if (btnIn.parentElement !== grid) grid.appendChild(btnIn); }
+    else if (place === 'inputs' && P.btnHome !== 'inputs' && anchor) anchor.parentElement.insertBefore(btnIn, anchor);
     const el = out ? btnOut : btnIn;
     if (!el) return '';
-    el.setAttribute('data-cbk', 'copylink');
+    el.setAttribute('data-cbk', k);
     [btnIn, btnOut].forEach(b => { if (b) tagTheme(b, it.theme, true); });
     if (it.v === false) [btnIn, btnOut].forEach(b => { if (b) b.setAttribute('data-cbx-hide', '1'); });
-    const S = '[data-cbx-copy]';
+    const S = '[data-cbx-btn="' + k + '"]';
     if (out) {
-      ordOf.copylink = (i + 1) * 10;
-      css += '[data-cbk="copylink"]{order:' + ordOf.copylink + ';}';
+      ordOf[k] = (i + 1) * 10;
+      css += '[data-cbk="' + k + '"]{order:' + ordOf[k] + ';}';
       const w = it.w && SPAN[it.w] ? it.w : 'full';
-      css += N + ' [data-cbk="copylink"]' + BOOST2 + '{grid-column:span ' + SPAN[w] + ';}';
-      css += P.gridOn + ' [data-cbk="copylink"]' + BOOST2 + '{display:block;width:100% !important;margin:0' + (P === PAGES.proposal ? ' 0 10px' : '') + ' !important;align-self:start;}';
-      if (btnIn !== btnOut) {                              // rep calc: show the results-side twin, hide the inputs one
-        css += P.copyIn + BOOST2 + (P.copyHide ? ',' + P.copyHide + BOOST2 : '') + '{display:none !important;}';
-        css += 'body:not(.cbx-edit) ' + P.copyOut + BOOST2 + ':not([data-cbx-hide]),body.cbx-edit ' + P.copyOut + BOOST2 + '{display:block !important;}';
+      css += N + ' [data-cbk="' + k + '"]' + BOOST2 + '{grid-column:span ' + SPAN[w] + ';}';
+      css += P.gridOn + ' [data-cbk="' + k + '"]' + BOOST2 + '{display:block;width:100% !important;margin:0' + (P === PAGES.proposal ? ' 0 10px' : '') + ' !important;align-self:start;}';
+      if (btnIn !== btnOut) {                              // rep calc Copy Link: show the results-side twin, hide the other
+        css += D.in + BOOST2 + (D.hide ? ',' + D.hide + BOOST2 : '') + '{display:none !important;}';
+        css += 'body:not(.cbx-edit) ' + D.out + BOOST2 + ':not([data-cbx-hide]),body.cbx-edit ' + D.out + BOOST2 + '{display:block !important;}';
       }
-    } else if (it.w && SPAN[it.w] && it.w !== 'full') {
+    } else if (place === 'inputs' && it.w && SPAN[it.w] && it.w !== 'full') {
       const W = PCT[it.w];
-      css += P.copyIn + BOOST2 + '{width:' + W + ' !important;max-width:' + W + ' !important;flex:0 0 auto !important;align-self:center;display:block;margin-left:auto !important;margin-right:auto !important;}';
+      css += D.in + BOOST2 + '{width:' + W + ' !important;max-width:' + W + ' !important;flex:0 0 auto !important;align-self:center;display:block;margin-left:auto !important;margin-right:auto !important;}';
     }
-    // Label: default theme only (Midnight's button is an image).
+    // Label: default theme only (Midnight's inputs-column Copy Link is an image).
     const lbl = typeof it.label === 'string' ? it.label.trim() : '';
     [btnIn, btnOut].forEach(b => {
       if (!b) return;
@@ -1174,12 +1193,14 @@
     Object.keys(_home).forEach(gk => { if (!CFG || !normInputs(CFG.inputs)[gk].ordered) placeGroup(_home[gk]); });   // input groups back in the page's order
     document.querySelectorAll(A.map(a => '[' + a + ']').join(',')).forEach(el => A.forEach(a => el.removeAttribute(a)));
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
-    // Copy Link: back to its home in the inputs column, original label
-    const home = document.getElementById('cbx-copy-home');
-    if (home && P.copyIn) { const b = document.querySelector(P.copyIn); if (b && b.previousSibling !== home) home.parentElement.insertBefore(b, home.nextSibling); }
-    document.querySelectorAll('[data-cbx-copy]').forEach(b => {
+    // Button blocks (Copy Link, Download PDF): back to their home, original label
+    Object.keys((P && P.btns) || {}).forEach(k => {
+      const home = document.getElementById('cbx-btnhome-' + k), b = document.querySelector(P.btns[k].in);
+      if (home && b && b.previousSibling !== home) home.parentElement.insertBefore(b, home.nextSibling);
+    });
+    document.querySelectorAll('[data-cbx-btn]').forEach(b => {
       if (b.hasAttribute('data-cbx-label') && b.hasAttribute('data-cbx-orig')) b.innerHTML = b.getAttribute('data-cbx-orig');
-      b.removeAttribute('data-cbx-label'); b.removeAttribute('data-cbx-copy');
+      b.removeAttribute('data-cbx-label'); b.removeAttribute('data-cbx-btn');
     });
     document.querySelectorAll('.cbx-grid,.cbx-contents,.cbx-fgrid,.cbx-fmode').forEach(el => el.classList.remove('cbx-grid', 'cbx-contents', 'cbx-fgrid', 'cbx-fmode'));
     document.querySelectorAll('.cbx-bar').forEach(el => el.remove());
@@ -1273,7 +1294,7 @@
     const w = curW(g, k);
     const ws = [['full', 'Full width', '1'], ['twothirds', 'Two-thirds width', '⅔'], ['half', 'Half width', '½'], ['third', 'One-third width', '⅓']]
       .map(([v, t, s]) => '<button type="button" data-cbx="w" data-v="' + v + '" title="' + t + '"' + (w === v ? ' class="on"' : '') + '>' + s + '</button>').join('');
-    let place = '', hdr = false;
+    let place = '', hdr = false, noW = false;
     if (g === 'b' && k === 'banner') {
       const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'banner') : null;
       const pl = (it && it.place) || 'results';
@@ -1282,12 +1303,17 @@
       const nx = { results: 'top', top: 'header', header: 'results' }[pl] || 'top';
       place = '<button type="button" data-cbx="place" title="Sits in: ' + nm[pl] + ' — click to move it to ' + nm[nx] + '">⇅ ' + nm[pl] + '</button><span class="cbx-sep"></span>';
     }
-    if (g === 'b' && k === 'copylink') {
-      const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === 'copylink') : null;
-      const out = !!(it && it.place === 'results');
-      place = '<button type="button" data-cbx="place" title="' + (out ? 'Move back to the inputs column' : 'Move into the results') + '">' + (out ? '⇤ Inputs' : 'Results ⇥') + '</button><span class="cbx-sep"></span>';
+    if (g === 'b' && (k === 'copylink' || k === 'pdf')) {
+      const P = page() || {};
+      const it = CFG ? normLayout(CFG.layout, CFG.blocks).find(x => x.k === k) : null;
+      const cur = btnPlace(P, it);
+      const order = P.btnHome === 'top' ? ['top', 'inputs', 'results'] : ['inputs', 'results'];
+      const nx = order[(order.indexOf(cur) + 1) % order.length];
+      noW = cur === 'top';                                 // the top bar sizes buttons to their text
+      const nm = { top: 'Top bar', inputs: 'Inputs', results: 'Results' };
+      place = '<button type="button" data-cbx="place" data-to="' + nx + '" title="Sits in: ' + nm[cur] + ' — click to move it to ' + nm[nx] + '">⇅ ' + nm[cur] + '</button><span class="cbx-sep"></span>';
     }
-    return '<span class="cbx-grip" title="Drag to move">⣿</span><span class="cbx-name">' + esc(labelOf(g, k)) + '</span>' + place + (hdr ? '' : ws +
+    return '<span class="cbx-grip" title="Drag to move">⣿</span><span class="cbx-name">' + esc(labelOf(g, k)) + '</span>' + place + (hdr || noW ? '' : ws +
       '<span class="cbx-sep"></span>') + (g === 'b' && !hdr ? '<button type="button" data-cbx="theme" title="Theme: ' + themeName(g, k) + ' — click for the next (Classic → Frosted glass → Liquid glass)">✦ ' + themeName(g, k) + '</button>' : '') +
       '<button type="button" data-cbx="style" title="Style this block">🎨</button>' +
       '<button type="button" data-cbx="eye" title="' + (isHidden(g, k) ? 'Show' : 'Hide') + '">' + (isHidden(g, k) ? '🚫' : '👁') + '</button>';
@@ -1359,7 +1385,7 @@
       if (kind === 'w') post({ op: 'width', g, k, w: v });
       else if (kind === 'eye') post({ op: 'toggle', g, k });
       else if (kind === 'style') post({ op: 'select', g, k, style: true });
-      else if (kind === 'place') post({ op: 'place', g, k });
+      else if (kind === 'place') post({ op: 'place', g, k, to: btn.getAttribute('data-to') || undefined });
       else if (kind === 'theme') post({ op: 'theme', g, k });
       else if (kind === 'pos') post({ op: 'pos', pos: v });
       else if (kind === 'pw') post({ op: 'pwidth', width: v });

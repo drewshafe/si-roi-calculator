@@ -1257,7 +1257,7 @@
     if (kind !== 'field' && owner.k === 'cards') wrap.appendChild(cardRowsEditor(st));
     if (kind !== 'field' && owner.k === 'hero') wrap.appendChild(heroOptsEditor(st));
     if (kind !== 'field') wrap.insertBefore(themeCtl(owner), g);
-    if (kind !== 'field' && owner.k === 'copylink') wrap.insertBefore(copyOptsEditor(owner), g);
+    if (kind !== 'field' && (owner.k === 'copylink' || owner.k === 'pdf')) wrap.insertBefore(copyOptsEditor(owner), g);
     if (kind !== 'field' && DETAIL_KEYS[owner.k]) wrap.insertBefore(detailsEditor(owner), wrap.querySelector('.cb-btn') || null);
     if (kind !== 'field' && owner.k === 'billing') wrap.insertBefore(labelOnlyEditor(owner, '▶ 💳 Billing Explained', 'Button text'), g);
     if (kind !== 'field' && owner.k === 'metrics') wrap.appendChild(pillsEditor(owner));
@@ -1460,18 +1460,20 @@
     draw();
     return box;
   }
-  // Copy Link button: where it sits + its text
+  // Copy Link / Download PDF buttons: where they sit + their text. No place = the default spot
+  // (the rep calc's top strip, after View; the merchant link has no top strip, so its inputs column).
   function copyOptsEditor(item) {
     const box = document.createElement('div'); box.className = 'mini-grid'; box.style.marginBottom = '4px';
-    box.appendChild(cell('Sits in', segCtl([['inputs', 'Inputs column'], ['results', 'Results']], item.place === 'results' ? 'results' : 'inputs', v => {
-      if (v === 'results') item.place = 'results'; else delete item.place; renderLayout(); refresh(true);
+    const cur = item.place === 'results' ? 'results' : item.place === 'inputs' ? 'inputs' : 'top';
+    box.appendChild(cell('Sits in', segCtl([['top', 'Top bar'], ['inputs', 'Inputs column'], ['results', 'Results']], cur, v => {
+      if (v === 'top') delete item.place; else item.place = v; renderLayout(); refresh(true);
     }), true));
-    const t = document.createElement('input'); t.type = 'text'; t.placeholder = '📋 Copy Link'; t.value = item.label || '';
+    const t = document.createElement('input'); t.type = 'text'; t.placeholder = item.k === 'pdf' ? '⬇ Download PDF' : '🔗 Copy Link'; t.value = item.label || '';
     t.style.cssText = 'width:100%;font-family:inherit;font-size:.8rem;padding:5px 8px;border:1px solid #d0d4e8;border-radius:6px;';
     t.addEventListener('input', () => { const v = t.value; if (v.trim()) item.label = v; else delete item.label; refresh(false); });
     box.appendChild(cell('Button text', t, true));
     const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;';
-    h.textContent = 'In the inputs column, width sizes the button within the column. In the results it orders and sizes like any block. Project Midnight keeps its own marble button.';
+    h.textContent = 'Top bar = the rep calc header, after View (the merchant link has no top bar, so there it sits in the inputs column). In the inputs column, width sizes the button within the column. In the results it orders and sizes like any block.' + (item.k === 'pdf' ? ' Download PDF shows on the rep calc only; merchants never see it.' : ' Project Midnight keeps its own marble button in the inputs column.');
     box.appendChild(h);
     return box;
   }
@@ -1631,7 +1633,7 @@
       row.className = 'lay-item' + (item.v === false ? ' hidden' : '') + (blk ? ' is-block' : '') + (_sel && _sel.g === 'b' && _sel.k === item.k ? ' sel' : '');
       row.dataset.k = item.k;
       const styled = blk ? false : !!(item.style && Object.keys(item.style).some(k => !['rows', 'subHidden', 'perPremium'].includes(k)));
-      const where = (item.k === 'copylink' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.place === 'results' ? 'results' : 'inputs') + '</span>' : '') +
+      const where = ((item.k === 'copylink' || item.k === 'pdf') ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.k === 'pdf' && !(PANEL && _canvas === 'calc') ? 'rep calc only' : item.place === 'results' ? 'results' : item.place === 'inputs' || !(PANEL && _canvas === 'calc') ? 'inputs' : 'top bar') + '</span>' : '') +
         (item.k === 'banner' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (!$('bannerUrl').value.trim() ? 'no image' : ({ top: 'top of page', header: 'header', inputs: 'header' })[item.place] || 'results') + '</span>' : '') +
         (item.theme ? ' <span title="' + (item.theme === 'liquid' ? 'Liquid glass' : 'Frosted glass') + '" style="font-size:.62rem;font-weight:800;padding:1px 5px;border-radius:5px;' + (item.theme === 'liquid' ? 'background:#151831;color:#c9b8ff;' : 'background:#eef1ff;color:#4a5fc1;border:1px solid #d5d9f0;') + '">' + (item.theme === 'liquid' ? 'LIQ' : 'FRO') + '</span>' : '');
       row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + where + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
@@ -1788,15 +1790,18 @@
     const it = d.k ? arr.find(x => x.k === d.k) : null;
     switch (d.op) {
       case 'move': {
-        // Copy Link: dragging it among the results places it there; nothing drops onto it while it's in the inputs column.
-        const cl = layout.find(x => x.k === 'copylink'), bn = layout.find(x => x.k === 'banner');
-        if (d.g === 'b' && d.target === 'copylink' && !(cl && cl.place === 'results')) return;
+        // Copy Link / Download PDF: dragging one among the results places it there; nothing drops onto
+        // one while it's in the top bar or the inputs column.
+        const BTN = { copylink: 1, pdf: 1 };
+        const cl = d.g === 'b' && BTN[d.k] ? layout.find(x => x.k === d.k) : null, bn = layout.find(x => x.k === 'banner');
+        const tb = d.g === 'b' && BTN[d.target] ? layout.find(x => x.k === d.target) : null;
+        if (d.g === 'b' && BTN[d.target] && !(tb && tb.place === 'results')) return;
         // Banner: dragged among the results it sits there; nothing drops onto it while it's elsewhere.
         if (d.g === 'b' && d.target === 'banner' && bn && bn.place) return;
         if (d.g === 'b' && d.k === 'banner' && bn) delete bn.place;
         if (moveKey(arr, d.k, d.target, !!d.after)) {
           if (d.g === 'f') inputsCfg.ordered = true;
-          if (d.g === 'b' && d.k === 'copylink' && cl) cl.place = 'results';
+          if (cl) cl.place = 'results';
           select(d.g, d.k, true); refresh(true);
         }
         return;
@@ -1804,6 +1809,7 @@
       case 'theme': if (it) { const i = THEME_OPTS.findIndex(o => o[0] === (it.theme || '')); const nx = THEME_OPTS[(i + 1) % THEME_OPTS.length][0]; if (nx) it.theme = nx; else delete it.theme; select(d.g, d.k, true); refresh(true); } return;
       case 'place':
         if (it && it.k === 'banner') { const nx = { top: 'header', header: '', inputs: '' }[it.place || '']; if (nx === undefined) it.place = 'top'; else if (nx) it.place = nx; else delete it.place; syncHdrBanner(); select(d.g, d.k, true); refresh(true); return; }
+        if (it && d.to) { if (d.to === 'top') delete it.place; else it.place = d.to; select(d.g, d.k, true); renderLayout(); refresh(true); return; }
         if (it) { if (it.place === 'results') delete it.place; else it.place = 'results'; select(d.g, d.k, true); refresh(true); } return;
       case 'width': if (it) { if (it.w === d.w) delete it.w; else it.w = d.w; select(d.g, d.k, true); refresh(true); } return;
       case 'toggle': if (it) { it.v = it.v === false; select(d.g, d.k, true); refresh(true); } return;

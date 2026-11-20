@@ -48,8 +48,8 @@
         .container.force-stacked #mainRevenueGrid { grid-template-columns: repeat(auto-fit, minmax(118px, 200px)); justify-content: center; }
         /* Stacked layout: Copy Link moves down to sit directly above the breakdown. */
         #generateProposalLinkStacked { display: none; }
-        .container.force-stacked #generateProposalLinkStacked { display: block; }
-        .container.force-stacked #generateProposalLink,
+        .container.force-stacked:has(.inputs-strip #generateProposalLink) #generateProposalLinkStacked { display: block; }
+        .container.force-stacked .inputs-strip #generateProposalLink,
         .container.force-stacked #linkDisplay { display: none !important; }
         /* Density: compact tightens padding/gaps */
         .container.density-compact .inputs-row { gap: 5px; }
@@ -755,6 +755,18 @@
         .merchant-pdf-btn:hover { border-color:#4a5fc1; background:#f4f5ff; }
         .merchant-pdf-btn:disabled { opacity:.6; cursor:default; }
         .theme-midnight .merchant-pdf-btn { background:#14141c; color:#e9c46a; border-color:rgba(233,196,106,.35); }
+        /* Copy Link + Download PDF: in the inputs column they fill the width; in the top strip (their default
+           spot, after View) they're compact pills that read on the header colour. Custom Build can move them. */
+        .inputs-strip #generateProposalLink, .calc-left #generateProposalLink { width:100%; margin-top:6px; }
+        .top-strip #generateProposalLink, .top-strip #merchantPdfBtn {
+            width:auto; margin:0; padding:6px 12px; min-height:0; font-size:0.82em; font-weight:700; line-height:1.2;
+            border-radius:6px; border:1px solid rgba(255,255,255,.35) !important; background:rgba(255,255,255,.15) !important;
+            color:#fff !important; box-shadow:none !important; white-space:nowrap; }
+        .top-strip #generateProposalLink:hover, .top-strip #merchantPdfBtn:hover { background:rgba(255,255,255,.27) !important; }
+        .theme-midnight .top-strip #generateProposalLink, .theme-midnight .top-strip #merchantPdfBtn {
+            background:#14141c !important; color:#e9c46a !important; border:1px solid rgba(233,196,106,.35) !important;
+            font-size:0.82em !important; min-height:0; }
+        .theme-midnight .top-strip #generateProposalLink:hover, .theme-midnight .top-strip #merchantPdfBtn:hover { background:#1d1d28 !important; }
         .generate-link-btn {
             display: flex;
             align-items: center;
@@ -1546,6 +1558,8 @@
                         <option value="annual">Annual</option>
                     </select>
                 </div>
+                <button id="generateProposalLink" type="button" class="generate-link-btn">🔗 Copy Link</button>
+                <button id="merchantPdfBtn" type="button" class="merchant-pdf-btn" title="Download the merchant link as a PDF: exactly what the merchant sees, without buttons" onclick="siMerchantPdf(this)">⬇ Download PDF</button>
                 <div class="display-ctrl-wrap" id="displayCtrlWrap">
                     <button type="button" class="display-ctrl-btn" id="displayCtrlBtn">🖥️ Display ▾</button>
                     <div class="display-ctrl-panel" id="displayCtrlPanel">
@@ -1791,8 +1805,8 @@
                 </div>
             </div>
 
-            <button id="generateProposalLink" class="generate-link-btn" style="width:100%;margin-top:6px;">🔗 Copy Link</button>
-            <button id="merchantPdfBtn" type="button" class="merchant-pdf-btn" title="Download the merchant link as a PDF: exactly what the merchant sees, without buttons" onclick="siMerchantPdf(this)">⬇ Download PDF</button>
+            <!-- Custom Build "Inputs column" spot for Copy Link / Download PDF (they live in the top strip by default) -->
+            <span id="cbxInputsBtns" hidden></span>
             <div id="linkDisplay" class="link-display" style="margin-top:6px;">
                 <p>Share this link:</p>
                 <div class="link-row">
