@@ -755,7 +755,7 @@
         .merchant-pdf-btn:hover { border-color:#4a5fc1; background:#f4f5ff; }
         .merchant-pdf-btn:disabled { opacity:.6; cursor:default; }
         .theme-midnight .merchant-pdf-btn { background:#14141c; color:#e9c46a; border-color:rgba(233,196,106,.35); }
-        /* Copy Link + Download PDF: in the inputs column they fill the width; in the top strip (their default
+        /* Copy Link + Download PNG: in the inputs column they fill the width; in the top strip (their default
            spot, after View) they're compact pills that read on the header colour. Custom Build can move them. */
         .inputs-strip #generateProposalLink, .calc-left #generateProposalLink { width:100%; margin-top:6px; }
         .top-strip #generateProposalLink, .top-strip #merchantPdfBtn {
@@ -1559,7 +1559,7 @@
                     </select>
                 </div>
                 <button id="generateProposalLink" type="button" class="generate-link-btn">🔗 Copy Link</button>
-                <button id="merchantPdfBtn" type="button" class="merchant-pdf-btn" title="Download the merchant link as a PDF: exactly what the merchant sees, without buttons" onclick="siMerchantPdf(this)">⬇ Download PDF</button>
+                <button id="merchantPdfBtn" type="button" class="merchant-pdf-btn" title="Download the merchant link as a PNG image: exactly what the merchant sees, without buttons" onclick="siMerchantPdf(this)">⬇ Download PNG</button>
                 <div class="display-ctrl-wrap" id="displayCtrlWrap">
                     <button type="button" class="display-ctrl-btn" id="displayCtrlBtn">🖥️ Display ▾</button>
                     <div class="display-ctrl-panel" id="displayCtrlPanel">
@@ -1805,7 +1805,7 @@
                 </div>
             </div>
 
-            <!-- Custom Build "Inputs column" spot for Copy Link / Download PDF (they live in the top strip by default) -->
+            <!-- Custom Build "Inputs column" spot for Copy Link / Download PNG (they live in the top strip by default) -->
             <span id="cbxInputsBtns" hidden></span>
             <div id="linkDisplay" class="link-display" style="margin-top:6px;">
                 <p>Share this link:</p>
@@ -4503,19 +4503,19 @@
         }
 
         // Builds the clean merchant-facing view link — the one reps share.
-        // ⬇ Download PDF: the merchant link exactly as the merchant sees it (desktop width, no buttons).
-        // Built from this page's own copy of proposal.html (so the PDF matches this release of the calc).
+        // ⬇ Download PNG: the merchant link exactly as the merchant sees it (desktop width, no buttons).
+        // Built from this page's own copy of proposal.html (so the image matches this release of the calc).
         async function siMerchantPdf(btn) {
             const old = btn.textContent;
-            if (!window.SIPDF) { alert('The PDF tool did not load. Reload the page and try again.'); return; }
-            btn.disabled = true; btn.textContent = '⏳ Making PDF…';
+            if (!window.SIPDF) { alert('The download tool did not load. Reload the page and try again.'); return; }
+            btn.disabled = true; btn.textContent = '⏳ Making PNG…';
             try {
                 const link = new URL(buildMerchantLink());
                 const url = new URL('proposal.html', location.href); url.search = link.search; url.hash = link.hash;
                 const name = ((document.getElementById('merchantName') || {}).value || '').trim();
                 await SIPDF.fromUrl(url.href, { name: name || undefined });
-                btn.textContent = '✓ PDF saved';
-            } catch (e) { btn.textContent = old; alert('PDF failed: ' + (e && e.message ? e.message : e)); }
+                btn.textContent = '✓ PNG saved';
+            } catch (e) { btn.textContent = old; alert('Download failed: ' + (e && e.message ? e.message : e)); }
             finally { btn.disabled = false; setTimeout(() => { btn.textContent = old; }, 1800); }
         }
         function buildMerchantLink() {

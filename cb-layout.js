@@ -51,7 +51,7 @@
     { k: 'breakdown', label: 'Calculation Breakdown' },
     { k: 'billing',   label: 'Billing Explained' },
     { k: 'copylink',  label: 'Copy Link button' },
-    { k: 'pdf',       label: 'Download PDF button' },
+    { k: 'pdf',       label: 'Download PNG button' },
   ];
   // Output strip pills (comfort) — the compact strip's boxes with the same meaning follow them.
   const PILLS = [
@@ -114,8 +114,8 @@
       heroRow: '#resultsSection > .hero-row',
       copyIn: '#p-save-link-btn', copyOut: '#p-save-link-btn',      // one button, moved into the results when placed there
       // Buttons that are blocks. btnHome = where the page draws them ('top' strip or 'inputs' column).
-      // The merchant view has no top strip and no Download PDF (reps only).
-      btns: { copylink: { in: '#p-save-link-btn', out: '#p-save-link-btn' } }, btnHome: 'inputs',
+      // The merchant view has no top strip: Copy Link, then Download, in the inputs column.
+      btns: { copylink: { in: '#p-save-link-btn', out: '#p-save-link-btn' }, pdf: { in: '#p-dl-btn', out: '#p-dl-btn' } }, btnHome: 'inputs',
       blocks: {
         metrics: q('#resultsSection > .key-metrics'),
         hero: q('#resultsSection > .hero-row > .result-hero:not(.upfront-hero)'),
@@ -880,7 +880,7 @@
     return out;
   }
 
-  // Button blocks (Copy Link, Download PDF). place: 'top' (the top strip, after View — the rep calc's
+  // Button blocks (Copy Link, Download PNG). place: 'top' (the top strip, after View — the rep calc's
   // default), 'inputs' (the inputs column — the merchant view's default) or 'results' (a results block
   // with order / width like any other). Own label + style. Midnight draws the inputs-column Copy Link as
   // a marble image with the text baked in, so label + colours are default-theme only there.
@@ -1193,7 +1193,7 @@
     Object.keys(_home).forEach(gk => { if (!CFG || !normInputs(CFG.inputs)[gk].ordered) placeGroup(_home[gk]); });   // input groups back in the page's order
     document.querySelectorAll(A.map(a => '[' + a + ']').join(',')).forEach(el => A.forEach(a => el.removeAttribute(a)));
     document.querySelectorAll('[data-cbx-ord]').forEach(el => { el.style.order = ''; el.removeAttribute('data-cbx-ord'); });
-    // Button blocks (Copy Link, Download PDF): back to their home, original label
+    // Button blocks (Copy Link, Download PNG): back to their home, original label
     Object.keys((P && P.btns) || {}).forEach(k => {
       const home = document.getElementById('cbx-btnhome-' + k), b = document.querySelector(P.btns[k].in);
       if (home && b && b.previousSibling !== home) home.parentElement.insertBefore(b, home.nextSibling);

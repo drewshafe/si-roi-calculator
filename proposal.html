@@ -332,6 +332,9 @@
         .calc-btn-wrap {
             padding: 0 14px 14px;
         }
+        .p-dl-btn { display:block; width:100%; margin-top:8px; padding:9px; border:1px solid #d0d4ff; border-radius:9px; background:#fff; color:#6675ff; font-size:0.82em; font-weight:700; cursor:pointer; font-family:inherit; }
+        .p-dl-btn:hover { background:#f4f5ff; }
+        .p-dl-btn:disabled { opacity:.6; cursor:default; }
 
         /* ── Results ── */
         #resultsSection {
@@ -927,6 +930,7 @@
         .theme-midnight .feature-result-item-label { color:#9a9ab0; }
         .theme-midnight .feature-result-item-value { color:#f2eede; }
         /* buttons */
+        .theme-midnight #p-dl-btn { background:#14141c !important; color:#e9c46a !important; border:1px solid rgba(233,196,106,.35) !important; }
         .theme-midnight #p-save-link-btn { background:url("assets/midnight/btn-copylink.png") center/contain no-repeat !important;
             background-color:transparent !important; border:none !important; box-shadow:none !important; font-size:0 !important; min-height:44px; }
         /* probe popup (dark) */
@@ -1305,6 +1309,7 @@
             <!-- Link actions (results update as inputs change) -->
             <div class="calc-btn-wrap">
                 <button id="p-save-link-btn" onclick="saveProposalLink()" style="width:100%;padding:9px;border:1px solid #d0d4ff;border-radius:9px;background:#f4f5ff;color:#6675ff;font-size:0.82em;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copy Link</button>
+                <button id="p-dl-btn" type="button" class="p-dl-btn" onclick="window.SIPDF ? SIPDF.button(this) : alert('The download tool did not load. Reload the page and try again.')" title="Save this page as an image (PNG), without the buttons">⬇ Download PNG</button>
                 <button id="p-cloud-update-btn" onclick="siMerchantUpdate()" style="display:none;margin-top:8px;width:100%;padding:9px;border:none;border-radius:9px;background:linear-gradient(135deg,#1f9d63,#0f8f56);color:#fff;font-size:0.82em;font-weight:800;cursor:pointer;font-family:inherit;">💾 Save changes</button>
             </div>
         </div><!-- /inputsSection -->
@@ -3176,7 +3181,7 @@
                 const a = b.accent, st = document.createElement('style'); st.id = 'cb-accent';
                 st.textContent = '.kmp-value{color:' + a + ' !important;}' +
                     '.result-hero:not(.upfront-hero){background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;}' +
-                    '#p-save-link-btn{color:' + a + ' !important;border-color:' + _cbShade(a, 40) + ' !important;}' +
+                    '#p-save-link-btn,#p-dl-btn{color:' + a + ' !important;border-color:' + _cbShade(a, 40) + ' !important;}' +
                     '.proposal-header{border-bottom-color:' + a + ' !important;}' +
                     '.si-opt-tab.active{background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;border-color:' + a + ' !important;box-shadow:0 2px 8px ' + _cbShade(a, 20) + '66 !important;}' +
                     '.no-results-placeholder strong{color:' + a + ' !important;}';

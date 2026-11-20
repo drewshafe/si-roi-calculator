@@ -1,10 +1,12 @@
-/* Merchant-view PDF (proposal.html) — exactly what the merchant sees, minus buttons and rep-only UI.
+/* Merchant-view image (proposal.html) — exactly what the merchant sees, minus buttons and rep-only UI,
+ * saved as one PNG cropped to the content ("{Merchant} – ShipInsure ROI.png").
  *
  * The page renders itself through the browser (html-to-image draws the live DOM into an SVG, so every
- * Custom Build style, font, theme and logo comes out as shown), then jsPDF wraps it in one PDF page
- * sized to the content. Libraries load from cdnjs only when a PDF is asked for.
+ * Custom Build style, font, theme and logo comes out as shown). The library loads from cdnjs only when
+ * an image is asked for. (A PNG rather than a PDF: the page is a picture either way, and a PNG drops
+ * straight into Aligned / Deal rooms, email, Slack and decks.)
  *
- * Triggered by the rep tools, never shown to merchants:
+ * Triggered by the ⬇ Download button on the merchant link, or by the rep tools:
  *   window.parent → {siCBx:'pdf', name?}     (Custom Build preview, the Rep Hub's Custom canvas,
  *                                              the rep calc's hidden merchant frame)
  *   replies         {siCBx:'pdfDone', ok, error?, name}
@@ -14,7 +16,6 @@
   'use strict';
   const LIBS = [
     'https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   ];
   let _libs = null;
   function loadLibs() {
@@ -28,7 +29,7 @@
     return _libs;
   }
 
-  // Rep-only / interactive UI that never goes in the PDF.
+  // Rep-only / interactive UI that never goes in the image.
   const HIDE = [
     'button:not(.itype-btn)', '.itype-btn:not(.active)', '.cbx-bar', '.cbx-drop', '.cbx-chip', '#mvBack', '#mv',
     '.calc-btn-wrap', '#mnAnimBtn', '.si-opt-tab', '.si-opt-tabs', '#mnBg', '.mn-scrim', '.cbx-plate', '.lgc-plate',
@@ -41,6 +42,8 @@
     body.pdf-capture [data-cbx-theme="frosted"] { background-color: rgba(255,255,255,.78) !important; }
     body.pdf-capture *, body.pdf-capture *::before, body.pdf-capture *::after { transition: none !important; animation: none !important; caret-color: transparent !important; }
     body.pdf-capture .itype-btn.active { cursor: default !important; box-shadow: none !important; }
+    /* Short tags sized exactly to their text: the capture measures text a hair wider, so keep them on one line. */
+    body.pdf-capture .co2-up-mo, body.pdf-capture .impact-pct-line, body.pdf-capture .co2-pills > * { white-space: nowrap !important; flex-shrink: 0 !important; }
     body.pdf-capture input, body.pdf-capture select { pointer-events: none !important; }
     body.pdf-capture select { -webkit-appearance: none !important; appearance: none !important; background-image: none !important; }
     body.pdf-capture.cbx-edit [data-cbk], body.pdf-capture.cbx-edit [data-cbf], body.pdf-capture.cbx-edit [data-cbp],
@@ -52,7 +55,7 @@
     const sub = document.getElementById('merchantSubtitle');
     return (q || (sub && sub.textContent) || 'Merchant').trim();
   }
-  const fileName = n => (n.replace(/[\\/:*?"<>|]+/g, '').trim() || 'Merchant') + ' – ShipInsure ROI.pdf';
+  const fileName = n => (n.replace(/[\\/:*?"<>|]+/g, '').trim() || 'Merchant') + ' – ShipInsure ROI.png';
 
   // Wait until the page has stopped changing (results drawn, Custom Build applied, glass mounted):
   // no DOM changes for 700ms, at most 8s.
@@ -68,7 +71,7 @@
   }
   let busy = false;
   async function download(o) {
-    if (busy) throw new Error('A PDF is already being made');
+    if (busy) throw new Error('An image is already being made');
     busy = true;
     const name = merchantName(o);
     const body = document.body;
@@ -80,7 +83,7 @@
       await loadLibs();
       if (document.readyState !== 'complete') await new Promise(r => window.addEventListener('load', r, { once: true }));
       await settle();
-      // Turn off canvas editing and the phone overlay for the shot (the desktop layout goes in the PDF).
+      // Turn off canvas editing and the phone overlay for the shot (the desktop layout goes in the image).
       if (wasEdit && window.SICB) window.SICB.setEdit(false);
       if (mvOn) body.classList.remove('mv-on');
       document.head.appendChild(st);
@@ -110,8 +113,6 @@
       await new Promise(r => setTimeout(r, 150));          // let the capture styles apply (rAF stalls in background tabs)
       const root = document.documentElement;
       const w = Math.ceil(Math.max(root.scrollWidth, body.scrollWidth, root.clientWidth));
-      const h = Math.ceil(Math.max(root.scrollHeight, body.scrollHeight));
-      const scale = Math.min(2, Math.max(1, Math.floor(14000 / Math.max(w, h) * 10) / 10));   // keep the canvas under browser limits
       const hide = new Set(document.querySelectorAll(HIDE));
       // A card that is only its (hidden) toggle — a collapsed breakdown / Billing Explained — goes too.
       document.querySelectorAll('[data-cbk], #p-calcBreakdown, #cbx-billing, .calc-breakdown').forEach(el => {
@@ -119,6 +120,21 @@
         const shown = [...el.children].filter(c => !hide.has(c) && c.getBoundingClientRect().height > 1 && !c.classList.contains('cbx-bar'));
         if (!shown.length) hide.add(el);
       });
+      // Crop to the content: the panels stretch to the window height, so measure the lowest thing that
+      // shows (skipping full-height wrappers and anything hidden) and stop a little below it.
+      const docH = Math.ceil(Math.max(root.scrollHeight, body.scrollHeight));
+      const hidden = el => { for (let e = el; e && e !== body; e = e.parentElement) if (hide.has(e)) return true; return false; };
+      let bottom = 0;
+      body.querySelectorAll('*').forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.height < 1 || r.width < 1 || r.height > docH * 0.8) return;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === 'hidden' || cs.display === 'none' || cs.position === 'fixed' || +cs.opacity === 0) return;
+        const b = r.bottom + window.scrollY;
+        if (b > bottom && !hidden(el)) bottom = b;
+      });
+      const h = Math.max(200, Math.min(docH, Math.ceil(bottom + 28)));
+      const scale = Math.min(2, Math.max(1, Math.floor(14000 / Math.max(w, h) * 10) / 10));   // keep the canvas under browser limits
       const bg = getComputedStyle(body).backgroundColor;
       const png = await window.htmlToImage.toPng(body, {
         width: w, height: h, pixelRatio: scale, cacheBust: true,
@@ -127,12 +143,8 @@
         filter: n => !(n.nodeType === 1 && hide.has(n)),
       });
       if (o && o.dryRun) return { ok: true, png, w, h, name: fileName(name) };   // for checks: the page image, nothing saved
-      const { jsPDF } = window.jspdf;
-      const ptW = w * 0.75, ptH = h * 0.75;                       // CSS px → PDF points
-      const pdf = new jsPDF({ orientation: ptW > ptH ? 'landscape' : 'portrait', unit: 'pt', format: [ptW, ptH], compress: true });
-      pdf.setProperties({ title: name + ' – ShipInsure ROI', creator: 'ShipInsure ROI' });
-      pdf.addImage(png, 'PNG', 0, 0, ptW, ptH, undefined, 'FAST');
-      pdf.save(fileName(name));
+      if (o && o.returnPng) return { ok: true, png, name: fileName(name) };   // a parent frame saves it
+      save(png, fileName(name));
       return { ok: true, name: fileName(name) };
     } finally {
       body.classList.remove('pdf-capture'); st.remove(); posters.forEach(im => im.remove());
@@ -142,15 +154,28 @@
     }
   }
 
+  function save(dataUrl, file) {
+    const a = document.createElement('a'); a.href = dataUrl; a.download = file; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 0);
+  }
+  // The ⬇ Download button on the merchant link itself.
+  async function button(btn) {
+    const old = btn.innerHTML;
+    btn.disabled = true; btn.textContent = '⏳ Making image…';
+    try { await download({}); btn.textContent = '✓ Saved'; }
+    catch (e) { btn.innerHTML = old; alert('Download failed: ' + (e && e.message ? e.message : e)); }
+    finally { btn.disabled = false; setTimeout(() => { btn.innerHTML = old; }, 1800); }
+  }
+
   window.addEventListener('message', e => {
     const d = e.data;
     if (!d || d.siCBx !== 'pdf' || e.source !== window.parent || window.parent === window) return;
-    download(d).then(
-      r => window.parent.postMessage(Object.assign({ siCBx: 'pdfDone', ok: true, name: r.name }, d.dryRun ? { png: r.png, w: r.w, h: r.h } : {}), '*'),
+    download(Object.assign({}, d, { returnPng: !d.dryRun })).then(
+      r => window.parent.postMessage(Object.assign({ siCBx: 'pdfDone', ok: true, name: r.name, png: r.png }, d.dryRun ? { w: r.w, h: r.h } : {}), '*'),
       err => window.parent.postMessage({ siCBx: 'pdfDone', ok: false, error: String(err && err.message || err) }, '*'));
   });
   // From a rep tool: open the merchant link in a hidden desktop-width frame (1280px, the width most
-  // merchants open it at), let it settle, and have it make its own PDF.
+  // merchants open it at), let it settle, and have it make its own image (this page saves the file).
   function fromUrl(url, o) {
     o = o || {};
     return new Promise((res, rej) => {
@@ -161,14 +186,15 @@
       const done = (ok, v) => { window.removeEventListener('message', on); clearTimeout(t); setTimeout(() => f.remove(), 1500); if (ok) res(v); else rej(v); };
       const on = e => {
         if (e.source !== f.contentWindow || !e.data || e.data.siCBx !== 'pdfDone') return;
-        if (e.data.ok) done(true, e.data); else done(false, new Error(e.data.error || 'PDF failed'));
+        if (e.data.ok) { if (e.data.png && !o.dryRun) save(e.data.png, e.data.name); done(true, e.data); }
+        else done(false, new Error(e.data.error || 'Download failed'));
       };
       window.addEventListener('message', on);
-      t = setTimeout(() => done(false, new Error('Timed out making the PDF')), 90000);
+      t = setTimeout(() => done(false, new Error('Timed out making the image')), 90000);
       f.onload = () => setTimeout(() => { try { f.contentWindow.postMessage({ siCBx: 'pdf', name: o.name, dryRun: !!o.dryRun }, '*'); } catch (x) { done(false, x); } }, o.wait || 2000);
       f.src = url;
       document.body.appendChild(f);
     });
   }
-  window.SIPDF = { download, fromUrl };
+  window.SIPDF = { download, fromUrl, button };
 })();

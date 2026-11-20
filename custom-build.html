@@ -186,7 +186,7 @@
       <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
       <button class="cb-btn ghost" id="loadBase">Load</button>
       <button class="cb-btn" id="copyLink">📋 Copy Custom Link</button>
-      <button class="cb-btn ghost" id="pdfBtn" title="Download the merchant view as a PDF: exactly what the merchant sees, without buttons">⬇ PDF</button>
+      <button class="cb-btn ghost" id="pdfBtn" title="Download the merchant view as a PNG image: exactly what the merchant sees, without buttons">⬇ PNG</button>
       <button class="cb-btn" id="cloudSaveBtn" title="Save this scenario to the merchant's cloud folder (updates it if already saved)">☁ Cloud Save</button>
       <button class="cb-btn" id="cloudSaveNewBtn" title="Save as a NEW scenario under the same merchant (e.g. Protection + Returns)">☁ Save as New</button>
     </div>
@@ -1460,7 +1460,7 @@
     draw();
     return box;
   }
-  // Copy Link / Download PDF buttons: where they sit + their text. No place = the default spot
+  // Copy Link / Download PNG buttons: where they sit + their text. No place = the default spot
   // (the rep calc's top strip, after View; the merchant link has no top strip, so its inputs column).
   function copyOptsEditor(item) {
     const box = document.createElement('div'); box.className = 'mini-grid'; box.style.marginBottom = '4px';
@@ -1468,12 +1468,12 @@
     box.appendChild(cell('Sits in', segCtl([['top', 'Top bar'], ['inputs', 'Inputs column'], ['results', 'Results']], cur, v => {
       if (v === 'top') delete item.place; else item.place = v; renderLayout(); refresh(true);
     }), true));
-    const t = document.createElement('input'); t.type = 'text'; t.placeholder = item.k === 'pdf' ? '⬇ Download PDF' : '🔗 Copy Link'; t.value = item.label || '';
+    const t = document.createElement('input'); t.type = 'text'; t.placeholder = item.k === 'pdf' ? '⬇ Download PNG' : '🔗 Copy Link'; t.value = item.label || '';
     t.style.cssText = 'width:100%;font-family:inherit;font-size:.8rem;padding:5px 8px;border:1px solid #d0d4e8;border-radius:6px;';
     t.addEventListener('input', () => { const v = t.value; if (v.trim()) item.label = v; else delete item.label; refresh(false); });
     box.appendChild(cell('Button text', t, true));
     const h = document.createElement('div'); h.className = 'hint'; h.style.cssText = 'grid-column:1/-1;margin:0;';
-    h.textContent = 'Top bar = the rep calc header, after View (the merchant link has no top bar, so there it sits in the inputs column). In the inputs column, width sizes the button within the column. In the results it orders and sizes like any block.' + (item.k === 'pdf' ? ' Download PDF shows on the rep calc only; merchants never see it.' : ' Project Midnight keeps its own marble button in the inputs column.');
+    h.textContent = 'Top bar = the rep calc header, after View (the merchant link has no top bar, so there it sits in the inputs column). In the inputs column, width sizes the button within the column. In the results it orders and sizes like any block.' + (item.k === 'pdf' ? ' Download saves the page as a PNG image, without any buttons. On the merchant link it sits under Copy Link by default.' : ' Project Midnight keeps its own marble button in the inputs column.');
     box.appendChild(h);
     return box;
   }
@@ -1633,7 +1633,7 @@
       row.className = 'lay-item' + (item.v === false ? ' hidden' : '') + (blk ? ' is-block' : '') + (_sel && _sel.g === 'b' && _sel.k === item.k ? ' sel' : '');
       row.dataset.k = item.k;
       const styled = blk ? false : !!(item.style && Object.keys(item.style).some(k => !['rows', 'subHidden', 'perPremium'].includes(k)));
-      const where = ((item.k === 'copylink' || item.k === 'pdf') ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.k === 'pdf' && !(PANEL && _canvas === 'calc') ? 'rep calc only' : item.place === 'results' ? 'results' : item.place === 'inputs' || !(PANEL && _canvas === 'calc') ? 'inputs' : 'top bar') + '</span>' : '') +
+      const where = ((item.k === 'copylink' || item.k === 'pdf') ? ' <span style="font-weight:600;color:var(--muted);">· ' + (item.place === 'results' ? 'results' : item.place === 'inputs' || !(PANEL && _canvas === 'calc') ? 'inputs' : 'top bar') + '</span>' : '') +
         (item.k === 'banner' ? ' <span style="font-weight:600;color:var(--muted);">· ' + (!$('bannerUrl').value.trim() ? 'no image' : ({ top: 'top of page', header: 'header', inputs: 'header' })[item.place] || 'results') + '</span>' : '') +
         (item.theme ? ' <span title="' + (item.theme === 'liquid' ? 'Liquid glass' : 'Frosted glass') + '" style="font-size:.62rem;font-weight:800;padding:1px 5px;border-radius:5px;' + (item.theme === 'liquid' ? 'background:#151831;color:#c9b8ff;' : 'background:#eef1ff;color:#4a5fc1;border:1px solid #d5d9f0;') + '">' + (item.theme === 'liquid' ? 'LIQ' : 'FRO') + '</span>' : '');
       row.innerHTML = '<span class="lay-grip">⣿</span><span class="lay-name" title="Select on the preview">' + blockLabel(item.k).replace(/</g, '&lt;') + where + (styled ? ' <span style="color:var(--accent);">●</span>' : '') + '</span>';
@@ -1790,7 +1790,7 @@
     const it = d.k ? arr.find(x => x.k === d.k) : null;
     switch (d.op) {
       case 'move': {
-        // Copy Link / Download PDF: dragging one among the results places it there; nothing drops onto
+        // Copy Link / Download PNG: dragging one among the results places it there; nothing drops onto
         // one while it's in the top bar or the inputs column.
         const BTN = { copylink: 1, pdf: 1 };
         const cl = d.g === 'b' && BTN[d.k] ? layout.find(x => x.k === d.k) : null, bn = layout.find(x => x.k === 'banner');
@@ -1920,16 +1920,16 @@
     refresh(true);
   });
 
-  // ⬇ PDF: the merchant link as the merchant sees it (desktop width), rendered without buttons.
+  // ⬇ PNG: the merchant link as the merchant sees it (desktop width), rendered without buttons.
   $('pdfBtn').addEventListener('click', async () => {
     const btn = $('pdfBtn'), old = btn.textContent;
-    if (!window.SIPDF) { alert('The PDF tool did not load. Reload the page and try again.'); return; }
-    btn.disabled = true; btn.textContent = '⏳ Making PDF…';
+    if (!window.SIPDF) { alert('The download tool did not load. Reload the page and try again.'); return; }
+    btn.disabled = true; btn.textContent = '⏳ Making PNG…';
     try {
       const name = (new URLSearchParams(baseParams).get('mname') || '').trim();
       await SIPDF.fromUrl(buildUrl(), { name: name || undefined });
-      btn.textContent = '✓ PDF saved';
-    } catch (e) { btn.textContent = old; alert('PDF failed: ' + (e && e.message ? e.message : e)); }
+      btn.textContent = '✓ PNG saved';
+    } catch (e) { btn.textContent = old; alert('Download failed: ' + (e && e.message ? e.message : e)); }
     finally { btn.disabled = false; setTimeout(() => { btn.textContent = old; }, 1800); }
   });
 
