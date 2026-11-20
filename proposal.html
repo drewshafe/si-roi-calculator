@@ -328,26 +328,10 @@
         .feature-section-title.cashback { color: #8b5cf6; }
         .feature-section-title.guarantee { color: #764ba2; }
 
-        /* ── Calculate Button ── */
+        /* ── Link actions (Copy Link / Save changes) — results recalc live, no Calculate button ── */
         .calc-btn-wrap {
             padding: 0 14px 14px;
         }
-
-        .calc-btn {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 9px;
-            background: linear-gradient(135deg, #6675ff 0%, #764ba2 100%);
-            color: white;
-            font-size: 0.88em;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-            transition: opacity 0.15s;
-        }
-
-        .calc-btn:hover { opacity: 0.9; }
 
         /* ── Results ── */
         #resultsSection {
@@ -1063,6 +1047,7 @@
     <script src="portal-templates.js"></script>
     <script src="cb-layout.js"></script>
     <script src="mobile.js" defer></script>
+    <script src="pdf-export.js" defer></script>
 </head>
 <body>
     <div class="proposal-layout">
@@ -1317,10 +1302,9 @@
                         </optgroup>
             </select>
 
-            <!-- Calculate button -->
+            <!-- Link actions (results update as inputs change) -->
             <div class="calc-btn-wrap">
-                <button class="calc-btn" id="calcBtn" onclick="calculateProposal()">Calculate ROI &rarr;</button>
-                <button id="p-save-link-btn" onclick="saveProposalLink()" style="margin-top:8px;width:100%;padding:9px;border:1px solid #d0d4ff;border-radius:9px;background:#f4f5ff;color:#6675ff;font-size:0.82em;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copy Link</button>
+                <button id="p-save-link-btn" onclick="saveProposalLink()" style="width:100%;padding:9px;border:1px solid #d0d4ff;border-radius:9px;background:#f4f5ff;color:#6675ff;font-size:0.82em;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copy Link</button>
                 <button id="p-cloud-update-btn" onclick="siMerchantUpdate()" style="display:none;margin-top:8px;width:100%;padding:9px;border:none;border-radius:9px;background:linear-gradient(135deg,#1f9d63,#0f8f56);color:#fff;font-size:0.82em;font-weight:800;cursor:pointer;font-family:inherit;">💾 Save changes</button>
             </div>
         </div><!-- /inputsSection -->
@@ -1334,7 +1318,7 @@
 
         <div id="noResultsPlaceholder" class="no-results-placeholder">
             <div class="nrp-icon">📊</div>
-            <p>Enter your inputs and click<br><strong>Calculate ROI →</strong><br>to see results here.</p>
+            <p>Enter your numbers and<br><strong>your results appear here</strong><br>as you type.</p>
         </div>
 
         <!-- ── Results Section ── -->
@@ -2131,10 +2115,6 @@
                 // If input is hidden, wrap acts like normal div
                 wrap.style.display = 'block';
             });
-
-            // Hide the calculate button
-            const calcBtn = document.getElementById('calcBtn');
-            if (calcBtn) calcBtn.style.display = 'none';
 
             // Keep details open
             const det = inputsSection.querySelector('details.add-inputs-details');
@@ -3196,7 +3176,6 @@
                 const a = b.accent, st = document.createElement('style'); st.id = 'cb-accent';
                 st.textContent = '.kmp-value{color:' + a + ' !important;}' +
                     '.result-hero:not(.upfront-hero){background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;}' +
-                    '.calc-btn{background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;}' +
                     '#p-save-link-btn{color:' + a + ' !important;border-color:' + _cbShade(a, 40) + ' !important;}' +
                     '.proposal-header{border-bottom-color:' + a + ' !important;}' +
                     '.si-opt-tab.active{background:linear-gradient(135deg,' + a + ' 0%,' + _cbShade(a, -20) + ' 100%) !important;border-color:' + a + ' !important;box-shadow:0 2px 8px ' + _cbShade(a, 20) + '66 !important;}' +

@@ -167,6 +167,7 @@
 </style>
 <script src="sb.js"></script>
 <script src="cb-layout.js"></script>
+<script src="pdf-export.js" defer></script>
 </head>
 <body>
   <header class="cbh">
@@ -185,6 +186,7 @@
       <input id="baseLink" type="text" placeholder="Paste a calculator / merchant link to seed data…">
       <button class="cb-btn ghost" id="loadBase">Load</button>
       <button class="cb-btn" id="copyLink">📋 Copy Custom Link</button>
+      <button class="cb-btn ghost" id="pdfBtn" title="Download the merchant view as a PDF: exactly what the merchant sees, without buttons">⬇ PDF</button>
       <button class="cb-btn" id="cloudSaveBtn" title="Save this scenario to the merchant's cloud folder (updates it if already saved)">☁ Cloud Save</button>
       <button class="cb-btn" id="cloudSaveNewBtn" title="Save as a NEW scenario under the same merchant (e.g. Protection + Returns)">☁ Save as New</button>
     </div>
@@ -383,6 +385,13 @@
         <details class="cb-section" id="secLayout">
           <summary>Style → Layout</summary>
           <div class="cb-section-body">
+            <div class="seg-row" style="margin-bottom:8px;" title="When the link opens in a frame narrower than the desktop design (an Aligned or Deal room, the Rep Hub canvas, a small window). Scale to fit keeps every block exactly where you placed it."><span>Rooms &amp; narrow frames</span>
+              <div class="blk-seg" id="embedSeg"><button type="button" data-v="" class="on">Scale to fit</button><button type="button" data-v="reflow">Reflow</button></div>
+            </div>
+            <div class="seg-row" style="margin-bottom:8px;"><span>Block spacing</span>
+              <div class="blk-seg" id="gapSeg"><button type="button" data-v="" class="on">Def</button><button type="button" data-v="4">XS</button><button type="button" data-v="8">S</button><button type="button" data-v="16">M</button><button type="button" data-v="24">L</button><button type="button" data-v="36">XL</button></div>
+            </div>
+            <div class="seg-row" style="margin-bottom:10px;"><span>Results background</span><span id="resultsBgSlot"></span></div>
             <div class="seg-row" style="margin-bottom:10px;"><span>Theme · all blocks</span>
               <div class="blk-seg" id="themeAll"><button type="button" data-v="">Classic</button><button type="button" data-v="frosted">Frosted glass</button><button type="button" data-v="liquid">Liquid glass</button></div>
             </div>
@@ -541,6 +550,7 @@
   let _inLblSize = '', _inSize = '';       // merchant input label / input size (S M L XL)
   let _openPill = null;                    // output-strip pill whose style editor is open
   let _openEx = null;                      // Additional Inputs: 'section' or a field key whose editor is open
+  let _resultsBg = '', _blockGap = '', _embed = '';   // results background, block spacing, rooms / narrow frames
 
   const $ = id => document.getElementById(id);
   const proposalBase = () => new URL('proposal.html', location.href).href;
@@ -589,11 +599,13 @@
         hdrWeight: $('hdrWeight').value || undefined,
         hdrSize: _hdrSize || undefined,
         periodText: $('periodText').checked ? undefined : 0,
+        resultsBg: _resultsBg || undefined,
+        blockGap: _blockGap !== '' ? +_blockGap : undefined,
       },
       layout: layout,
       blocks: blocks,
       inputs: inputsCfg,
-      display: $('phoneMode').value === 'keep' ? { phone: 'keep' } : undefined,
+      display: ($('phoneMode').value === 'keep' || _embed) ? Object.assign({}, $('phoneMode').value === 'keep' ? { phone: 'keep' } : {}, _embed ? { embed: _embed } : {}) : undefined,
       v: 2,
     };
   }
@@ -656,6 +668,13 @@
     txt('sumBanner', $('bannerUrl').value.trim() ? 'on' + (bi && bi.v === false ? ' · hidden' : bi && PL[bi.place] ? ' · ' + PL[bi.place] : '') : '');
     _renderBannerThumb();
   }
+  // The rep calc (Rep Hub) shows an uploaded / Lock-built logo too: it travels as branding.logoData
+  // on the live message only (links carry it in the #cbimg hash).
+  function withLogoData(c) {
+    if (!_logoImg) return c;
+    const o = JSON.parse(JSON.stringify(c)); o.branding = Object.assign({}, o.branding, { logoData: _logoImg });
+    return o;
+  }
   function refresh(immediate) {
     syncSummaries();
     paintPvFeat();
@@ -666,7 +685,7 @@
     histPush();
     if (PANEL) {                                         // the hub owns the canvas
       toHub({ siCB: 'canvas', view: _canvas, url: buildUrl(true), sig: sig, cfg: c, edit: { on: _edit, sel: _sel } });
-      toHub({ siCB: 'branding', cfg: c });
+      toHub({ siCB: 'branding', cfg: withLogoData(c) });
       return;
     }
     if (w && sig === _loadedSig && sig === _srcSig) {
@@ -677,7 +696,7 @@
     }
     // Live branding sync: when stacked under the ROI Builder, push the current branding
     // to the hub so it can re-brand the calc above without reloading it.
-    try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'branding', cfg: cfg() }, '*'); } catch (e) {}
+    try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'branding', cfg: withLogoData(cfg()) }, '*'); } catch (e) {}
   }
 
   // On load (when stacked), ask the hub for the calc's current data so the preview starts
@@ -746,6 +765,15 @@
   $('bannerUrl').addEventListener('input', () => { renderLayout(); refresh(false); });
   $('periodText').addEventListener('change', () => refresh(true));
   $('phoneMode').addEventListener('change', () => refresh(true));
+  // Layout-wide: rooms / narrow frames, block spacing, results background
+  function syncLayoutWide() {
+    document.querySelectorAll('#embedSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === _embed));
+    document.querySelectorAll('#gapSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === _blockGap));
+    const slot = $('resultsBgSlot'); if (slot) { slot.innerHTML = ''; slot.appendChild(colorCtl(() => _resultsBg, v => { _resultsBg = v || ''; }, '#d8dced')); }
+  }
+  document.querySelectorAll('#embedSeg button').forEach(b => b.addEventListener('click', () => { _embed = b.dataset.v; syncLayoutWide(); refresh(true); }));
+  document.querySelectorAll('#gapSeg button').forEach(b => b.addEventListener('click', () => { _blockGap = b.dataset.v; syncLayoutWide(); refresh(true); }));
+  syncLayoutWide();
   $('hdrBanner').addEventListener('change', e => {
     const bi = layout.find(l => l.k === 'banner'); if (!bi) return;
     if (e.target.checked) { bi.place = 'header'; if (bi.v === false) bi.v = true; } else delete bi.place;
@@ -1218,6 +1246,12 @@
       const rad = document.createElement('input'); rad.type = 'number'; rad.min = '0'; rad.max = '40'; rad.placeholder = 'Def'; rad.value = st.radius != null ? st.radius : '';
       rad.addEventListener('input', () => { const n = parseInt(rad.value, 10); set('radius', isNaN(n) ? undefined : n); refresh(false); });
       g.appendChild(cell('Corner radius px', rad));
+      const numIn = (key, ph, max) => { const i = document.createElement('input'); i.type = 'number'; i.min = '0'; i.max = String(max); i.placeholder = ph; i.value = st[key] != null ? st[key] : '';
+        i.addEventListener('input', () => { const n = parseInt(i.value, 10); set(key, isNaN(n) ? undefined : n); refresh(false); }); return i; };
+      g.appendChild(cell('Padding px', numIn('pad', 'Def', 60)));
+      g.appendChild(cell('Space below px', numIn('mb', 'Def', 80)));
+      g.appendChild(cell('Text align', segCtl([['', 'Def'], ['left', 'L'], ['center', 'C'], ['right', 'R']], st.align || '', v => { set('align', v); refresh(true); })));
+      g.appendChild(cell('Shadow', segCtl([['', 'Def'], ['none', 'None'], ['soft', 'Soft'], ['strong', 'Strong']], st.shadow || '', v => { set('shadow', v); refresh(true); })));
     }
     wrap.appendChild(g);
     if (kind !== 'field' && owner.k === 'cards') wrap.appendChild(cardRowsEditor(st));
@@ -1716,7 +1750,7 @@
     $('pbDisp').appendChild($('dispMode')); $('pbDisp').appendChild($('phoneMode'));
     $('pbSel').replaceWith($('pvSel'));
     const er = $('pbEditRow'); er.insertBefore($('editCanvasBtn'), er.firstChild);
-    ['copyLink', 'cloudSaveBtn', 'cloudSaveNewBtn'].forEach(id => $('pbActions').appendChild($(id)));
+    ['copyLink', 'pdfBtn', 'cloudSaveBtn', 'cloudSaveNewBtn'].forEach(id => $('pbActions').appendChild($(id)));
     $('copyLink').textContent = '📋 Copy Link'; $('cloudSaveBtn').textContent = '☁ Save'; $('cloudSaveNewBtn').textContent = '☁ Save new';
     document.querySelectorAll('#canvasSeg button').forEach(b => b.addEventListener('click', () => {
       _canvas = b.dataset.v;
@@ -1880,6 +1914,19 @@
     refresh(true);
   });
 
+  // ⬇ PDF: the merchant link as the merchant sees it (desktop width), rendered without buttons.
+  $('pdfBtn').addEventListener('click', async () => {
+    const btn = $('pdfBtn'), old = btn.textContent;
+    if (!window.SIPDF) { alert('The PDF tool did not load. Reload the page and try again.'); return; }
+    btn.disabled = true; btn.textContent = '⏳ Making PDF…';
+    try {
+      const name = (new URLSearchParams(baseParams).get('mname') || '').trim();
+      await SIPDF.fromUrl(buildUrl(), { name: name || undefined });
+      btn.textContent = '✓ PDF saved';
+    } catch (e) { btn.textContent = old; alert('PDF failed: ' + (e && e.message ? e.message : e)); }
+    finally { btn.disabled = false; setTimeout(() => { btn.textContent = old; }, 1800); }
+  });
+
   // Copy Custom Link. An uploaded/lock-built logo is ~8–15KB; embedding it in the
   // URL hash makes a huge link that Slack/email/Aligned truncate on paste (dropping
   // the image). So when a logo image is present, route through the cloud for a SHORT
@@ -1923,6 +1970,7 @@
       || _ibgMode !== 'default' || _inpLabelSet || _inpInputSet || _inpBorderSet || _inpBorderW !== ''
       || ($('accentHex').value || '').toLowerCase() !== '#6675ff'
       || !!(_hdrColor || $('hdrFont').value || $('hdrWeight').value || _hdrSize) || !$('periodText').checked || $('phoneMode').value === 'keep'
+      || !!(_resultsBg || _blockGap !== '' || _embed)
       || inputsCfg.ordered || inputsCfg.pos !== 'left' || inputsCfg.width !== 'normal'
       || !!($('inLblFont').value || $('inFontSel').value || _inLblSize || _inSize)
       || inputsCfg.fields.some(f => f.w || f.v === false || f.label || (f.style && Object.keys(f.style).length))
@@ -2008,10 +2056,11 @@
         inpBorderW: b.inputBorderW || '', logoImg: '',
         hdrColor: b.hdrColor || '', hdrFont: b.hdrFont || '', hdrWeight: b.hdrWeight || '', hdrSize: b.hdrSize || '',
         inLblFont: b.inputLabelFont || '', inLblSize: b.inputLabelSize || '', inFont: b.inputFont || '', inSize: b.inputSize || '',
-        periodOff: b.periodText === 0
+        periodOff: b.periodText === 0,
+        resultsBg: b.resultsBg || '', blockGap: b.blockGap != null ? String(b.blockGap) : ''
       },
       layout: bld.layout || [], blocks: bld.blocks || [], inputs: bld.inputs || null,
-      display: { phone: bld.display && bld.display.phone === 'keep' ? 'keep' : '' }
+      display: { phone: bld.display && bld.display.phone === 'keep' ? 'keep' : '', embed: bld.display && bld.display.embed === 'reflow' ? 'reflow' : '' }
     };
   }
 
@@ -2068,11 +2117,12 @@
         hdrColor: _hdrColor, hdrFont: $('hdrFont').value, hdrWeight: $('hdrWeight').value, hdrSize: _hdrSize,
         inLblFont: $('inLblFont').value, inLblSize: _inLblSize, inFont: $('inFontSel').value, inSize: _inSize,
         periodOff: !$('periodText').checked,
+        resultsBg: _resultsBg, blockGap: _blockGap,
       },
       layout: JSON.parse(JSON.stringify(layout)),
       blocks: JSON.parse(JSON.stringify(blocks)),
       inputs: JSON.parse(JSON.stringify(inputsCfg)),
-      display: { phone: $('phoneMode').value || '' },
+      display: { phone: $('phoneMode').value || '', embed: _embed },
     };
   }
 
@@ -2085,7 +2135,8 @@
     if (snap.layout) layout = SICB.normLayout(JSON.parse(JSON.stringify(snap.layout)), blocks);
     inputsCfg = SICB.normInputs(snap.inputs ? JSON.parse(JSON.stringify(snap.inputs)) : null);
     _openSec = null; _openBlk = null; _openFld = null; _openPill = null; _openEx = null; _sel = null;
-    if (snap.display && typeof snap.display === 'object') $('phoneMode').value = snap.display.phone === 'keep' ? 'keep' : '';
+    if (snap.display && typeof snap.display === 'object') { $('phoneMode').value = snap.display.phone === 'keep' ? 'keep' : ''; _embed = snap.display.embed === 'reflow' ? 'reflow' : ''; }
+    syncLayoutWide();
     if (includeBranding && snap.branding) {
       const b = snap.branding;
       const setv = (id, v) => { const e = $(id); if (e && v != null) e.value = v; };
@@ -2115,6 +2166,7 @@
       document.querySelectorAll('#inLblSize button').forEach(x => x.classList.toggle('on', x.dataset.v === _inLblSize));
       document.querySelectorAll('#inSizeSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === _inSize));
       $('periodText').checked = !b.periodOff;
+      _resultsBg = b.resultsBg || ''; _blockGap = b.blockGap != null ? String(b.blockGap) : '';
       const hc = $('hdrColorSlot'); hc.innerHTML = ''; hc.appendChild(colorCtl(() => _hdrColor, v => { _hdrColor = v || ''; }, '#ffffff'));
     }
     renderSwatches(); renderLists(); refresh(true);

@@ -528,6 +528,14 @@
     if (b.hdrWeight) css += P.hdrMain + BOOST + '{font-weight:' + (parseInt(b.hdrWeight, 10) || 500) + ' !important;}';
     if (b.hdrSize && HDR_SIZE[b.hdrSize]) css += P.hdrMain + BOOST + '{font-size:' + HDR_SIZE[b.hdrSize] + ' !important;line-height:1.2;}';
 
+    // ── Results area: background + spacing between blocks ──
+    if (b.resultsBg && okColor(b.resultsBg)) css += LIGHT + P.results + BOOST + '{background:' + b.resultsBg + ' !important;}';
+    const gap = b.blockGap != null && b.blockGap !== '' ? Math.max(0, Math.min(48, parseInt(b.blockGap, 10) || 0)) : null;
+    if (gap != null) {
+      if (P === PAGES.proposal) css += P.gridOn + BOOST + '{column-gap:' + gap + 'px !important;}' + P.gridOn + ' [data-cbk]' + BOOST + ',' + P.gridOn + '>.cb-block' + BOOST + '{margin-bottom:' + gap + 'px !important;}';
+      else css += P.gridOn + BOOST + '{row-gap:' + gap + 'px !important;column-gap:' + gap + 'px !important;}';
+    }
+
     // ── Merchant input section (defaults for every field) ──
     if (b.inputBg && okColor(b.inputBg)) {
       if (P.inSurface.length) css += P.inSurface.map(s => LIGHT + s + BOOST).join(',') + '{background:' + b.inputBg + ' !important;}';
@@ -558,16 +566,22 @@
     const W = P.panelW[inp.width] || P.panelW.normal;
     const wrapSel = P.root === P.wrap ? P.root : P.root + (P.notStacked || '') + ' ' + P.wrap;
     const panelSel = P.root === P.wrap ? P.root + ' ' + P.panel : P.root + (P.notStacked || '') + ' ' + P.panel;
+    let colCss = '';
     if (inp.pos === 'right') {
-      css += mq + wrapSel + BOOST + '{flex-direction:row-reverse !important;}' +
-        panelSel + BOOST + '{width:' + W + 'px !important;border-right:none !important;border-left:2px solid #dde0f2;}}';
+      colCss = wrapSel + BOOST + '{flex-direction:row-reverse !important;}' +
+        panelSel + BOOST + '{width:' + W + 'px !important;border-right:none !important;border-left:2px solid #dde0f2;}';
     } else if (inp.pos === 'top') {
-      css += mq + wrapSel + BOOST + '{flex-direction:column !important;}' +
+      colCss = wrapSel + BOOST + '{flex-direction:column !important;}' +
         panelSel + BOOST + '{width:100% !important;border-right:none !important;border-bottom:2px solid #dde0f2;overflow:visible;}' +
-        (P === PAGES.proposal ? '.right-panel' + BOOST + '{min-height:0;}' : '') + '}';
+        (P === PAGES.proposal ? '.right-panel' + BOOST + '{min-height:0;}' : '');
     } else if (inp.width !== 'normal') {
-      css += mq + panelSel + BOOST + '{width:' + W + 'px !important;}}';
+      colCss = panelSel + BOOST + '{width:' + W + 'px !important;}';
     }
+    if (colCss) css += mq + colCss + '}';
+    // Fit to frame (merchant view): narrower than the design width — an Aligned / Deal room embed,
+    // the Rep Hub canvas, a small window — scales the desktop layout down instead of reflowing it,
+    // so every block sits exactly where the build put it. display.embed 'reflow' turns it off.
+    css += fitCss(P, cfg, W, colCss);
     const panel = document.querySelector(P.panel);
     if (panel) panel.setAttribute('data-cbp', 'inputs');
 
@@ -958,6 +972,11 @@
       if (st.bw != null && st.bw !== '') css += LIGHT + tgt + BOOST2 + '{border:' + (parseInt(st.bw, 10) || 0) + 'px solid ' + (okColor(st.bc) ? st.bc : '#e3e6f0') + ' !important;}';
       else if (okColor(st.bc)) css += LIGHT + tgt + BOOST2 + '{border-color:' + st.bc + ' !important;}';
       if (st.radius != null && st.radius !== '') css += tgt + BOOST2 + '{border-radius:' + (parseInt(st.radius, 10) || 0) + 'px !important;}';
+      if (st.pad != null && st.pad !== '' && !o.noPad) css += tgt + BOOST2 + '{padding:' + Math.max(0, parseInt(st.pad, 10) || 0) + 'px !important;}';
+      if (st.mb != null && st.mb !== '') css += S + BOOST3 + '{margin-bottom:' + Math.max(0, parseInt(st.mb, 10) || 0) + 'px !important;}';
+      if (st.align === 'left' || st.align === 'center' || st.align === 'right') css += S + BOOST2 + '{text-align:' + st.align + ' !important;}';
+      const SH = { none: 'none', soft: '0 4px 14px rgba(20,24,48,.10)', strong: '0 14px 34px rgba(20,24,48,.24)' };
+      if (SH[st.shadow]) css += LIGHT + tgt + BOOST2 + '{box-shadow:' + SH[st.shadow] + ' !important;}';
     }
     if (st.font) { loadFont(st.font); css += S + BOOST2 + ',' + S + BOOST2 + ' input,' + S + BOOST2 + ' select,' + S + BOOST2 + ' button:not(.cbx-bar button){font-family:' + fontStack(st.font) + ' !important;}'; }
     if (st.size && SIZE[st.size]) css += S + BOOST2 + '{font-size:' + SIZE[st.size] + ';}';
@@ -1032,6 +1051,23 @@
     if (okColor(st.bg) && !/gradient/i.test(st.bg)) css += LIGHT + H + '{background-color:' + st.bg + ' !important;}';
     if (st.radius != null && st.radius !== '') css += H + '{border-radius:' + (parseInt(st.radius, 10) || 0) + 'px !important;}';
     css += 'body.cbx-edit ' + P.header + '[data-cbx-hdr]>.cbx-bar{top:6px;}';
+    return css;
+  }
+
+  const DESIGN_W = 1180;                                 // .proposal-layout max-width
+  function fitCss(P, cfg, panelW, colCss) {
+    const html = document.documentElement;
+    const want = P === PAGES.proposal && !(cfg.display && cfg.display.embed === 'reflow') && !document.body.classList.contains('mv-on');
+    const vw = html.clientWidth;
+    const on = want && vw >= 560 && vw < DESIGN_W;
+    html.classList.toggle('cbx-fit', on);
+    if (!on) return '';
+    const z = Math.round(vw / DESIGN_W * 1000) / 1000, F = 'html.cbx-fit ';
+    let css = F + '.proposal-layout{zoom:' + z + ';width:' + DESIGN_W + 'px;max-width:none;flex-direction:row;}' +
+      F + '.left-panel{width:' + panelW + 'px;border-right:2px solid #dde0f2;border-bottom:none;}' +
+      F + '.right-panel{min-height:calc(100vh / ' + z + ');}';
+    // The inputs-column rules only apply above the stacking width; inside the fitted frame they always do.
+    if (colCss) css += colCss.split('}').filter(r => r.trim()).map(r => { const i = r.indexOf('{'); return r.slice(0, i).split(',').map(x => F + x.trim()).join(',') + r.slice(i) + '}'; }).join('');
     return css;
   }
 

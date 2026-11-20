@@ -751,6 +751,10 @@
         .input-group.cashback .itype-btn.active { background: #5b21b6; color: white; }
         .input-group.cashback .itype-btn { border-left-color: #c4b5fd; }
 
+        .merchant-pdf-btn { width:100%; margin-top:6px; padding:6px 12px; font:inherit; font-size:0.78em; font-weight:700; border-radius:7px; border:1.5px solid #c5caeb; background:#fff; color:#4a5fc1; cursor:pointer; }
+        .merchant-pdf-btn:hover { border-color:#4a5fc1; background:#f4f5ff; }
+        .merchant-pdf-btn:disabled { opacity:.6; cursor:default; }
+        .theme-midnight .merchant-pdf-btn { background:#14141c; color:#e9c46a; border-color:rgba(233,196,106,.35); }
         .generate-link-btn {
             display: flex;
             align-items: center;
@@ -1788,6 +1792,7 @@
             </div>
 
             <button id="generateProposalLink" class="generate-link-btn" style="width:100%;margin-top:6px;">🔗 Copy Link</button>
+            <button id="merchantPdfBtn" type="button" class="merchant-pdf-btn" title="Download the merchant link as a PDF: exactly what the merchant sees, without buttons" onclick="siMerchantPdf(this)">⬇ Download PDF</button>
             <div id="linkDisplay" class="link-display" style="margin-top:6px;">
                 <p>Share this link:</p>
                 <div class="link-row">
@@ -4378,6 +4383,21 @@
         }
 
         // Builds the full rep-state calc link (used to store/reload saved configs).
+        // The Custom Build on this calc (from its link, or live from the Rep Hub's Custom pane) rides on
+        // every link it makes, so the merchant / rep view opens with the same build. An uploaded logo
+        // goes in the #cbimg hash, like Custom Build links. Returns the hash ('' when none).
+        function _siBuildLink(params) {
+            if (window._siBuildCfg && typeof window._siBuildCfg === 'object' && !params.get('bld')) {
+                try {
+                    const bc = JSON.parse(JSON.stringify(window._siBuildCfg));
+                    if (bc.branding) delete bc.branding.logoData;
+                    params.set('bld', JSON.stringify(bc));
+                } catch (e) {}
+            }
+            const lg = window._siBuildLogo || '';
+            if (!/^data:image\//.test(lg)) return '';
+            try { return '#cbimg=' + encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({ logo: lg }))))); } catch (e) { return ''; }
+        }
         function buildRepLink() {
             const baseUrl = 'https://drewshafe.github.io/si-roi-calculator';
             const pricingTemplate = document.getElementById('pricingTemplate').value;
@@ -4464,10 +4484,26 @@
             // Carry the optimized Compact layout through the link when the rep is in Compact.
             { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); else if (document.body.classList.contains('disp-mobile')) params.set('disp', 'mobile'); }
 
-            return `${baseUrl}?${params.toString()}`;
+            const _bh = _siBuildLink(params);   // adds bld first, then the query string is read
+            return `${baseUrl}?${params.toString()}${_bh}`;
         }
 
         // Builds the clean merchant-facing view link — the one reps share.
+        // ⬇ Download PDF: the merchant link exactly as the merchant sees it (desktop width, no buttons).
+        // Built from this page's own copy of proposal.html (so the PDF matches this release of the calc).
+        async function siMerchantPdf(btn) {
+            const old = btn.textContent;
+            if (!window.SIPDF) { alert('The PDF tool did not load. Reload the page and try again.'); return; }
+            btn.disabled = true; btn.textContent = '⏳ Making PDF…';
+            try {
+                const link = new URL(buildMerchantLink());
+                const url = new URL('proposal.html', location.href); url.search = link.search; url.hash = link.hash;
+                const name = ((document.getElementById('merchantName') || {}).value || '').trim();
+                await SIPDF.fromUrl(url.href, { name: name || undefined });
+                btn.textContent = '✓ PDF saved';
+            } catch (e) { btn.textContent = old; alert('PDF failed: ' + (e && e.message ? e.message : e)); }
+            finally { btn.disabled = false; setTimeout(() => { btn.textContent = old; }, 1800); }
+        }
         function buildMerchantLink() {
             const baseUrl = 'https://drewshafe.github.io/si-roi-calculator/proposal.html';
             const pricingTemplate = document.getElementById('pricingTemplate').value;
@@ -4550,7 +4586,8 @@
             // Carry the optimized Compact layout through the link when the rep is in Compact.
             { const _c = document.querySelector('.container'); if (_c && _c.classList.contains('density-compact')) params.set('disp', 'compact'); else if (document.body.classList.contains('disp-mobile')) params.set('disp', 'mobile'); }
 
-            return `${baseUrl}?${params.toString()}`;
+            const _bh = _siBuildLink(params);   // adds bld first, then the query string is read
+            return `${baseUrl}?${params.toString()}${_bh}`;
         }
 
         // One shareable link = the merchant view. Builds it, shows it in the
@@ -5042,9 +5079,11 @@
             if (!cfg) { try { const raw = new URLSearchParams(location.search).get('bld'); if (raw) cfg = JSON.parse(raw); } catch (e) {} }
             window._siBuildCfg = cfg;   // mobile.js mirrors the live build (labels / hidden / branding)
             const b = (cfg && cfg.branding) || {};
-            // Merchant logo — from branding.logoUrl, or (initial load only) the #cbimg hash.
-            let logo = b.logoUrl || '';
+            // Merchant logo — from branding.logoUrl, an uploaded image the Custom pane sends (logoData),
+            // or (initial load only) the #cbimg hash.
+            let logo = b.logoUrl || b.logoData || '';
             if (!cfgObj) { try { const m = (location.hash || '').match(/[#&]cbimg=([^&]+)/); if (m) { const o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); if (o && o.logo) logo = o.logo; } } catch (e) {} }
+            window._siBuildLogo = logo || '';   // carried on links (_siBuildLink)
             const la = document.querySelector('.logo-area');
             if (logo && la) {
                 let img = document.getElementById('cbMerchantLogo');
@@ -5453,6 +5492,7 @@
 
     </script>
     <script src="mobile.js"></script>
+    <script src="pdf-export.js"></script>
 
     <script type="module">
         // Liquid glass backplates from samasante/liquid-glass (React, loaded from esm.sh). The impact box,
