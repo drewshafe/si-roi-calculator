@@ -73,6 +73,12 @@
   .cb-linkout textarea{ width:100%; height:52px; font-family:ui-monospace,Menlo,monospace; font-size:.62rem; padding:7px; border:1px solid #d0d4e8; border-radius:7px; resize:none; color:#3a3d47; background:#f7f8fc; }
   @media (max-width:820px){ main{ grid-template-columns:1fr; } .preview{ min-height:50vh; } .cb-link-row input{ width:150px; } }
   .cb-logo-up{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .kit-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .kit-b{ display:flex; flex-direction:column; align-items:center; gap:3px; width:72px; padding:5px 4px 4px; border:1px solid #d5d9f0; border-radius:8px; background:#fff; cursor:pointer; font-family:inherit; }
+  .kit-b:hover{ border-color:var(--accent); }
+  .kit-b.on{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(102,117,255,.22); }
+  .kit-b img{ width:60px; height:36px; object-fit:contain; background:repeating-conic-gradient(#eef0f6 0% 25%,#fafbfd 0% 50%) 0 0/8px 8px; border-radius:4px; }
+  .kit-b span{ font-size:.6rem; font-weight:700; color:#4a5068; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .cb-up-btn{ display:inline-flex; align-items:center; gap:5px; font-size:.74rem; font-weight:700; color:#6675ff; background:#f4f5ff; border:1px solid #c8ccff; border-radius:7px; padding:6px 11px; cursor:pointer; }
   .cb-up-btn:hover{ background:#eceeff; }
   .cb-lock-btn{ background:#1a1a2e; color:#fff; border-color:#1a1a2e; }
@@ -288,7 +294,11 @@
             <button type="button" class="cb-up-clear" id="logoImgClear" style="display:none;" title="Remove uploaded image">✕</button>
           </div>
         </div>
-            <div class="hint">Uploaded logos travel inside the share link (compressed), no hosting needed. An uploaded or Lock-built image overrides the Logo URL.</div>
+        <div class="fld" id="logoKitFld" style="display:none;">
+          <label>From the brand kit <span id="logoKitName" style="font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)"></span></label>
+          <div class="kit-row" id="logoKit"></div>
+        </div>
+            <div class="hint">Uploaded logos travel inside the share link (compressed), no hosting needed. An uploaded, Lock-built or brand-kit image overrides the Logo URL.</div>
           </div>
         </details>
         <details class="cb-section" id="secBanner">
@@ -801,7 +811,33 @@
     if (_logoImg) { t.src = _logoImg; t.style.display = ''; c.style.display = ''; }
     else { t.removeAttribute('src'); t.style.display = 'none'; c.style.display = 'none'; }
   }
-  function setLogoImg(dataUrl) { _logoImg = dataUrl || ''; _renderLogoThumb(); refresh(true); }
+  function setLogoImg(dataUrl) { _logoImg = dataUrl || ''; _renderLogoThumb(); refresh(true); _paintLogoKit(); }
+  // ── Brand kit (Merchant Folders → Brand kit): one click uses a saved logo (anything but the banner) ──
+  const _KIT_LOGOS = [['main', 'Main logo'], ['secondary', 'Secondary'], ['hero', 'Hero logo'], ['favicon', 'Favicon'], ['lock', 'SI lock']];
+  var _logoKit = [];
+  function _paintLogoKit() {
+    const fld = $('logoKitFld'); if (!fld) return;
+    fld.style.display = _logoKit.length ? '' : 'none';
+    $('logoKit').innerHTML = _logoKit.map((it, i) => '<button type="button" class="kit-b' + (_logoImg === it.src ? ' on' : '') + '" data-kit="' + i + '" title="Use the ' + it.label.toLowerCase() + '"><img alt="" src="' + it.src.replace(/"/g, '&quot;') + '"><span>' + it.label + '</span></button>').join('');
+  }
+  async function loadLogoKit() {
+    _logoKit = [];
+    try {
+      if (!window.SIsb || !(await SIsb.currentUser())) return _paintLogoKit();
+      const ref = await _folderRef(); if (!ref) return _paintLogoKit();
+      const c = await SIsb.client();
+      let r = await c.from('merchants').select('name, logo_path, brand').eq('id', ref).single();
+      if (r.error) r = await c.from('merchants').select('name, logo_path').eq('id', ref).single();
+      const m = r.data || {}, b = m.brand || {};
+      _KIT_LOGOS.forEach(([k, label]) => { const src = k === 'main' ? m.logo_path : b[k]; if (typeof src === 'string' && src) _logoKit.push({ k, label, src }); });
+      $('logoKitName').textContent = m.name ? '· ' + m.name : '';
+    } catch (e) { _logoKit = []; }
+    _paintLogoKit();
+  }
+  $('logoKit').addEventListener('click', e => { const b = e.target.closest('[data-kit]'); if (b) { const it = _logoKit[+b.dataset.kit]; if (it) setLogoImg(it.src); } });
+  $('secLogo').addEventListener('toggle', e => { if (e.target.open) loadLogoKit(); });
+  if (window.SIsb && SIsb.onActiveFolder) SIsb.onActiveFolder(() => loadLogoKit());
+  setTimeout(loadLogoKit, 1200);
   $('logoFile').addEventListener('change', e => {
     const file = e.target.files && e.target.files[0]; if (!file) return;
     if (file.size > 4 * 1024 * 1024) { alert('Image must be under 4MB.'); e.target.value = ''; return; }
@@ -895,7 +931,7 @@
     if (!ref) throw new Error('No Merchant Folder found for this merchant. Open it in Merchant Folders (or ☁ Cloud Save) first.');
     const c = await SIsb.client();
     const [m, as, cf] = await Promise.all([
-      c.from('merchants').select('id, name, bld, logo_path').eq('id', ref).single(),
+      c.from('merchants').select('id, name, bld, logo_path, brand').eq('id', ref).single(),
       c.from('merchant_assets').select('id, kind, title, data').eq('merchant_ref', ref).order('updated_at', { ascending: false }).limit(200),
       c.from('configs').select('id, title, data, logo_path').eq('merchant_ref', ref).limit(100),
     ]);
@@ -903,7 +939,11 @@
     const out = [], seen = new Set();
     const add = (src, label, rank, extra) => { if (!src || seen.has(src)) return; seen.add(src); out.push(Object.assign({ src, label, rank }, extra || {})); };
     const KIND = { checkout: 'Checkout', email: 'Email', claim: 'Claims', proposal: 'Proposal', msa: 'MSA', mnda: 'MNDA', onepager: 'One-Pager' };
-    const f = m.data || {};
+    const f = m.data || {}, bk = f.brand || {};
+    // Brand kit first (banner on top), then everything else saved in the folder.
+    [['banner', 'Banner'], ['hero', 'Hero logo'], ['main', 'Main logo'], ['secondary', 'Secondary logo'], ['lock', 'Custom SI lock'], ['favicon', 'Favicon']].forEach(([k, label], i) => {
+      const src = k === 'main' ? f.logo_path : bk[k]; if (typeof src === 'string' && src) add(src, 'Brand kit · ' + label, -10 + i);
+    });
     _collectImages(f.bld, 'banner', (u, k) => add(u, 'Folder branding · ' + k, _imgRank(k)), 0);
     if (f.logo_path) add(f.logo_path, 'Folder logo', 3);
     (as.data || []).forEach(a => {
