@@ -265,18 +265,43 @@
 
   // ── Active merchant (shared by the Rep Hub and every tool; same origin) ──
   // {id, name, logo} in localStorage; other tabs/iframes hear changes via 'storage'.
+  //
+  // Pinned folder: a page opened with ?folder=<merchant id> (optionally &fname=<name>) works on
+  // that folder only. Other tabs switching folders don't move it, and its own folder changes stay
+  // on this page instead of moving the rest of the rep's tabs. Pages without ?folder= behave as before.
   const ACTIVE_KEY = 'si_active_merchant';
-  function getActiveFolder() { try { return JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null'); } catch (e) { return null; } }
+  const _activeSubs = [];
+  const _notify = v => _activeSubs.forEach(function (fn) { try { fn(v); } catch (e) {} });
+  const _norm = f => f && f.id ? { id: String(f.id), name: f.name || '', logo: f.logo || f.logo_path || '' } : null;
+  let _pin = null;
+  try {
+    const q = new URLSearchParams(location.search);
+    const id = (q.get('folder') || '').trim();
+    if (/^[\w-]{6,64}$/.test(id)) _pin = { id: id, name: (q.get('fname') || '').trim(), logo: '' };
+  } catch (e) {}
+  function getActiveFolder() {
+    if (_pin) return Object.assign({}, _pin);
+    try { return JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null'); } catch (e) { return null; }
+  }
   function setActiveFolder(f) {
-    const v = f && f.id ? { id: f.id, name: f.name || '', logo: f.logo || f.logo_path || '' } : null;
+    const v = _norm(f);
+    if (_pin) { _pin = v; _notify(v); return v; }   // pinned page: change this page only
     try { v ? localStorage.setItem(ACTIVE_KEY, JSON.stringify(v)) : localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
-    _activeSubs.forEach(function (fn) { try { fn(v); } catch (e) {} });
+    _notify(v);
     return v;
   }
-  const _activeSubs = [];
   function onActiveFolder(fn) {
     _activeSubs.push(fn);
-    window.addEventListener('storage', function (e) { if (e.key === ACTIVE_KEY) fn(getActiveFolder()); });
+    window.addEventListener('storage', function (e) { if (e.key === ACTIVE_KEY && !_pin) fn(getActiveFolder()); });
+  }
+  const pinnedFolder = () => _pin ? Object.assign({}, _pin) : null;
+  // Fill in a pinned folder's name + logo once a rep is signed in (the link may carry only the id).
+  if (_pin) {
+    client().then(c => c.from('merchants').select('id, name, logo_path').eq('id', _pin.id).maybeSingle()).then(function (r) {
+      if (!_pin || !r || !r.data || r.data.id !== _pin.id) return;
+      _pin = { id: _pin.id, name: r.data.name || _pin.name, logo: r.data.logo_path || '' };
+      _notify(pinnedFolder());
+    }, function () {});
   }
 
   window.SIsb = {
@@ -285,6 +310,6 @@
     saveMerchant, getMerchant, getMerchantByName, listMerchants,
     ASSET_KINDS, listFolders, createFolder, updateFolder,
     listAssets, recentAssets, getAsset, saveAsset, deleteAsset, folderContents, linkScenario, renameSave, uploadDoc, docLink, removeDoc,
-    getActiveFolder, setActiveFolder, onActiveFolder
+    getActiveFolder, setActiveFolder, onActiveFolder, pinnedFolder
   };
 })();
