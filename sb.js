@@ -87,13 +87,15 @@
   // bld = cfg() output (for rendering), cb = cbSnapshot() (for editing), logo in storage.
   async function saveMerchant(m) {
     const c = await client();
-    const row = { name: m.name || '', bld: m.bld || {}, cb: m.cb || {}, updated_at: new Date().toISOString() };
+    const row = { bld: m.bld || {}, cb: m.cb || {}, updated_at: new Date().toISOString() };
     if (m.logoUrl != null) row.logo_path = m.logoUrl;
     let id = m.id;
     if (!id && m.name) { const ex = await getMerchantByName(m.name); if (ex) id = ex.id; }
     const q = c.from('merchants');
+    // Saving branding never renames a folder (that's Brand Folders' Edit details): the name is
+    // only written when the folder is created.
     const res = id ? await q.update(row).eq('id', id).select('id').single()
-                   : await q.insert(row).select('id').single();
+                   : await q.insert(Object.assign({ name: m.name || '' }, row)).select('id').single();
     if (res.error) throw res.error;
     return res.data;
   }

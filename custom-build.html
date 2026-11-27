@@ -713,6 +713,57 @@
   // in sync with the rep's live inputs, not just the seed link.
   try { window.addEventListener('load', function () { try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'needData' }, '*'); } catch (e) {} }); } catch (e) {}
 
+  // ── One merchant at a time ── The folder + scenario this build is tied to belong to ONE merchant.
+  // When the merchant changes (the hub's live calc data, a pasted link), let go of them at once so a
+  // save can't land in (or rename) the previous merchant's folder. Once the new name settles, open
+  // that merchant's own saved look, or start from the default look if the current one came from the
+  // previous merchant's folder. A look the rep is designing from scratch (or imported from a link)
+  // is kept.
+  let _cbBoundKey = null;          // lower-cased merchant name the folder / scenario belong to (null = not set yet)
+  let _cbLookFromFolder = false;   // the current look was opened from a merchant folder
+  let _cbSwitchT = null;
+  const merchantOf = params => ((new URLSearchParams(params || '').get('mname')) || '').trim();
+  function noteMerchant(o) {
+    o = o || {};
+    const name = merchantOf(baseParams), key = name.toLowerCase();
+    if (_cbBoundKey === null || o.adopt) { _cbBoundKey = key; return; }
+    if (key === _cbBoundKey) { clearTimeout(_cbSwitchT); return; }
+    if (_cbMerchantId || _cbCloudId) { _cbMerchantId = null; _cbCloudId = null; _cbCloudRef = null; _cbCloudName = ''; }
+    _cbBoundKey = key;
+    clearTimeout(_cbSwitchT);
+    if (o.keepLook) { _cbLookFromFolder = false; return; }
+    _cbSwitchT = setTimeout(() => switchMerchantLook(name, key), 1200);   // typing a name: wait until it settles
+  }
+  async function switchMerchantLook(name, key) {
+    if (key !== _cbBoundKey) return;
+    let m = null;
+    if (name && window.SIsb) { try { if (await SIsb.currentUser()) m = await SIsb.getMerchantByName(name); } catch (e) {} }
+    if (key !== _cbBoundKey) return;                                       // changed again meanwhile
+    if (m && m.name && m.name.toLowerCase() === key) {
+      _cbMerchantId = m.id;
+      if (m.cb && (m.cb.branding || m.cb.layout)) {
+        cbRestore(m.cb, true);
+        if (m.logo_path) { _logoImg = m.logo_path; _renderLogoThumb(); }
+        _cbLookFromFolder = true;
+        cbNote('Opened ' + m.name + '\'s saved look from its Merchant Folder.');
+      }
+      return;
+    }
+    if (_cbLookFromFolder) {                                               // the look was the previous merchant's
+      const def = (typeof getDefault === 'function') ? getPresets().find(x => same(x.name, getDefault())) : null;
+      cbRestore(JSON.parse(JSON.stringify(def || STOCK)), def ? !!def.branding : true);
+      _logoImg = ''; _renderLogoThumb();
+      _cbLookFromFolder = false;
+      cbNote((name || 'This merchant') + ' has no saved look yet: started from ' + (def ? 'your ★ default preset' : 'the default look') + '.');
+    }
+  }
+  function cbNote(msg) {
+    let t = $('cbNoteToast');
+    if (!t) { t = document.createElement('div'); t.id = 'cbNoteToast'; t.setAttribute('role', 'status'); t.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:50;max-width:420px;margin:0 auto;padding:9px 12px;border-radius:9px;background:#1f2430;color:#fff;font:600 .74rem/1.35 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(20,24,48,.25);'; document.body.appendChild(t); }
+    t.textContent = msg; t.style.display = '';
+    clearTimeout(t._h); t._h = setTimeout(() => { t.style.display = 'none'; }, 4200);
+  }
+
   // Live rep-input + display sync: when stacked under the ROI Builder, the hub relays the
   // calc's current merchant link (+ display settings) on every change, so the preview below
   // reflects the rep's edits in real time. Branding stays owned by this editor (bld stripped).
@@ -726,6 +777,7 @@
       ps.delete('bld');
       if (d.display && d.display.density) { if (d.display.density === 'compact' || d.display.density === 'mobile') ps.set('disp', d.display.density); else ps.delete('disp'); }
       baseParams = ps.toString() || DEFAULT_BASE;
+      noteMerchant();
       if ($('baseLink')) $('baseLink').value = proposalBase() + '?' + baseParams;
       if (typeof syncDispCheckbox === 'function') syncDispCheckbox();
       refresh(false);
@@ -1932,6 +1984,7 @@
     const bldRaw = p.get('bld');
     p.delete('bld');
     if (p.toString()) baseParams = p.toString();
+    noteMerchant({ keepLook: !!bldRaw });   // a link that carries its own look keeps it
     // If the pasted link carries branding (bld), IMPORT it into the editor — this is
     // how you reuse a merchant's branding on a new plan/scenario. Then it's a fresh
     // (unsaved) branded build, so a Cloud Save creates a NEW config under that merchant.
@@ -2000,6 +2053,8 @@
   }
   let _cbCloudId = null;     // the scenario (config) being edited
   let _cbMerchantId = null;  // the merchant folder this build belongs to
+  let _cbCloudRef = null;    // the folder that scenario lives in (a scenario is only updated in its own folder)
+  let _cbCloudName = '';     // …and its merchant name (scenarios saved before folders existed)
   // Name a scenario from its plan options so a merchant folder can hold several.
   function _scenarioLabel(params) {
     const p = new URLSearchParams(params || '');
@@ -2043,6 +2098,11 @@
       if (_logoImg) { try { logoUrl = await SIsb.uploadLogo(_logoImg); } catch (e) { alert('Logo upload failed: ' + e.message); btn.textContent = old; return; } }
       // 1) Merchant folder branding (single source for all its scenarios).
       const _mkSnap = () => { const s = cbSnapshot(); if (s.branding) s.branding.logoImg = ''; return s; };
+      // The folder this build is tied to must be THIS merchant's (never save into, or rename, another's).
+      if (_cbMerchantId) {
+        try { const cur = await SIsb.getMerchant(_cbMerchantId); if (!cur || String(cur.name || '').trim().toLowerCase() !== merchant.toLowerCase()) _cbMerchantId = null; }
+        catch (e) { _cbMerchantId = null; }
+      }
       let mrow;
       if (_cbHasBranding()) {
         mrow = await SIsb.saveMerchant({ id: _cbMerchantId || undefined, name: merchant, bld: cfg(), cb: _mkSnap(), logoUrl: logoUrl });
@@ -2051,10 +2111,13 @@
         mrow = (await SIsb.getMerchantByName(merchant)) || await SIsb.saveMerchant({ name: merchant, bld: cfg(), cb: _mkSnap(), logoUrl: logoUrl });
       }
       _cbMerchantId = mrow.id;
-      // 2) This scenario: params only — branding comes from the merchant folder.
+      // 2) This scenario: params only — branding comes from the merchant folder. A scenario opened
+      // from another merchant's folder is never moved or overwritten: this saves a new one here.
+      if (_cbCloudId && ((_cbCloudRef && _cbCloudRef !== mrow.id) || (!_cbCloudRef && _cbCloudName && _cbCloudName.toLowerCase() !== merchant.toLowerCase()))) _cbCloudId = null;
       const data = { q: baseParams, hash: '' };
       const res = await SIsb.saveConfig({ id: _cbCloudId || undefined, merchant: merchant, merchant_ref: mrow.id, kind: 'proposal', title: _scenarioLabel(baseParams), data: data });
-      _cbCloudId = res.id;
+      _cbCloudId = res.id; _cbCloudRef = mrow.id; _cbCloudName = merchant;
+      _cbBoundKey = merchant.toLowerCase(); _cbLookFromFolder = true;
       const link = proposalBase() + '?id=' + res.id + '&t=' + res.edit_token;
       try { await navigator.clipboard.writeText(link); } catch (e) {}
       $('linkOut').value = link;
@@ -2134,7 +2197,8 @@
         if (!snap) snap = d.cb || _snapFromBld(bldRaw);
         if (snap) cbRestore(snap, true);
         if (logo) { _logoImg = logo; _renderLogoThumb(); }
-        _cbCloudId = id;
+        _cbCloudId = id; _cbCloudRef = row.merchant_ref || null; _cbCloudName = String(row.merchant || merchantOf(baseParams) || '').trim();
+        _cbLookFromFolder = !!row.merchant_ref; noteMerchant({ adopt: true });
         syncDispCheckbox();
         refresh(true);
         // Embedded in the hub: this async cloud load can land AFTER the hub's live
