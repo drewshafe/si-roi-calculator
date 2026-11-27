@@ -2137,6 +2137,10 @@
         _cbCloudId = id;
         syncDispCheckbox();
         refresh(true);
+        // Embedded in the hub: this async cloud load can land AFTER the hub's live
+        // repdata sync and overwrite it with the saved (stale) params, dropping
+        // anything picked since (e.g. ?upf=). Ask the hub to resend the live link.
+        try { if (window.parent && window.parent !== window) window.parent.postMessage({ siCB: 'needData' }, '*'); } catch (e) {}
         return;
       } catch (e) { console.warn('[CB] load id failed:', e && e.message); }
     }
